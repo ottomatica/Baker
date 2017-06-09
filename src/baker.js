@@ -83,9 +83,10 @@ function bake(name)
             console.log( out );
             console.log( err || "ready" );
         });
-        machine.on("progress", function(data)
+        machine.on("up-progress", function(data)
         {
-            console.log(machine, progress, rate, remaining);
+            //console.log(machine, progress, rate, remaining);
+            console.log(data)
         });
     });
 
