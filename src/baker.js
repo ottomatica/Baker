@@ -1,6 +1,8 @@
 const path = require("path");
 const fs = require('fs-extra');
 const vagrant = require('node-vagrant');
+const scp2 = require("scp2");
+
 var child_process = require("child_process");
 const program = require('./help').parse(process.argv); // The --help page
 
@@ -28,7 +30,13 @@ function main()
     }
     else
     {
-        bake("test");
+        var ansibleVM = vagrant.create({ cwd: ansible });
+        getSSHConfig(ansibleVM, function(sshConfig)
+        {
+            bake("test", sshConfig, ansibleVM);
+
+        });
+
     }
 
 }
@@ -63,7 +71,36 @@ function checkAnsible()
     });
 }
 
-function bake(name)
+function getSSHConfig(machine, callback)
+{
+    machine.sshConfig(function(err, sshConfig)
+    {
+        console.log( err || "ssh info:" );
+        if( sshConfig && sshConfig.length > 0 )
+        {
+            callback(sshConfig[0])
+        }
+        else
+        {
+            callback(err);
+        }
+    });
+}
+
+function copyFromHostToVM(src, dest, destSSHConfig)
+{
+    scp2.scp(src, 
+    {
+        host: '127.0.0.1',
+        port: destSSHConfig.port,
+        username: destSSHConfig.user,
+        privateKey: fs.readFileSync( destSSHConfig.private_key),
+        path: dest
+    }, function(err) {console.log(err)})
+}
+
+
+function bake(name, ansibleSSHConfig, ansibleVM)
 {
     var dir = path.join(boxes, name);
     var config = require('./config/base_vm.json');
@@ -83,14 +120,11 @@ function bake(name)
             console.log( out );
             console.log( err || "ready" );
 
-            machine.sshConfig(function(err, sshConfig)
+            getSSHConfig(machine, function(sshConfig)
             {
-                console.log( err || "ssh info:" );
-                if( sshConfig && sshConfig.length > 0 )
-                {
-                    console.log( sshConfig[0].private_key )
-                }
+                copyFromHostToVM(sshConfig.private_key, `/home/vagrant/${name}.key`, ansibleSSHConfig)
             });
+
         });
         machine.on("up-progress", function(data)
         {
