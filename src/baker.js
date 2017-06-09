@@ -40,7 +40,12 @@ function checkAnsible()
 
         machine.up(function(err, out)
         {
+            console.log( out );
             console.log( err || "ready" );
         });
+        machine.on("up-progress", function(data)
+        {
+            console.log(data);
+        })
     });
 }

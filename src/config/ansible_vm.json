@@ -6,8 +6,7 @@
         "network": {
             "type": "private_network",
             "detail": {
-                "address": "192.168.33.101",
-                "family": "Socket::AF_INET"
+                "ip": "192.168.33.101"
             }
         },
 
