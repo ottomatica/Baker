@@ -9,6 +9,6 @@ $ baker https://github.com/alt-code/Dazed
 ubuntu/xenial64 virtual machine created at C:\boxes\alt-code\Dazed
 
   To use:
-  $ cd C:\boxes\alt-code\Dazed
-  $ vagrant ssh
+    cd C:\boxes\alt-code\Dazed
+    vagrant ssh
 ```
