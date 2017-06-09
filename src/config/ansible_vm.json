@@ -1,0 +1,25 @@
+{
+    "config": {
+        "vm": {
+            "box": "ubuntu/trusty64"
+        },
+        "network": {
+            "type": "public_network",
+            "detail": {
+                "guest": 83,
+                "host": 85
+            }
+        },
+
+        "providers": {
+            "virtualbox": {
+                "memory": 384
+            }
+        },
+        "provisioners": {
+            "shell": {
+                "path": "'./provision.shell.sh'"
+            }
+        }
+    }
+}
