@@ -2,6 +2,9 @@ const path = require("path");
 const fs = require('fs-extra');
 const vagrant = require('node-vagrant');
 const scp2 = require("scp2");
+const ssh2 = require("ssh2");
+const Client = require('ssh2').Client;
+
 
 var child_process = require("child_process");
 const program = require('./help').parse(process.argv); // The --help page
@@ -96,9 +99,36 @@ function copyFromHostToVM(src, dest, destSSHConfig)
         username: destSSHConfig.user,
         privateKey: fs.readFileSync( destSSHConfig.private_key),
         path: dest
-    }, function(err) {console.log(err)})
+    }, 
+    function(err) 
+    {
+        if(err) console.log(err)
+        chmod(dest, destSSHConfig);
+    });
 }
 
+function chmod(key,sshConfig)
+{
+    var c = new Client();
+    c.on('ready', function() {
+        c.exec(`chmod 600 ${key}`, function(err, stream) {
+            if (err) throw err;
+            stream.on('close', function(code, signal) {
+                console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
+                c.end();
+            }).on('data', function(data) {
+                console.log('STDOUT: ' + data);
+            }).stderr.on('data', function(data) {
+                console.log('STDERR: ' + data);
+            });
+        });
+    }).connect({
+        host: '127.0.0.1',
+        port: sshConfig.port,
+        username: sshConfig.user,
+        privateKey: fs.readFileSync(sshConfig.private_key)
+    });    
+}
 
 function bake(name, ansibleSSHConfig, ansibleVM)
 {
