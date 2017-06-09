@@ -14,6 +14,11 @@
             "virtualbox": {
                 "memory": 1024
             }
+        },
+        "provisioners": {
+            "shell": {
+                "path": "'./provision.shell.sh'"
+            }
         }
     }
 }
