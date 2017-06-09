@@ -1,8 +1,8 @@
-
-var path = require("path");
-var fs = require('fs-extra');
-var vagrant = require('node-vagrant');
+const path = require("path");
+const fs = require('fs-extra');
+const vagrant = require('node-vagrant');
 var child_process = require("child_process");
+const program = require('./help').parse(process.argv); // The --help page
 
 var boxes = path.join(require('os').homedir(), ".baker");
 var ansible = path.join(boxes, "ansible-srv");
@@ -18,8 +18,18 @@ function main()
         fs.mkdirSync(ansible);
     }
 
-    //checkAnsible();
-    bake("test");
+    // if(argv._.includes('help') || argv.help || argv.h)
+    //     help();
+
+    // console.log(program)
+    if(program.install)
+    {
+        checkAnsible();
+    }
+    else
+    {
+        bake("test");
+    }
 
 }
 
