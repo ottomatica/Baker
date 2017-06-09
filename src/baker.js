@@ -18,8 +18,8 @@ function main()
         fs.mkdirSync(ansible);
     }
 
-    checkAnsible();
-
+    //checkAnsible();
+    bake("test");
 
 }
 
@@ -51,4 +51,32 @@ function checkAnsible()
         })
         */
     });
+}
+
+function bake(name)
+{
+    var dir = path.join(boxes, name);
+    var config = require('./config/base_vm.json');
+
+    if( !fs.existsSync(dir))
+    {
+        fs.mkdirSync(dir);
+    }
+
+    var machine = vagrant.create({ cwd: dir });
+
+    machine.init('ubuntu/trusty64', config, function(err, out)
+    {
+        console.log( err || "baking vm..." );
+        machine.up(function(err, out)
+        {
+            console.log( out );
+            console.log( err || "ready" );
+        });
+        machine.on("progress", function(data)
+        {
+            console.log(machine, progress, rate, remaining);
+        });
+    });
+
 }
