@@ -6,14 +6,18 @@
         "network": {
             "type": "private_network",
             "detail": {
-                "address": "192.168.33.101",
-                "family": "Socket::AF_INET"
+                "ip": "192.168.33.101"
             }
         },
 
         "providers": {
             "virtualbox": {
                 "memory": 1024
+            }
+        },
+        "provisioners": {
+            "shell": {
+                "path": "'./provision.shell.sh'"
             }
         }
     }

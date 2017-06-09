@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require('fs-extra');
 const vagrant = require('node-vagrant');
+var child_process = require("child_process");
 const program = require('./help').parse(process.argv); // The --help page
 
 var boxes = path.join(require('os').homedir(), ".baker");
@@ -43,9 +44,17 @@ function checkAnsible()
     {
         console.log( err || "creating ansible server..." );
 
+        child_process.execSync(`cd ${ansible} && vagrant up`, {stdio: 'inherit'})
+        /*
         machine.up(function(err, out)
         {
+            console.log( out );
             console.log( err || "ready" );
         });
+        machine.on("up-progress", function(data)
+        {
+            console.log(data);
+        })
+        */
     });
 }
