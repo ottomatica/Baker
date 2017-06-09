@@ -82,6 +82,15 @@ function bake(name)
         {
             console.log( out );
             console.log( err || "ready" );
+
+            machine.sshConfig(function(err, sshConfig)
+            {
+                console.log( err || "ssh info:" );
+                if( sshConfig && sshConfig.length > 0 )
+                {
+                    console.log( sshConfig[0].private_key )
+                }
+            });
         });
         machine.on("up-progress", function(data)
         {
