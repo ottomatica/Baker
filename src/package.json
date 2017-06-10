@@ -2,6 +2,9 @@
   "name": "baker",
   "version": "0.1.0",
   "description": "baker creates ansible powered virtual machines",
+  "engines": {
+    "node": ">=7.10.0"
+  },
   "main": "baker.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
