@@ -1,93 +1,170 @@
+/**
+ * TODO: reinstall ansible vm is implemented, but doesn't copy know private keys to the new ansible server
+ */
 const path = require("path");
 const fs = require('fs-extra');
 const vagrant = require('node-vagrant');
+const argv = require('yargs').argv
 const scp2 = require("scp2");
 const ssh2 = require("ssh2");
 const Client = require('ssh2').Client;
 
-
 var child_process = require("child_process");
-const program = require('./help').parse(process.argv); // The --help page
 
 var boxes = path.join(require('os').homedir(), ".baker");
 var ansible = path.join(boxes, "ansible-srv");
 
-function main()
-{
-    if( !fs.existsSync(boxes))
-    {
+async function main() {
+    if( !fs.existsSync(boxes)) {
         fs.mkdirSync(boxes);
     }
-    if( !fs.existsSync(ansible))
-    {
+    if( !fs.existsSync(ansible)) {
         fs.mkdirSync(ansible);
     }
 
-    // if(argv._.includes('help') || argv.help || argv.h)
-    //     help();
-
-    // console.log(program)
-    if(program.install)
-    {
-        checkAnsible();
+    if(argv.install)
+        await installAnsibleServer()
+    else if(argv.reinstall)
+        await reinstallAnsibleServer()
+    else {
+        let ansibleVM = await prepareAnsibleServer()
+        let sshConfig = await getSSHConfig(ansibleVM)
+        bake("test", sshConfig, ansibleVM);
     }
-    else
-    {
-        var ansibleVM = vagrant.create({ cwd: ansible });
-        getSSHConfig(ansibleVM, function(sshConfig)
-        {
-            bake("test", sshConfig, ansibleVM);
-
-        });
-
-    }
-
 }
 
 main();
 
-function checkAnsible()
-{
-    var machine = vagrant.create({ cwd: ansible });
-    var config = require('./config/ansible_vm.json');
-
-    fs.copySync(path.resolve(__dirname,'./config/provision.shell.sh'), 
-                path.resolve(ansible,'provision.shell.sh')
-    );
-
-    machine.init('ubuntu/trusty64', config, function(err, out)
-    {
-        console.log( err || "creating ansible server..." );
-
-        child_process.execSync(`cd ${ansible} && vagrant up`, {stdio: 'inherit'})
-        /*
-        machine.up(function(err, out)
-        {
-            console.log( out );
-            console.log( err || "ready" );
+/**
+ * get State of a vagrant vm by id. 
+ * @param {String} id 
+ */
+async function getState(id){
+    return new Promise((resolve, reject)=>{
+        vagrant.globalStatus(function(err, out){
+            out.forEach((vm)=>{if(vm.id == id) resolve(vm.state)})
         });
-        machine.on("up-progress", function(data)
-        {
-            console.log(data);
-        })
-        */
-    });
+    })
 }
 
-function getSSHConfig(machine, callback)
-{
-    machine.sshConfig(function(err, sshConfig)
-    {
-        console.log( err || "ssh info:" );
-        if( sshConfig && sshConfig.length > 0 )
+/**
+ * get vagrant id of ansible server
+ */
+async function getAnsibleSrvVagrantId(){
+    return new Promise((resolve, reject)=>{
+        vagrant.globalStatus(function(err, out){
+            out.forEach((vm)=>{ if(/ansible-srv/.test(vm.cwd)){
+                resolve(vm.id);
+            } })
+            resolve(undefined)
+        })
+    })
+}
+
+/**
+ * Checks if ansible server is up, if not it starts the server
+ * Returns a promise, use cleaner es7 syntax:
+ * Resolves the ansible machine
+ * ------
+ * await prepareAnsibleServer()
+ * ...do something after finished preparing server
+ * ------
+ */
+async function prepareAnsibleServer(){
+    let machine = vagrant.create({ cwd: ansible });      
+    
+    // if(await getAnsibleSrvVagrantId() == undefined)
+    //     // TODO
+    if(await getState(await getAnsibleSrvVagrantId()) != 'running'){
+        console.log('==> Starting ansible server...')
+        return new Promise((resolve, reject)=>{
+            machine.up(function(err, out) {
+                // console.log( out );
+                console.log( err || '==> Ansible server is now ready!' );
+                resolve(machine);
+            });
+        }) 
+    } else{
+        console.log( "==> Ansible server is now ready!" );        
+        return machine;
+    } 
+}
+
+/**
+ * Destroy a vagrant vm sync
+ * @param {String} id 
+ */
+function destroyVM(id){
+    console.log('==> Destroying ansible server...')
+    child_process.execSync(`vagrant destroy ${id}`, {stdio: 'inherit'})
+}
+
+/**
+ * Creates ansible server, if already doesn't exist
+ */
+async function installAnsibleServer(){
+    if(await getAnsibleSrvVagrantId() != undefined){
+        console.log('==> ansible server already provisioned...')
+        prepareAnsibleServer();
+        return;
+    } else{
+        let machine = vagrant.create({ cwd: ansible });
+        let config = require('./config/ansible_vm.json');
+
+        fs.copySync(path.resolve(__dirname,'./config/provision.shell.sh'), 
+                    path.resolve(ansible,'provision.shell.sh')
+        );
+
+        machine.init('ubuntu/trusty64', config, function(err, out)
         {
-            callback(sshConfig[0])
-        }
-        else
-        {
-            callback(err);
-        }
-    });
+            console.log( err || '==> Creating ansible server...' );
+
+            // child_process.execSync(`cd ${ansible} && vagrant up`, {stdio: 'inherit'})
+            
+            machine.up(function(err, out)
+            {
+                // console.log( out );
+                if(err)
+                    throw `==> Couldn't start ansible server!!`
+                else
+                    console.log('==> Ansible server is now ready!')
+                return;
+            });
+            // machine.on("up-progress", function(data)
+            // {
+            //     console.log(data);
+            // })
+        });
+    }
+}
+
+/**
+ * Re-installs ansible server.
+ * @returns Promise
+ */
+async function reinstallAnsibleServer(){
+    destroyVM(await getAnsibleSrvVagrantId());
+    await installAnsibleServer();
+}
+
+/**
+ * Get ssh configurations
+ * @param {Obj} machine 
+ */
+async function getSSHConfig(machine){
+    return new Promise((resolve, reject)=>{
+        machine.sshConfig(function(err, sshConfig){
+            // console.log( err || "ssh info:" );
+            if( sshConfig && sshConfig.length > 0 ) {
+                // callback(sshConfig[0])
+                resolve(sshConfig[0]);
+            }
+            else {
+                // callback(err);
+                throw `==> Couldn't get private ssh key of new VM`// err
+            }
+        });
+    })
 }
 
 function copyFromHostToVM(src, dest, destSSHConfig)
@@ -97,7 +174,7 @@ function copyFromHostToVM(src, dest, destSSHConfig)
         host: '127.0.0.1',
         port: destSSHConfig.port,
         username: destSSHConfig.user,
-        privateKey: fs.readFileSync( destSSHConfig.private_key),
+        privateKey: fs.readFileSync( destSSHConfig.private_key, "utf8"),
         path: dest
     }, 
     function(err) 
@@ -130,37 +207,30 @@ function chmod(key,sshConfig)
     });    
 }
 
-function bake(name, ansibleSSHConfig, ansibleVM)
-{
-    var dir = path.join(boxes, name);
-    var config = require('./config/base_vm.json');
+async function bake(name, ansibleSSHConfig, ansibleVM) {
+    let dir = path.join(boxes, name);
+    let config = require('./config/base_vm.json');
 
-    if( !fs.existsSync(dir))
-    {
+    if( !fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
 
-    var machine = vagrant.create({ cwd: dir });
+    let machine = vagrant.create({ cwd: dir });
 
-    machine.init('ubuntu/trusty64', config, function(err, out)
-    {
-        console.log( err || "baking vm..." );
-        machine.up(function(err, out)
-        {
-            console.log( out );
-            console.log( err || "ready" );
-
-            getSSHConfig(machine, function(sshConfig)
-            {
-                copyFromHostToVM(sshConfig.private_key, `/home/vagrant/${name}.key`, ansibleSSHConfig)
-            });
-
+    machine.init('ubuntu/trusty64', config, function(err, out) {
+        console.log( err || "==> Baking vm..." );
+        machine.up(async function(err, out) {
+            console.log( err || "==> New VM is ready" );
+            let sshConfig = await getSSHConfig(machine);
+            copyFromHostToVM(sshConfig.private_key, `/home/vagrant/${name}.key`, ansibleSSHConfig)
         });
-        machine.on("up-progress", function(data)
-        {
-            //console.log(machine, progress, rate, remaining);
-            console.log(data)
-        });
+
+        // machine.on("up-progress", function(data){
+        //     //console.log(machine, progress, rate, remaining);
+        //     console.log(data)
+        // });
+
+        return;
     });
 
 }
