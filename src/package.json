@@ -27,6 +27,7 @@
   "dependencies": {
     "commander": "^2.9.0",
     "fs-extra": "^3.0.1",
+    "js-yaml": "^3.8.4",
     "node-vagrant": "^1.0.8",
     "scp2": "^0.5.0",
     "ssh2": "^0.5.5",
