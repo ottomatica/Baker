@@ -11,6 +11,7 @@ const Client = require('ssh2').Client;
 const yaml = require('js-yaml');
 const prompt = require('prompt');
 const mustache = require('mustache');
+const chalk = require('chalk');
 
 var child_process = require('child_process');
 
@@ -81,16 +82,16 @@ async function prepareAnsibleServer() {
     // if(await getAnsibleSrvVagrantId() == undefined)
     //     // TODO
     if ((await getState(await getAnsibleSrvVagrantId())) != 'running') {
-        console.log('==> Starting ansible server...');
+        console.log(chalk.green('==> Starting ansible server...'));
         return new Promise((resolve, reject) => {
             machine.up(function(err, out) {
                 // console.log( out );
-                console.log(err || '==> Ansible server is now ready!');
+                console.log(err || chalk.green('==> Ansible server is now ready!'));
                 resolve(machine);
             });
         });
     } else {
-        console.log('==> Ansible server is now ready!');
+        console.log(chalk.green('==> Ansible server is now ready!'));
         return machine;
     }
 }
@@ -100,7 +101,7 @@ async function prepareAnsibleServer() {
  * @param {String} id
  */
 function destroyVM(id) {
-    console.log('==> Destroying ansible server...');
+    console.log(chalk.green('==> Destroying ansible server...'));
     child_process.execSync(`vagrant destroy ${id}`, { stdio: 'inherit' });
 }
 
@@ -109,7 +110,7 @@ function destroyVM(id) {
  */
 async function installAnsibleServer() {
     if ((await getAnsibleSrvVagrantId()) != undefined) {
-        console.log('==> ansible server already provisioned...');
+        console.log(chalk.green('==> Ansible server already provisioned...'));
         prepareAnsibleServer();
         return;
     } else {
@@ -129,7 +130,7 @@ async function installAnsibleServer() {
             machine.up(function(err, out) {
                 // console.log( out );
                 if (err) throw `==> Couldn't start ansible server!!`;
-                else console.log('==> Ansible server is now ready!');
+                else console.log(chalk.green('==> Ansible server is now ready!'));
                 return;
             });
             // machine.on("up-progress", function(data)
@@ -179,7 +180,7 @@ function copyFromHostToVM(src, dest, destSSHConfig) {
             path: dest
         },
         function(err) {
-            if (err) console.log(err);
+            if (err) console.log(chalk.bold.red(`Faild configure ssh keys: ${err}`));
             chmod(dest, destSSHConfig);
         }
     );
@@ -222,7 +223,7 @@ async function promptValue(propertyName, description)
         prompt.start();
         prompt.get([{name: propertyName, description: description }], function (err, result)
         {
-            if (err) { console.log(err); }
+            if (err) { console.log(chalk.bold.red(err)); }
             //prompt.stop();
             resolve(result[propertyName]);
         });
@@ -283,10 +284,10 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
     let machine = vagrant.create({ cwd: dir });
 
     await initVagrantFile(path.join(dir, "Vagrantfile"), doc, template);
-    console.log('==> Baking vm...');
+    console.log(chalk.green('==> Baking vm...'));
 
     machine.up(async function(err, out) {
-        console.log(err || '==> New VM is ready');
+        console.log(err || chalk.green('==> New VM is ready'));
         let sshConfig = await getSSHConfig(machine);
         copyFromHostToVM(
             sshConfig.private_key,
