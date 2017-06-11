@@ -89,6 +89,10 @@ async function prepareAnsibleServer() {
                 console.log(err || chalk.green('==> Ansible server is now ready!'));
                 resolve(machine);
             });
+
+            machine.on("up-progress", function(data) {
+                verbose(data);
+            })
         });
     } else {
         console.log(chalk.green('==> Ansible server is now ready!'));
@@ -133,10 +137,10 @@ async function installAnsibleServer() {
                 else console.log(chalk.green('==> Ansible server is now ready!'));
                 return;
             });
-            // machine.on("up-progress", function(data)
-            // {
-            //     console.log(data);
-            // })
+
+            machine.on("up-progress", function(data) {
+                verbose(data);
+            })
         });
     }
 }
@@ -270,6 +274,12 @@ async function initVagrantFile(path, doc, template)
     fs.writeFileSync(path, output);
 }
 
+function verbose(details){
+    if(argv.verbose || argv.v){
+        console.log(details);
+    }
+}
+
 async function bake(name, ansibleSSHConfig, ansibleVM) {
     let dir = path.join(boxes, name);
     let template = fs.readFileSync( "./config/BaseVM.mustache" ).toString();
@@ -296,8 +306,8 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
         );
     });
 
-    // machine.on("up-progress", function(data){
-    //     //console.log(machine, progress, rate, remaining);
-    //     console.log(data)
-    // });
+    machine.on("up-progress", function(data){
+        //console.log(machine, progress, rate, remaining);
+        verbose(data);
+    });
 }
