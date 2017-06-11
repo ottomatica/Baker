@@ -225,7 +225,7 @@ function readBakerYaml(configFile)
         // Validate logic...
 
         // if( verbose )
-        console.log(JSON.stringify(doc, null, 3));
+        // console.log(JSON.stringify(doc, null, 3));
 
         return doc;
     } catch (e) {
@@ -234,15 +234,17 @@ function readBakerYaml(configFile)
     return null;
 }
 
-async function promptOrGetValue(property)
+async function promptOrGetValue(propertyName, property)
 {
     if( property && property.hasOwnProperty("prompt"))
     {
         prompt.start();
-        prompt.get([{name: "value", warning: property.prompt }], function (err, result)
-        {
-            if (err) { console.log(err); }
-            return result.value;
+        return new Promise((resolve, reject) => {
+            prompt.get([{name: propertyName, description: property.prompt }], function (err, result)
+            {
+                if (err) { console.log(err); }
+                resolve(result[propertyName]);
+            });
         });
     }
     return property;
@@ -253,7 +255,7 @@ var properties = [
     {
       name: 'username',
       validator: /^[a-zA-Z\s\-]+$/,
-      warning: 'Username must be only letters, spaces, or dashes'
+      description: 'Username must be only letters, spaces, or dashes'
     },
     {
       name: 'password',
@@ -261,12 +263,12 @@ var properties = [
     }
 ];
 
-function updateVagrantConfig(config, bakerDoc)
+async function updateVagrantConfig(baseConfig, bakerDoc)
 {
     let vagrant = bakerDoc.vagrant;
     if( vagrant.memory )
     {
-        config.providers.virtualbox.memory = await promptOrGetValue(vagrant.memory);
+        baseConfig.config.providers.virtualbox.memory = await promptOrGetValue("memory", vagrant.memory);
     }
     if( vagrant.network && vagrant.network.length > 0 )
     {
@@ -278,6 +280,10 @@ function updateVagrantConfig(config, bakerDoc)
             }
         });
     }
+    if( vagrant.synced_folder )
+    {
+
+    }
 }
 
 
@@ -285,18 +291,18 @@ function updateVagrantConfig(config, bakerDoc)
 
 async function bake(name, ansibleSSHConfig, ansibleVM) {
     let dir = path.join(boxes, name);
-    let config = require('./config/base_vm.json');
-    let bakerDoc = readBakerYaml('test/resources/baker.yml')
+    let baseConfig = require('./config/base_vm.json');
+    let bakerDoc = readBakerYaml('test/resources/prompt.yml')
 
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
 
-    updateVagrantConfig(config, bakerDoc);
+    await updateVagrantConfig(baseConfig, bakerDoc);
 
     let machine = vagrant.create({ cwd: dir });
 
-    machine.init( await promptOrGetValue(bakerDoc.vagrant.box), config, function(err, out) {
+    machine.init( await promptOrGetValue("box", bakerDoc.vagrant.box), baseConfig, function(err, out) {
         console.log(err || '==> Baking vm...');
         machine.up(async function(err, out) {
             console.log(err || '==> New VM is ready');
