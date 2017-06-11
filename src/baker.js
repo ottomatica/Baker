@@ -266,6 +266,10 @@ var properties = [
 async function updateVagrantConfig(baseConfig, bakerDoc)
 {
     let vagrant = bakerDoc.vagrant;
+    if( vagrant.box )
+    {
+        baseConfig.config.vm.box = await promptOrGetValue("box", vagrant.box);
+    }
     if( vagrant.memory )
     {
         baseConfig.config.providers.virtualbox.memory = await promptOrGetValue("memory", vagrant.memory);
