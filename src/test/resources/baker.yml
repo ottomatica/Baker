@@ -1,0 +1,21 @@
+---
+name: dazed16
+#vagrant: env/Vagrantfile
+vagrant:
+  box: "ubuntu/xenial64"
+  forwarded_port:
+     guest: 8888
+     host: 8888
+  memory: 4096
+  synced_folder:
+    src:
+      prompt: "What is the path to your dev projects?"
+    dest: /projects
+
+bake:
+  ansible:
+    source: env/
+    run:
+      - ansible-playbook bootstrap.yml -i inventory
+      - ansible-playbook configure.yml -i inventory -s
+      - ansible-playbook aruco.yml -i inventory

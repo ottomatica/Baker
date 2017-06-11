@@ -8,6 +8,7 @@ const argv = require('yargs').argv;
 const scp2 = require('scp2');
 const ssh2 = require('ssh2');
 const Client = require('ssh2').Client;
+const yaml = require('js-yaml')
 
 var child_process = require('child_process');
 
@@ -28,6 +29,8 @@ async function main() {
         let ansibleVM = await prepareAnsibleServer();
         let sshConfig = await getSSHConfig(ansibleVM);
         bake('test', sshConfig, ansibleVM);
+
+        readBakerYaml('test/resources/baker.yml')
     }
 }
 
@@ -212,6 +215,16 @@ function chmod(key, sshConfig) {
             username: sshConfig.user,
             privateKey: fs.readFileSync(sshConfig.private_key)
         });
+}
+
+function readBakerYaml(configFile)
+{
+    try {
+        let doc = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
+        console.log(JSON.stringify(doc, null, 3));
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 async function bake(name, ansibleSSHConfig, ansibleVM) {
