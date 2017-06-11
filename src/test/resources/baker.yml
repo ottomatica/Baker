@@ -3,14 +3,17 @@ name: dazed16
 #vagrant: env/Vagrantfile
 vagrant:
   box: "ubuntu/xenial64"
-  memory: 4096
+  memory:
+    prompt: "how much memory?"
   network:
     - forwarded_port:
         guest: 8888
         host: 8888
     - forwarded_port:
         guest: 80
-        host: 8080
+        host:
+          prompt:
+            "what web port?"
     - private_network:
         ip: 192.168.3.39
   synced_folders:
