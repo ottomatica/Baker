@@ -24,6 +24,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # Create a forwarded port mapping which allows access to a specific port
     # within the machine from a port on the host machine. In the example below,
     # accessing "localhost:8080" will access port 80 on the guest machine.
+    # Currently using 127.0.0.1 for host ip due to vagrant bug in 1.9.3, fixed in 1.9.4:
+    # https://github.com/mitchellh/vagrant/issues/8395
 
     # Create a private network, which allows host-only access to the machine
     # using a specific IP.
@@ -33,7 +35,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # your network.
   {{#vagrant.network}}
     {{#forwarded_port}}
-    config.vm.network "forwarded_port", guest: {{guest}}, host: {{host}}
+    config.vm.network "forwarded_port", guest: {{guest}}, host: {{host}}, host_ip: "127.0.0.1"
     {{/forwarded_port}}
     {{#private_network}}
     config.vm.network "private_network", ip: "{{ip}}"
@@ -48,7 +50,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
   {{#vagrant.synced_folders}}
-    config.vm.synced_folder "{{{src}}}", "{{{dest}}}"
+    config.vm.synced_folder "{{{folder.src}}}", "{{{folder.dest}}}"
   {{/vagrant.synced_folders}}
 
   # Provider-specific configuration so you can fine-tune various

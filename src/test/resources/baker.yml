@@ -12,13 +12,18 @@ vagrant:
     - forwarded_port:
         guest: 80
         host:
-          prompt:
-            "what web port?"
+          prompt: "what web port?"
     - private_network:
         ip: 192.168.3.39
   synced_folders:
-    - {src: "C:/projects", dest: "/projects"}
-    - {src: "C:/dev", dest: "/code"}
+    - folder:
+        src:
+          prompt: "What host folder to sync for projects?"
+        dest: "/code"
+    - folder:
+        src: "C:/"
+        dest: "/cdrive"
+
 
 bake:
   ansible:
