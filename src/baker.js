@@ -8,7 +8,8 @@ const argv = require('yargs').argv;
 const scp2 = require('scp2');
 const ssh2 = require('ssh2');
 const Client = require('ssh2').Client;
-const yaml = require('js-yaml')
+const yaml = require('js-yaml');
+const prompt = require('prompt');
 
 var child_process = require('child_process');
 
@@ -29,8 +30,6 @@ async function main() {
         let ansibleVM = await prepareAnsibleServer();
         let sshConfig = await getSSHConfig(ansibleVM);
         bake('test', sshConfig, ansibleVM);
-
-        readBakerYaml('test/resources/baker.yml')
     }
 }
 
@@ -219,25 +218,85 @@ function chmod(key, sshConfig) {
 
 function readBakerYaml(configFile)
 {
+    console.log("Reading Baker.yml")
     try {
         let doc = yaml.safeLoad(fs.readFileSync(configFile, 'utf8'));
+
+        // Validate logic...
+
+        // if( verbose )
         console.log(JSON.stringify(doc, null, 3));
+
+        return doc;
     } catch (e) {
         console.log(e);
     }
+    return null;
 }
+
+async function promptOrGetValue(property)
+{
+    if( property && property.hasOwnProperty("prompt"))
+    {
+        prompt.start();
+        prompt.get([{name: "value", warning: property.prompt }], function (err, result)
+        {
+            if (err) { console.log(err); }
+            return result.value;
+        });
+    }
+    return property;
+}
+
+// We can get more fancy...
+var properties = [
+    {
+      name: 'username',
+      validator: /^[a-zA-Z\s\-]+$/,
+      warning: 'Username must be only letters, spaces, or dashes'
+    },
+    {
+      name: 'password',
+      hidden: true
+    }
+];
+
+function updateVagrantConfig(config, bakerDoc)
+{
+    let vagrant = bakerDoc.vagrant;
+    if( vagrant.memory )
+    {
+        config.providers.virtualbox.memory = await promptOrGetValue(vagrant.memory);
+    }
+    if( vagrant.network && vagrant.network.length > 0 )
+    {
+        vagrant.network.forEach(setting =>
+        {
+            if( setting.forwarded_port )
+            {
+                //config.network. = await promptOrGetValue(vagrant.memory)
+            }
+        });
+    }
+}
+
+
+
 
 async function bake(name, ansibleSSHConfig, ansibleVM) {
     let dir = path.join(boxes, name);
     let config = require('./config/base_vm.json');
+    let bakerDoc = readBakerYaml('test/resources/baker.yml')
 
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
     }
 
+    updateVagrantConfig(config, bakerDoc);
+
     let machine = vagrant.create({ cwd: dir });
 
-    machine.init('ubuntu/trusty64', config, function(err, out) {
+    machine.init( await promptOrGetValue(bakerDoc.vagrant.box), config, function(err, out) {
         console.log(err || '==> Baking vm...');
         machine.up(async function(err, out) {
             console.log(err || '==> New VM is ready');
