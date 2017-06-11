@@ -86,13 +86,15 @@ async function prepareAnsibleServer() {
         return new Promise((resolve, reject) => {
             machine.up(function(err, out) {
                 // console.log( out );
-                console.log(err || chalk.green('==> Ansible server is now ready!'));
+                console.log(
+                    err || chalk.green('==> Ansible server is now ready!')
+                );
                 resolve(machine);
             });
 
-            machine.on("up-progress", function(data) {
+            machine.on('up-progress', function(data) {
                 verbose(data);
-            })
+            });
         });
     } else {
         console.log(chalk.green('==> Ansible server is now ready!'));
@@ -134,13 +136,16 @@ async function installAnsibleServer() {
             machine.up(function(err, out) {
                 // console.log( out );
                 if (err) throw `==> Couldn't start ansible server!!`;
-                else console.log(chalk.green('==> Ansible server is now ready!'));
+                else
+                    console.log(
+                        chalk.green('==> Ansible server is now ready!')
+                    );
                 return;
             });
 
-            machine.on("up-progress", function(data) {
+            machine.on('up-progress', function(data) {
                 verbose(data);
-            })
+            });
         });
     }
 }
@@ -184,7 +189,8 @@ function copyFromHostToVM(src, dest, destSSHConfig) {
             path: dest
         },
         function(err) {
-            if (err) console.log(chalk.bold.red(`Faild configure ssh keys: ${err}`));
+            if (err)
+                console.log(chalk.bold.red(`==> Faild configure ssh keys: ${err}`));
             chmod(dest, destSSHConfig);
         }
     );
@@ -221,13 +227,17 @@ function chmod(key, sshConfig) {
             privateKey: fs.readFileSync(sshConfig.private_key)
         });
 }
-async function promptValue(propertyName, description)
-{
+
+async function promptValue(propertyName, description) {
     return new Promise((resolve, reject) => {
         prompt.start();
-        prompt.get([{name: propertyName, description: description }], function (err, result)
-        {
-            if (err) { console.log(chalk.bold.red(err)); }
+        prompt.get([{ name: propertyName, description: description }], function(
+            err,
+            result
+        ) {
+            if (err) {
+                console.log(chalk.bold.red(err));
+            }
             //prompt.stop();
             resolve(result[propertyName]);
         });
@@ -235,38 +245,34 @@ async function promptValue(propertyName, description)
 }
 
 async function traverse(o) {
-    const stack = [{obj: o, parent: null, parentKey:""}]
+    const stack = [{ obj: o, parent: null, parentKey: '' }];
 
     while (stack.length) {
-        const s = stack.shift()
+        const s = stack.shift();
         const obj = s.obj;
         const parent = s.parent;
         const parentKey = s.parentKey;
 
-        for( var i = 0; i < Object.keys(obj).length; i++ )
-        {
+        for (var i = 0; i < Object.keys(obj).length; i++) {
             let key = Object.keys(obj)[i];
 
             //await fn(key, obj[key], obj)
 
             if (obj[key] instanceof Object) {
-                stack.unshift({obj: obj[key], parent: obj, parentKey: key})
+                stack.unshift({ obj: obj[key], parent: obj, parentKey: key });
             }
 
-            if( key == "prompt")
-            {
+            if (key == 'prompt') {
                 const input = await promptValue(parentKey, obj[key]);
                 // Replace "prompt" with an value provided by user.
                 parent[parentKey] = input;
             }
-
         }
     }
     return o;
 }
 
-async function initVagrantFile(path, doc, template)
-{
+async function initVagrantFile(path, doc, template) {
     const vagrant = doc.vagrant;
     await traverse(vagrant);
     const output = mustache.render(template, doc);
@@ -274,18 +280,20 @@ async function initVagrantFile(path, doc, template)
     fs.writeFileSync(path, output);
 }
 
-function verbose(details){
-    if(argv.verbose || argv.v){
+function verbose(details) {
+    if (argv.verbose || argv.v) {
         console.log(details);
     }
 }
 
 async function bake(name, ansibleSSHConfig, ansibleVM) {
     let dir = path.join(boxes, name);
-    let template = fs.readFileSync( "./config/BaseVM.mustache" ).toString();
+    let template = fs.readFileSync('./config/BaseVM.mustache').toString();
 
     // TODO: Use version fetched from github.
-    let doc = yaml.safeLoad(fs.readFileSync("test/resources/baker.yml", 'utf8'));
+    let doc = yaml.safeLoad(
+        fs.readFileSync('test/resources/baker.yml', 'utf8')
+    );
 
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
@@ -293,7 +301,7 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
 
     let machine = vagrant.create({ cwd: dir });
 
-    await initVagrantFile(path.join(dir, "Vagrantfile"), doc, template);
+    await initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template);
     console.log(chalk.green('==> Baking vm...'));
 
     machine.up(async function(err, out) {
@@ -306,7 +314,7 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
         );
     });
 
-    machine.on("up-progress", function(data){
+    machine.on('up-progress', function(data) {
         //console.log(machine, progress, rate, remaining);
         verbose(data);
     });
