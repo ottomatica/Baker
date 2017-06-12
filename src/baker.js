@@ -29,7 +29,7 @@ async function main() {
     if (argv.install) await installAnsibleServer();
     else if (argv.reinstall) await reinstallAnsibleServer();
     else {
-        let ansibleVM = await prepareAnsibleServer();
+        let ansibleVM = await prepareAnsibleServer(argv.script);
         let sshConfig = await getSSHConfig(ansibleVM);
         bake('test', sshConfig, ansibleVM);
     }
@@ -77,8 +77,17 @@ async function getAnsibleSrvVagrantId() {
  * ...do something after finished preparing server
  * ------
  */
-async function prepareAnsibleServer() {
+async function prepareAnsibleServer(bakerScriptPath) {
     let machine = vagrant.create({ cwd: ansible });
+
+    if(bakerScriptPath != undefined){
+        let template = fs.readFileSync('./config/AnsibleVM.mustache', 'utf8');
+        let doc = require('./config/AnsibleVM');
+        doc.SyncFolder.src = bakerScriptPath;
+        let vagrantfile = mustache.render(template, doc);
+        fs.writeFileSync(path.join(ansible, 'Vagrantfile'), vagrantfile)
+        child_process.execSync(`vagrant reload ${await getAnsibleSrvVagrantId()}`, { stdio: argv.verbose ? 'ignore' : 'inherit' });
+    }
 
     // if(await getAnsibleSrvVagrantId() == undefined)
     //     // TODO
