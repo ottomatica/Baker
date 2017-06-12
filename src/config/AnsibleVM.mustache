@@ -56,7 +56,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
      # fix crappy dns
      # https://serverfault.com/questions/453185/vagrant-virtualbox-dns-10-0-2-3-not-working
      vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+     # Setting VM name in vagrant
+     vb.name = "baker"
   end
+
+  # Setting VM name in vagrant
+  config.vm.define "baker" do |t|
+  end
+
   #
   # View the documentation for the provider you are using for more
   # information on available options.
