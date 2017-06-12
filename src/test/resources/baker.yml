@@ -4,7 +4,7 @@ name: dazed16
 vagrant:
   box: "ubuntu/xenial64"
   memory:
-    prompt: "how much memory?"
+    prompt: "How much memory?"
   network:
     - forwarded_port:
         guest: 8888
@@ -12,7 +12,7 @@ vagrant:
     - forwarded_port:
         guest: 80
         host:
-          prompt: "what web port?"
+          prompt: "What web port?"
     - private_network:
         ip: 192.168.3.39
   synced_folders:
@@ -20,9 +20,9 @@ vagrant:
         src:
           prompt: "What host folder to sync for projects?"
         dest: "/code"
-    - folder:
-        src: "C:/"
-        dest: "/cdrive"
+    # - folder:
+    #     src: "C:/"
+    #     dest: "/cdrive"
 
 
 bake:

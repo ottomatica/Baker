@@ -69,6 +69,7 @@ async function getAnsibleSrvVagrantId() {
 
 /**
  * Checks if ansible server is up, if not it starts the server
+ * It will also add the new vm's ansible script directory as a sync folder
  * Returns a promise, use cleaner es7 syntax:
  * Resolves the ansible machine
  * ------
@@ -121,31 +122,29 @@ async function installAnsibleServer() {
         return;
     } else {
         let machine = vagrant.create({ cwd: ansible });
-        let config = require('./config/ansible_vm.json');
+        let template = fs.readFileSync('./config/AnsibleVM.mustache', 'utf8');
+        let vagrantfile = mustache.render(template, require('./config/AnsibleVM'));
+        fs.writeFileSync(path.join(ansible, 'Vagrantfile'), vagrantfile)
 
         fs.copySync(
             path.resolve(__dirname, './config/provision.shell.sh'),
             path.resolve(ansible, 'provision.shell.sh')
         );
 
-        machine.init('ubuntu/trusty64', config, function(err, out) {
-            console.log(err || '==> Creating ansible server...');
+        console.log(chalk.green('==> Creating ansible server...'));
 
-            // child_process.execSync(`cd ${ansible} && vagrant up`, {stdio: 'inherit'})
+        machine.up(function(err, out) {
+            // console.log( out );
+            if (err) throw `==> Couldn't start ansible server!!`;
+            else
+                console.log(
+                    chalk.green('==> Ansible server is now ready!')
+                );
+            return;
+        });
 
-            machine.up(function(err, out) {
-                // console.log( out );
-                if (err) throw `==> Couldn't start ansible server!!`;
-                else
-                    console.log(
-                        chalk.green('==> Ansible server is now ready!')
-                    );
-                return;
-            });
-
-            machine.on('up-progress', function(data) {
-                verbose(data);
-            });
+        machine.on('up-progress', function(data) {
+            verbose(data);
         });
     }
 }
@@ -244,6 +243,9 @@ async function promptValue(propertyName, description) {
     });
 }
 
+/**
+ * Traverse yaml and do prompts
+ */
 async function traverse(o) {
     const stack = [{ obj: o, parent: null, parentKey: '' }];
 
