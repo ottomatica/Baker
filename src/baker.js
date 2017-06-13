@@ -44,6 +44,8 @@ main();
 async function getState(id) {
     return new Promise((resolve, reject) => {
         vagrant.globalStatus(function(err, out) {
+            if( err )
+                chalk.red(err);
             out.forEach(vm => {
                 if (vm.id == id) resolve(vm.state);
             });
@@ -297,6 +299,38 @@ async function addToAnsibleHosts(ip, name, sshConfig){
         });
 }
 
+// TODO: Need to be cleaning cmd so they don't do things like
+// ; sudo rm -rf / on our server...
+async function runAnsiblePlaybook(doc, cmd, sshConfig)
+{
+    var c = new Client();
+    c
+        .on('ready', function() {
+            let execStr = `cd /home/vagrant/baker/${doc.name} && ansible-playbook -i ${doc.name} ${cmd}`;
+            console.log( execStr );
+            c.exec(execStr, function(err, stream) {
+                if (err) throw err;
+                stream
+                    .on('close', function(code, signal) {
+                        c.end();
+                        return;
+                    })
+                    .on('data', function(data) {
+                        // console.log('STDOUT: ' + data);
+                    })
+                    .stderr.on('data', function(data) {
+                        console.log('STDERR: ' + data);
+                    });
+            });
+        })
+        .connect({
+            host: '127.0.0.1',
+            port: sshConfig.port,
+            username: sshConfig.user,
+            privateKey: fs.readFileSync(sshConfig.private_key)
+        });
+}
+
 async function promptValue(propertyName, description) {
     return new Promise((resolve, reject) => {
         prompt.start();
@@ -363,9 +397,7 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
     let template = fs.readFileSync('./config/BaseVM.mustache').toString();
 
     // TODO: Use version fetched from github.
-    let doc = yaml.safeLoad(
-        fs.readFileSync('test/resources/baker.yml', 'utf8')
-    );
+    let doc = yaml.safeLoad(fs.readFileSync(path.join(argv.script, 'baker.yml'), 'utf8'));
 
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
@@ -387,8 +419,17 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
         await addToAnsibleHosts(
             doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip,
             doc.name,
-            await getSSHConfig(ansibleVM)
+            ansibleSSHConfig
         )
+        console.log(chalk.green('==> Running Ansible playbooks'));        
+        console.log( doc.bake.ansible.playbooks );
+        for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ )
+        {
+            var cmd = doc.bake.ansible.playbooks[i];
+            await runAnsiblePlaybook(
+                doc, cmd, ansibleSSHConfig
+            )
+        }
     });
 
     machine.on('up-progress', function(data) {
