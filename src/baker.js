@@ -31,7 +31,7 @@ async function main() {
     else {
         let ansibleVM = await prepareAnsibleServer(argv.script);
         let sshConfig = await getSSHConfig(ansibleVM);
-        bake('test', sshConfig, ansibleVM);
+        bake(sshConfig, ansibleVM);
     }
 }
 
@@ -228,10 +228,11 @@ async function copyFromHostToVM(src, dest, destSSHConfig, chmod_=true) {
  * @param {Object} sshConfig
  */
 function chmod(key, sshConfig) {
+    // && eval "$(ssh-agent -s)" && ssh-add ${key}
     var c = new Client();
     c
         .on('ready', function() {
-            c.exec(`chmod 600 ${key} && eval "$(ssh-agent -s)" && ssh-add ${key}`, function(err, stream) {
+            c.exec(`chmod 600 ${key} `, function(err, stream) {
                 if (err) throw err;
                 stream
                     .on('close', function(code, signal) {
@@ -306,7 +307,7 @@ async function runAnsiblePlaybook(doc, cmd, sshConfig)
     var c = new Client();
     c
         .on('ready', function() {
-            let execStr = `cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd}`;
+            let execStr = `cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ubuntu`;
             console.log( execStr );
             c.exec(execStr, function(err, stream) {
                 if (err) throw err;
@@ -392,12 +393,12 @@ function verbose(details) {
     }
 }
 
-async function bake(name, ansibleSSHConfig, ansibleVM) {
-    let dir = path.join(boxes, name);
-    let template = fs.readFileSync('./config/BaseVM.mustache').toString();
-
+async function bake(ansibleSSHConfig, ansibleVM) {
     // TODO: Use version fetched from github.
     let doc = yaml.safeLoad(fs.readFileSync(path.join(argv.script, 'baker.yml'), 'utf8'));
+
+    let dir = path.join(boxes, doc.name);
+    let template = fs.readFileSync('./config/BaseVM.mustache').toString();
 
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
@@ -421,7 +422,7 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
             doc.name,
             ansibleSSHConfig
         )
-        console.log(chalk.green('==> Running Ansible playbooks'));        
+        console.log(chalk.green('==> Running Ansible playbooks'));
         console.log( doc.bake.ansible.playbooks );
         for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ )
         {
