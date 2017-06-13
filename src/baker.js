@@ -217,6 +217,14 @@ async function copyFromHostToVM(src, dest, destSSHConfig, chmod_=true) {
     );
 }
 
+/**
+ * chmod 600 the key files on ansible server,
+ * add the key to agent,
+ * and add the host url to /etc/hosts
+ *
+ * @param {String} key path to the key on server
+ * @param {Object} sshConfig
+ */
 function chmod(key, sshConfig) {
     var c = new Client();
     c
@@ -235,6 +243,46 @@ function chmod(key, sshConfig) {
                     })
                     .on('data', function(data) {
                         console.log('STDOUT: ' + data);
+                    })
+                    .stderr.on('data', function(data) {
+                        console.log('STDERR: ' + data);
+                    });
+            });
+        })
+        .connect({
+            host: '127.0.0.1',
+            port: sshConfig.port,
+            username: sshConfig.user,
+            privateKey: fs.readFileSync(sshConfig.private_key)
+        });
+}
+
+/**
+ * Adds the host url to /etc/hosts
+ *
+ * @param {String} ip
+ * @param {String} name
+ * @param {Object} sshConfig
+ */
+async function addToAnsibleHosts(ip, name, sshConfig){
+    var c = new Client();
+    c
+        .on('ready', function() {
+            c.exec(`ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, function(err, stream) {
+                if (err) throw err;
+                stream
+                    .on('close', function(code, signal) {
+                        // console.log(
+                        //     'Stream :: close :: code: ' +
+                        //         code +
+                        //         ', signal: ' +
+                        //         signal
+                        // );
+                        c.end();
+                        return;
+                    })
+                    .on('data', function(data) {
+                        // console.log('STDOUT: ' + data);
                     })
                     .stderr.on('data', function(data) {
                         console.log('STDERR: ' + data);
@@ -331,11 +379,16 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
     machine.up(async function(err, out) {
         console.log(err || chalk.green('==> New VM is ready'));
         let sshConfig = await getSSHConfig(machine);
-        copyFromHostToVM(
+        await copyFromHostToVM(
             sshConfig.private_key,
             `/home/vagrant/baker/${doc.name}/id_rsa`,
             ansibleSSHConfig
         );
+        await addToAnsibleHosts(
+            doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip,
+            doc.name,
+            await getSSHConfig(ansibleVM)
+        )
     });
 
     machine.on('up-progress', function(data) {
