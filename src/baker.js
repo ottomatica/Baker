@@ -270,7 +270,7 @@ async function addToAnsibleHosts(ip, name, sshConfig){
     var c = new Client();
     c
         .on('ready', function() {
-            c.exec(`ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, function(err, stream) {
+            c.exec(`echo "[${name}]\n${ip}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, function(err, stream) {
                 if (err) throw err;
                 stream
                     .on('close', function(code, signal) {
@@ -306,7 +306,7 @@ async function runAnsiblePlaybook(doc, cmd, sshConfig)
     var c = new Client();
     c
         .on('ready', function() {
-            let execStr = `cd /home/vagrant/baker/${doc.name} && ansible-playbook -i ${doc.name} ${cmd}`;
+            let execStr = `cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd}`;
             console.log( execStr );
             c.exec(execStr, function(err, stream) {
                 if (err) throw err;
@@ -316,7 +316,7 @@ async function runAnsiblePlaybook(doc, cmd, sshConfig)
                         return;
                     })
                     .on('data', function(data) {
-                        // console.log('STDOUT: ' + data);
+                        console.log('STDOUT: ' + data);
                     })
                     .stderr.on('data', function(data) {
                         console.log('STDERR: ' + data);
