@@ -221,7 +221,7 @@ function chmod(key, sshConfig) {
     var c = new Client();
     c
         .on('ready', function() {
-            c.exec(`chmod 600 ${key}`, function(err, stream) {
+            c.exec(`chmod 600 ${key} && eval "$(ssh-agent -s)" && ssh-add ${key}`, function(err, stream) {
                 if (err) throw err;
                 stream
                     .on('close', function(code, signal) {
@@ -333,7 +333,7 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
         let sshConfig = await getSSHConfig(machine);
         copyFromHostToVM(
             sshConfig.private_key,
-            `/home/vagrant/${doc.name}/id_rsa`,
+            `/home/vagrant/baker/${doc.name}/id_rsa`,
             ansibleSSHConfig
         );
     });
