@@ -69,7 +69,7 @@ async function getAnsibleSrvVagrantId() {
 
 /**
  * Checks if ansible server is up, if not it starts the server
- * It will also add the new vm's ansible script directory as a sync folder
+ * It will also copy new vm's ansible script to ~/baker/{name}/ in ansible server
  * Returns a promise, use cleaner es7 syntax:
  * Resolves the ansible machine
  * ------
@@ -79,26 +79,30 @@ async function getAnsibleSrvVagrantId() {
  */
 async function prepareAnsibleServer(bakerScriptPath) {
     let machine = vagrant.create({ cwd: ansible });
-
-    if(bakerScriptPath != undefined){
-        let template = fs.readFileSync('./config/AnsibleVM.mustache', 'utf8');
-        let doc = require('./config/AnsibleVM');
-        doc.SyncFolder.src = bakerScriptPath;
-        let vagrantfile = mustache.render(template, doc);
-        fs.writeFileSync(path.join(ansible, 'Vagrantfile'), vagrantfile)
-        child_process.execSync(`vagrant reload ${await getAnsibleSrvVagrantId()}`, { stdio: argv.verbose ? 'ignore' : 'inherit' });
-    }
+    let doc = yaml.safeLoad(fs.readFileSync(path.join(argv.script, 'baker.yml'), 'utf8'));
+    let ansibleSSHConfig = await getSSHConfig(machine);
 
     // if(await getAnsibleSrvVagrantId() == undefined)
     //     // TODO
     if ((await getState(await getAnsibleSrvVagrantId())) != 'running') {
         console.log(chalk.green('==> Starting ansible server...'));
         return new Promise((resolve, reject) => {
-            machine.up(function(err, out) {
+            machine.up(async function(err, out) {
                 // console.log( out );
                 console.log(
                     err || chalk.green('==> Ansible server is now ready!')
                 );
+
+                // Copying ansible script to ansible vm
+                if(bakerScriptPath != undefined){
+                    await copyFromHostToVM(
+                        path.resolve(argv.script,doc.bake.ansible.source),
+                        `/home/vagrant/baker/${doc.name}`,
+                        ansibleSSHConfig,
+                        false
+                    );
+                }
+
                 resolve(machine);
             });
 
@@ -108,6 +112,14 @@ async function prepareAnsibleServer(bakerScriptPath) {
         });
     } else {
         console.log(chalk.green('==> Ansible server is now ready!'));
+        if(bakerScriptPath != undefined){
+            await copyFromHostToVM(
+                path.resolve(argv.script,doc.bake.ansible.source),
+                `/home/vagrant/baker/${doc.name}`,
+                ansibleSSHConfig,
+                false
+            );
+        }
         return machine;
     }
 }
@@ -186,7 +198,7 @@ async function getSSHConfig(machine) {
     });
 }
 
-function copyFromHostToVM(src, dest, destSSHConfig) {
+async function copyFromHostToVM(src, dest, destSSHConfig, chmod_=true) {
     scp2.scp(
         src,
         {
@@ -198,8 +210,9 @@ function copyFromHostToVM(src, dest, destSSHConfig) {
         },
         function(err) {
             if (err)
-                console.log(chalk.bold.red(`==> Faild configure ssh keys: ${err}`));
-            chmod(dest, destSSHConfig);
+                console.log(chalk.bold.red(`==> Failed to configure ssh keys: ${err}`));
+            if(chmod_) chmod(dest, destSSHConfig);
+            return;
         }
     );
 }
@@ -320,7 +333,7 @@ async function bake(name, ansibleSSHConfig, ansibleVM) {
         let sshConfig = await getSSHConfig(machine);
         copyFromHostToVM(
             sshConfig.private_key,
-            `/home/vagrant/${name}.key`,
+            `/home/vagrant/${doc.name}/id_rsa`,
             ansibleSSHConfig
         );
     });
