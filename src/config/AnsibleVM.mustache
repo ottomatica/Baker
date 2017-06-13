@@ -64,6 +64,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "baker" do |t|
   end
 
+  # Setting up Ansible!
+  config.vm.provision "shell", path: "provision.shell.sh"
+
   #
   # View the documentation for the provider you are using for more
   # information on available options.
