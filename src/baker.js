@@ -330,10 +330,14 @@ async function addToAnsibleHosts(ip, name, sshConfig){
 // ; sudo rm -rf / on our server...
 async function runAnsiblePlaybook(doc, cmd, sshConfig)
 {
+    let dir = path.join(boxes, doc.name);
+    let vm = vagrant.create({ cwd: dir });
+    let vmSSHConfigUser = await getSSHConfig(vm);
+
     var c = new Client();
     c
         .on('ready', function() {
-            let execStr = `export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ubuntu`;
+            let execStr = `export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}`;
             console.log( execStr );
             c.exec(execStr, function(err, stream) {
                 if (err) throw err;
