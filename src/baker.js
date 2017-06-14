@@ -171,7 +171,7 @@ async function installAnsibleServer() {
         return;
     } else {
         let machine = vagrant.create({ cwd: ansible });
-        let template = fs.readFileSync('./config/AnsibleVM.mustache', 'utf8');
+        let template = fs.readFileSync(path.join(__dirname, './config/AnsibleVM.mustache'), 'utf8');
         let vagrantfile = mustache.render(template, require('./config/AnsibleVM'));
         fs.writeFileSync(path.join(ansible, 'Vagrantfile'), vagrantfile)
 
@@ -227,7 +227,7 @@ async function getSSHConfig(machine) {
 }
 
 async function copyFromHostToVM(src, dest, destSSHConfig, chmod_=true) {
-    return new Promise((resolve, reject) => 
+    return new Promise((resolve, reject) =>
     {
         scp2.scp(
             src,
@@ -246,9 +246,9 @@ async function copyFromHostToVM(src, dest, destSSHConfig, chmod_=true) {
                 }
                 else
                 {
-                    if(chmod_) 
+                    if(chmod_)
                     {
-                        await chmod(dest, destSSHConfig)                    
+                        await chmod(dest, destSSHConfig)
                     }
                     resolve();
                 }
