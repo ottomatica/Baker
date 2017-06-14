@@ -390,7 +390,7 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
     let doc = yaml.safeLoad(fs.readFileSync(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
     let dir = path.join(boxes, doc.name);
-    let template = fs.readFileSync('./config/BaseVM.mustache').toString();
+    let template = fs.readFileSync(path.join(__dirname, './config/BaseVM.mustache')).toString();
 
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
