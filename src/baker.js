@@ -220,7 +220,7 @@ async function getSSHConfig(machine) {
                 resolve(sshConfig[0]);
             } else {
                 // callback(err);
-                throw `==> Couldn't get private ssh key of new VM`; // err
+                throw `==> Couldn't get private ssh key of new VM: ${err}`; // err
             }
         });
     });
