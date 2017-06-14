@@ -76,6 +76,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "{{name}}" do |t|
   end
 
+  # Install python 2 if not installed.
+  config.vm.provision "shell",
+    inline: "test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)"
+
   #
   # View the documentation for the provider you are using for more
   # information on available options.
