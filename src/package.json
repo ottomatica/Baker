@@ -7,7 +7,8 @@
   },
   "main": "baker.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pkg": "pkg ./package.json"
   },
   "repository": {
     "type": "git",
@@ -37,8 +38,11 @@
     "underscore": "^1.8.3",
     "yargs": "^8.0.1"
   },
-  "pkg":{
+  "pkg": {
     "assets": "config/**"
   },
-  "bin": "baker.js"
+  "bin": "baker.js",
+  "devDependencies": {
+    "pkg": "^4.1.0"
+  }
 }
