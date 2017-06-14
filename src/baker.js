@@ -184,7 +184,7 @@ async function installAnsibleServer() {
 
         machine.up(function(err, out) {
             // console.log( out );
-            if (err) throw `==> Couldn't start ansible server!!`;
+            if (err) throw `==> Couldn't start ansible server!!: ${err}`;
             else
                 console.log(
                     chalk.green('==> Ansible server is now ready!')
