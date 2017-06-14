@@ -32,6 +32,9 @@ async function main() {
     else if(argv.test){
         console.log(await cloneRepo(argv.test))
     }
+    else if(argv.ssh){
+        bakerSSH(argv.ssh);
+    }
     else {
         let ansibleVM;
         if(argv.script){
@@ -80,19 +83,31 @@ async function getState(id) {
 }
 
 /**
- * get vagrant id of ansible server
+ * get vagrant id of VMs by name
  */
-async function getAnsibleSrvVagrantId() {
+async function getVagrantIDByName(name) {
     return new Promise((resolve, reject) => {
         vagrant.globalStatus(function(err, out) {
             out.forEach(vm => {
-                if (/ansible-srv/.test(vm.cwd)) {
+                if (new RegExp(name.toLowerCase()).test(vm.cwd.toLowerCase())) {
                     resolve(vm.id);
                 }
             });
             resolve(undefined);
         });
     });
+}
+
+/**
+ * It will ssh to the vagrant box
+ * @param {String} name
+ */
+async function bakerSSH(name){
+    let id = await getVagrantIDByName(name);
+    if(id != undefined)
+        child_process.execSync(`vagrant ssh ${id}`, { stdio: 'inherit' })
+    else
+        throw `==> No VM found with this name!`
 }
 
 /**
@@ -110,9 +125,9 @@ async function prepareAnsibleServer(bakerScriptPath) {
     let doc = yaml.safeLoad(fs.readFileSync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
     let ansibleSSHConfig = await getSSHConfig(machine);
 
-    // if(await getAnsibleSrvVagrantId() == undefined)
+    // if(await getVagrantIDByName() == undefined)
     //     // TODO
-    if ((await getState(await getAnsibleSrvVagrantId())) != 'running') {
+    if ((await getState(await getVagrantIDByName('ansible-srv'))) != 'running') {
         console.log(chalk.green('==> Starting ansible server...'));
         return new Promise((resolve, reject) => {
             machine.up(async function(err, out) {
@@ -165,7 +180,7 @@ function destroyVM(id) {
  * Creates ansible server, if already doesn't exist
  */
 async function installAnsibleServer() {
-    if ((await getAnsibleSrvVagrantId()) != undefined) {
+    if ((await getVagrantIDByName('ansible-srv')) != undefined) {
         console.log(chalk.green('==> Ansible server already provisioned...'));
         prepareAnsibleServer();
         return;
@@ -203,7 +218,7 @@ async function installAnsibleServer() {
  * @returns Promise
  */
 async function reinstallAnsibleServer() {
-    destroyVM(await getAnsibleSrvVagrantId());
+    destroyVM(await getVagrantIDByName('ansible-srv'));
     await installAnsibleServer();
 }
 
