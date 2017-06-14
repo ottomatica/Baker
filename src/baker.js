@@ -12,6 +12,7 @@ const yaml = require('js-yaml');
 const prompt = require('prompt');
 const mustache = require('mustache');
 const chalk = require('chalk');
+var tmp = require('tmp');
 
 var child_process = require('child_process');
 
@@ -28,14 +29,39 @@ async function main() {
 
     if (argv.install) await installAnsibleServer();
     else if (argv.reinstall) await reinstallAnsibleServer();
+    else if(argv.test){
+        console.log(await cloneRepo(argv.test))
+    }
     else {
-        let ansibleVM = await prepareAnsibleServer(argv.script);
-        let sshConfig = await getSSHConfig(ansibleVM);
-        bake(sshConfig, ansibleVM);
+        let ansibleVM;
+        if(argv.script){
+            ansibleVM = await prepareAnsibleServer(argv.script);
+            let sshConfig = await getSSHConfig(ansibleVM);
+            bake(sshConfig, ansibleVM, argv.script);
+        }
+        else if (argv.repo){
+            let localRepoPath = await cloneRepo(argv.repo);
+            ansibleVM = await prepareAnsibleServer(localRepoPath);
+            let sshConfig = await getSSHConfig(ansibleVM);
+            bake(sshConfig, ansibleVM, localRepoPath);
+        }
+        else
+            throw `==> User --script to give local path or --repo to give git repository with baker.yml`
+
+
     }
 }
 
 main();
+
+async function cloneRepo(repoURL){
+    let dir = path.join(boxes, '.repos');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    let tmpName = path.basename(tmp.tmpNameSync({ template: `/${dir}/tmp-XXXXXXXXXX` }));
+
+    child_process.execSync(`cd ${dir} && git clone ${repoURL} ${tmpName}`, { stdio: 'inherit' });
+    return `${path.join(dir, tmpName)}`;
+}
 
 /**
  * get State of a vagrant vm by id.
@@ -81,7 +107,7 @@ async function getAnsibleSrvVagrantId() {
  */
 async function prepareAnsibleServer(bakerScriptPath) {
     let machine = vagrant.create({ cwd: ansible });
-    let doc = yaml.safeLoad(fs.readFileSync(path.join(argv.script, 'baker.yml'), 'utf8'));
+    let doc = yaml.safeLoad(fs.readFileSync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
     let ansibleSSHConfig = await getSSHConfig(machine);
 
     // if(await getAnsibleSrvVagrantId() == undefined)
@@ -98,7 +124,7 @@ async function prepareAnsibleServer(bakerScriptPath) {
                 // Copying ansible script to ansible vm
                 if(bakerScriptPath != undefined){
                     await copyFromHostToVM(
-                        path.resolve(argv.script,doc.bake.ansible.source),
+                        path.resolve(bakerScriptPath, doc.bake.ansible.source),
                         `/home/vagrant/baker/${doc.name}`,
                         ansibleSSHConfig,
                         false
@@ -116,7 +142,7 @@ async function prepareAnsibleServer(bakerScriptPath) {
         console.log(chalk.green('==> Ansible server is now ready!'));
         if(bakerScriptPath != undefined){
             await copyFromHostToVM(
-                path.resolve(argv.script,doc.bake.ansible.source),
+                path.resolve(bakerScriptPath, doc.bake.ansible.source),
                 `/home/vagrant/baker/${doc.name}`,
                 ansibleSSHConfig,
                 false
@@ -393,9 +419,9 @@ function verbose(details) {
     }
 }
 
-async function bake(ansibleSSHConfig, ansibleVM) {
+async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
     // TODO: Use version fetched from github.
-    let doc = yaml.safeLoad(fs.readFileSync(path.join(argv.script, 'baker.yml'), 'utf8'));
+    let doc = yaml.safeLoad(fs.readFileSync(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
     let dir = path.join(boxes, doc.name);
     let template = fs.readFileSync('./config/BaseVM.mustache').toString();
