@@ -333,7 +333,7 @@ async function runAnsiblePlaybook(doc, cmd, sshConfig)
     var c = new Client();
     c
         .on('ready', function() {
-            let execStr = `cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ubuntu`;
+            let execStr = `export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ubuntu`;
             console.log( execStr );
             c.exec(execStr, function(err, stream) {
                 if (err) throw err;
