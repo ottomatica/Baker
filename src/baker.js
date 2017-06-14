@@ -227,23 +227,67 @@ async function getSSHConfig(machine) {
 }
 
 async function copyFromHostToVM(src, dest, destSSHConfig, chmod_=true) {
-    scp2.scp(
-        src,
-        {
-            host: '127.0.0.1',
-            port: destSSHConfig.port,
-            username: destSSHConfig.user,
-            privateKey: fs.readFileSync(destSSHConfig.private_key, 'utf8'),
-            path: dest
-        },
-        function(err) {
-            if (err)
-                console.log(chalk.bold.red(`==> Failed to configure ssh keys: ${err}`));
-            if(chmod_) chmod(dest, destSSHConfig);
-            return;
-        }
-    );
+    return new Promise((resolve, reject) => 
+    {
+        scp2.scp(
+            src,
+            {
+                host: '127.0.0.1',
+                port: destSSHConfig.port,
+                username: destSSHConfig.user,
+                privateKey: fs.readFileSync(destSSHConfig.private_key, 'utf8'),
+                path: dest
+            },
+            async function(err) {
+                if (err)
+                {
+                    console.log(chalk.bold.red(`==> Failed to configure ssh keys: ${err}`));
+                    reject();
+                }
+                else
+                {
+                    if(chmod_) 
+                    {
+                        await chmod(dest, destSSHConfig)                    
+                    }
+                    resolve();
+                }
+            }
+        );
+    });
 }
+
+async function sshExec(cmd, sshConfig)
+{
+    return new Promise((resolve, reject) => {
+        var c = new Client();
+        c
+            .on('ready', function() {
+                c.exec(cmd, function(err, stream) {
+                    if (err) throw err;
+                    stream
+                        .on('close', function(code, signal) {
+                            c.end();
+                            resolve();
+                        })
+                        .on('data', function(data) {
+                            console.log('STDOUT: ' + data);
+                        })
+                        .stderr.on('data', function(data) {
+                            console.log('STDERR: ' + data);
+                            reject();
+                        });
+                });
+            })
+            .connect({
+                host: '127.0.0.1',
+                port: sshConfig.port,
+                username: sshConfig.user,
+                privateKey: fs.readFileSync(sshConfig.private_key)
+            });
+    });
+}
+
 
 /**
  * chmod 600 the key files on ansible server,
@@ -253,37 +297,9 @@ async function copyFromHostToVM(src, dest, destSSHConfig, chmod_=true) {
  * @param {String} key path to the key on server
  * @param {Object} sshConfig
  */
-function chmod(key, sshConfig) {
+async function chmod(key, sshConfig) {
     // && eval "$(ssh-agent -s)" && ssh-add ${key}
-    var c = new Client();
-    c
-        .on('ready', function() {
-            c.exec(`chmod 600 ${key} `, function(err, stream) {
-                if (err) throw err;
-                stream
-                    .on('close', function(code, signal) {
-                        console.log(
-                            'Stream :: close :: code: ' +
-                                code +
-                                ', signal: ' +
-                                signal
-                        );
-                        c.end();
-                    })
-                    .on('data', function(data) {
-                        console.log('STDOUT: ' + data);
-                    })
-                    .stderr.on('data', function(data) {
-                        console.log('STDERR: ' + data);
-                    });
-            });
-        })
-        .connect({
-            host: '127.0.0.1',
-            port: sshConfig.port,
-            username: sshConfig.user,
-            privateKey: fs.readFileSync(sshConfig.private_key)
-        });
+    return sshExec(`chmod 600 ${key}`, sshConfig);
 }
 
 /**
@@ -294,36 +310,7 @@ function chmod(key, sshConfig) {
  * @param {Object} sshConfig
  */
 async function addToAnsibleHosts(ip, name, sshConfig){
-    var c = new Client();
-    c
-        .on('ready', function() {
-            c.exec(`echo "[${name}]\n${ip}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, function(err, stream) {
-                if (err) throw err;
-                stream
-                    .on('close', function(code, signal) {
-                        // console.log(
-                        //     'Stream :: close :: code: ' +
-                        //         code +
-                        //         ', signal: ' +
-                        //         signal
-                        // );
-                        c.end();
-                        return;
-                    })
-                    .on('data', function(data) {
-                        // console.log('STDOUT: ' + data);
-                    })
-                    .stderr.on('data', function(data) {
-                        console.log('STDERR: ' + data);
-                    });
-            });
-        })
-        .connect({
-            host: '127.0.0.1',
-            port: sshConfig.port,
-            username: sshConfig.user,
-            privateKey: fs.readFileSync(sshConfig.private_key)
-        });
+    return sshExec(`echo "[${name}]\n${ip}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
 }
 
 // TODO: Need to be cleaning cmd so they don't do things like
@@ -334,32 +321,7 @@ async function runAnsiblePlaybook(doc, cmd, sshConfig)
     let vm = vagrant.create({ cwd: dir });
     let vmSSHConfigUser = await getSSHConfig(vm);
 
-    var c = new Client();
-    c
-        .on('ready', function() {
-            let execStr = `export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}`;
-            console.log( execStr );
-            c.exec(execStr, function(err, stream) {
-                if (err) throw err;
-                stream
-                    .on('close', function(code, signal) {
-                        c.end();
-                        return;
-                    })
-                    .on('data', function(data) {
-                        console.log('STDOUT: ' + data);
-                    })
-                    .stderr.on('data', function(data) {
-                        console.log('STDERR: ' + data);
-                    });
-            });
-        })
-        .connect({
-            host: '127.0.0.1',
-            port: sshConfig.port,
-            username: sshConfig.user,
-            privateKey: fs.readFileSync(sshConfig.private_key)
-        });
+    return sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}`, sshConfig);
 }
 
 async function promptValue(propertyName, description) {
