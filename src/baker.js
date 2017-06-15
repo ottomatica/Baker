@@ -13,6 +13,7 @@ const prompt = require('prompt');
 const mustache = require('mustache');
 const chalk = require('chalk');
 var tmp = require('tmp');
+const slash = require("slash");
 
 var child_process = require('child_process');
 
@@ -55,7 +56,7 @@ main();
 async function cloneRepo(repoURL){
     let name = path.basename(repoURL);
     name = name.slice(-4) === '.git' ? name.slice(0,-4): name; // Removing .git from the end
-    let dir = path.resolve(__dirname);
+    let dir = path.resolve(process.cwd());
 
     child_process.execSync(`git clone ${repoURL}`, { stdio: 'inherit' });
     return `${path.join(dir, name)}`;
@@ -384,7 +385,7 @@ async function traverse(o) {
 async function initVagrantFile(vagrantFilePath, doc, template, scriptPath) {
     const vagrant = doc.vagrant;
     await traverse(vagrant);
-    doc.vagrant.synced_folders = [...doc.vagrant.synced_folders, ...[{folder : {src: scriptPath, dest: `/${path.basename(scriptPath)}`}}]];
+    doc.vagrant.synced_folders = [...doc.vagrant.synced_folders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
     const output = mustache.render(template, doc);
 
     fs.writeFileSync(vagrantFilePath, output);
