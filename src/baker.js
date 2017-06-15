@@ -29,9 +29,6 @@ async function main() {
 
     if (argv.install) await installAnsibleServer();
     else if (argv.reinstall) await reinstallAnsibleServer();
-    else if(argv.test){
-        console.log(await cloneRepo(argv.test))
-    }
     else if(argv.ssh){
         bakerSSH(argv.ssh);
     }
@@ -50,20 +47,18 @@ async function main() {
         }
         else
             throw `==> User --script to give local path or --repo to give git repository with baker.yml`
-
-
     }
 }
 
 main();
 
 async function cloneRepo(repoURL){
-    let dir = path.join(boxes, '.repos');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    let tmpName = path.basename(tmp.tmpNameSync({ template: `/${dir}/tmp-XXXXXXXXXX` }));
+    let name = path.basename(repoURL);
+    name = name.slice(-4) === '.git' ? name.slice(0,-4): name; // Removing .git from the end
+    let dir = path.resolve(__dirname);
 
-    child_process.execSync(`cd ${dir} && git clone ${repoURL} ${tmpName}`, { stdio: 'inherit' });
-    return `${path.join(dir, tmpName)}`;
+    child_process.execSync(`git clone ${repoURL}`, { stdio: 'inherit' });
+    return `${path.join(dir, name)}`;
 }
 
 /**
@@ -386,12 +381,13 @@ async function traverse(o) {
     return o;
 }
 
-async function initVagrantFile(path, doc, template) {
+async function initVagrantFile(vagrantFilePath, doc, template, scriptPath) {
     const vagrant = doc.vagrant;
     await traverse(vagrant);
+    doc.vagrant.synced_folders = [...doc.vagrant.synced_folders, ...[{folder : {src: scriptPath, dest: `/${path.basename(scriptPath)}`}}]];
     const output = mustache.render(template, doc);
 
-    fs.writeFileSync(path, output);
+    fs.writeFileSync(vagrantFilePath, output);
 }
 
 function verbose(details) {
@@ -413,7 +409,7 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
 
     let machine = vagrant.create({ cwd: dir });
 
-    await initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template);
+    await initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
     console.log(chalk.green('==> Baking vm...'));
 
     machine.up(async function(err, out) {
