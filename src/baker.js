@@ -55,7 +55,7 @@ main();
 async function cloneRepo(repoURL){
     let name = path.basename(repoURL);
     name = name.slice(-4) === '.git' ? name.slice(0,-4): name; // Removing .git from the end
-    let dir = path.resolve(__dirname);
+    let dir = process.cwd();
 
     child_process.execSync(`git clone ${repoURL}`, { stdio: 'inherit' });
     return `${path.join(dir, name)}`;
