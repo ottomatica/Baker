@@ -1,0 +1,9 @@
+---
+- hosts: all
+
+  vars_files:
+    - "{{vault}}"
+
+  tasks:
+    #- debug: msg="{{vars[key]}}"
+    - copy: content="{{vars[key]}}" dest="{{dest}}" mode=0600

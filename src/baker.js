@@ -172,6 +172,14 @@ async function copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig)
             ansibleSSHConfig,
             false
         );
+
+        await copyFromHostToVM(
+            path.resolve(__dirname, './config/common/CheckoutFromVault.yml'),
+            `/home/vagrant/baker/CheckoutFromVault.yml`,
+            ansibleSSHConfig,
+            false
+        );
+
         resolve();
     });
 }
@@ -339,13 +347,16 @@ async function setKnownHosts(ip, sshConfig) {
     return sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," registerhost.yml -e "ip=${ip}" -c local`, sshConfig);
 }
 
-async function runAnsibleVault(doc, pass, vaultFile, dest, sshConfig, vmSSHConfigUser)
+async function runAnsibleVault(doc, pass, dest, sshConfig, vmSSHConfigUser)
 {
     return new Promise( async (resolve, reject) => 
     {
-        await sshExec(`cd /home/vagrant/baker/${doc.name} && echo "${pass}" > vault-pwd &&  ansible-vault view ${vaultFile} --vault-password-file=vault-pwd > checkout.key`, sshConfig);
-        await sshExec(`cd /home/vagrant/baker/${doc.name} && ansible all -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} -m copy -a "src=checkout.key dest=${dest} mode=0600"`, sshConfig)
-        await sshExec(`cd /home/vagrant/baker/${doc.name} && rm vault-pwd && rm checkout.key`, sshConfig)
+        let key = doc.bake.vault.checkout.key;
+        await sshExec(`cd /home/vagrant/baker/${doc.name} && echo "${pass}" > vault-pwd`, sshConfig);
+        await sshExec(`cd /home/vagrant/baker/${doc.name} && ansible-playbook -e "vault=${doc.name}/baker-vault.yml key=${key} dest=${dest}" -i baker_inventory --vault-password-file=vault-pwd --private-key id_rsa -u ${vmSSHConfigUser.user} ../CheckoutFromVault.yml`, sshConfig)
+        //await sshExec(`cd /home/vagrant/baker/${doc.name} && echo "${pass}" > vault-pwd &&  ansible-vault view baker-vault.yml --vault-password-file=vault-pwd > checkout.key`, sshConfig);
+        //await sshExec(`cd /home/vagrant/baker/${doc.name} && ansible all -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} -m copy -a "src=checkout.key dest=${dest} mode=0600"`, sshConfig)
+        await sshExec(`cd /home/vagrant/baker/${doc.name} && rm vault-pwd`, sshConfig)
         resolve();
     });
 }
@@ -465,7 +476,7 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
         if( doc.bake.vault && doc.bake.vault.checkout && doc.bake.vault.checkout.key)
         {
             console.log(chalk.green('==> Checking out keys from vault'));
-            let vaultFile = `/home/vagrant/baker/${doc.name}/${doc.bake.vault.checkout.key}`;
+            let vaultFile = `/home/vagrant/baker/${doc.name}/baker-vault.yml`;
             await copyFromHostToVM(
                 path.resolve( scriptPath, doc.bake.vault.source ),
                 vaultFile,
@@ -474,7 +485,7 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
             // prompt vault pass
             let pass = await promptValue(`vault pass for ${doc.bake.vault.source}`);
             // ansible-vault to checkout key and copy to dest.
-            await runAnsibleVault(doc, pass, vaultFile, doc.bake.vault.dest, ansibleSSHConfig, sshConfig)
+            await runAnsibleVault(doc, pass, doc.bake.vault.checkout.dest, ansibleSSHConfig, sshConfig)
         }
     });
 
