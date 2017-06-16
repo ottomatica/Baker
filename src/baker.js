@@ -119,7 +119,6 @@ async function bakerSSH(name){
 async function prepareAnsibleServer(bakerScriptPath) {
     let machine = vagrant.create({ cwd: ansible });
     let doc = yaml.safeLoad(fs.readFileSync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
-    let ansibleSSHConfig = await getSSHConfig(machine);
 
     // if(await getVagrantIDByName() == undefined)
     //     // TODO
@@ -127,6 +126,8 @@ async function prepareAnsibleServer(bakerScriptPath) {
         console.log(chalk.green('==> Starting ansible server...'));
         return new Promise((resolve, reject) => {
             machine.up(async function(err, out) {
+                let ansibleSSHConfig = await getSSHConfig(machine);
+
                 // console.log( out );
                 console.log(
                     err || chalk.green('==> Ansible server is now ready!')
@@ -151,6 +152,8 @@ async function prepareAnsibleServer(bakerScriptPath) {
         });
     } else {
         console.log(chalk.green('==> Ansible server is now ready!'));
+        let ansibleSSHConfig = await getSSHConfig(machine);
+
         if(bakerScriptPath != undefined){
             await copyFromHostToVM(
                 path.resolve(bakerScriptPath, doc.bake.ansible.source),
@@ -178,7 +181,6 @@ function destroyVM(id) {
 async function installAnsibleServer() {
     if ((await getVagrantIDByName('ansible-srv')) != undefined) {
         console.log(chalk.green('==> Ansible server already provisioned...'));
-        prepareAnsibleServer();
         return;
     } else {
         let machine = vagrant.create({ cwd: ansible });
