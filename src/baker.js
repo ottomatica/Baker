@@ -373,10 +373,10 @@ async function runAnsiblePlaybook(doc, cmd, sshConfig)
     return sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}`, sshConfig);
 }
 
-async function promptValue(propertyName, description) {
+async function promptValue(propertyName, description,hidden=false) {
     return new Promise((resolve, reject) => {
         prompt.start();
-        prompt.get([{ name: propertyName, description: description }], function(
+        prompt.get([{ name: propertyName, description: description, hidden:hidden }], function(
             err,
             result
         ) {
@@ -483,7 +483,7 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
                 ansibleSSHConfig
             );
             // prompt vault pass
-            let pass = await promptValue(`vault pass for ${doc.bake.vault.source}`);
+            let pass = await promptValue('pass', `vault pass for ${doc.bake.vault.source}`, hidden=true);
             // ansible-vault to checkout key and copy to dest.
             await runAnsibleVault(doc, pass, doc.bake.vault.checkout.dest, ansibleSSHConfig, sshConfig)
         }
