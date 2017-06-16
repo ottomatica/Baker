@@ -330,8 +330,10 @@ async function runAnsibleVault(doc, pass, vaultFile, dest, sshConfig)
 {
     let fn = async () => 
     {
-        await sshExec(`cd /home/vagrant/baker/${doc.name} && ansible-vault view ${vaultFile} < ${pass} > checkout.key`, sshConfig);
-        await sshExec(`/home/vagrant/baker/${doc.name} && ansible all -i baker_inventory -m copy -a "src=checkout.key dest=${dest}" mode=0600"`)
+        await sshExec(`cd /home/vagrant/baker/${doc.name} && echo "${pass}" > vault-pwd &&  ansible-vault view ${vaultFile} --vault-password-file=vault-pwd > checkout.key`, sshConfig);
+        await sshExec(`cd /home/vagrant/baker/${doc.name} && ansible all -i baker_inventory -m copy -a "src=checkout.key dest=${dest} mode=0600"`, sshConfig)
+        await sshExec(`cd /home/vagrant/baker/${doc.name} && rm vault-pwd && rm checkout.key`, sshConfig)
+
     };
     return fn();
 }
@@ -451,15 +453,16 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
         if( doc.bake.vault && doc.bake.vault.checkout && doc.bake.vault.checkout.key)
         {
             console.log(chalk.green('==> Checking out keys from vault'));
+            let vaultFile = `/home/vagrant/baker/${doc.name}/${doc.bake.vault.checkout.key}`;
             await copyFromHostToVM(
-                path.resolve( project, doc.bake.vault.source ),
-                `/home/vagrant/baker/${doc.name}/${doc.bake.vault.checkout.key}`,
+                path.resolve( scriptPath, doc.bake.vault.source ),
+                vaultFile,
                 ansibleSSHConfig
             );
             // prompt vault pass
-            let pass = await promptValue(`vault pass for ${doc.bake.vault.source}:`);
+            let pass = await promptValue(`vault pass for ${doc.bake.vault.source}`);
             // ansible-vault to checkout key and copy to dest.
-            await runAnsibleVault(doc, pass, vaultFile, doc.bake.vault.dest, sshConfig)
+            await runAnsibleVault(doc, pass, vaultFile, doc.bake.vault.dest, ansibleSSHConfig)
         }
     });
 
