@@ -133,15 +133,7 @@ async function prepareAnsibleServer(bakerScriptPath) {
                     err || chalk.green('==> Ansible server is now ready!')
                 );
 
-                // Copying ansible script to ansible vm
-                if(bakerScriptPath != undefined){
-                    await copyFromHostToVM(
-                        path.resolve(bakerScriptPath, doc.bake.ansible.source),
-                        `/home/vagrant/baker/${doc.name}`,
-                        ansibleSSHConfig,
-                        false
-                    );
-                }
+                await copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
 
                 resolve(machine);
             });
@@ -154,6 +146,17 @@ async function prepareAnsibleServer(bakerScriptPath) {
         console.log(chalk.green('==> Ansible server is now ready!'));
         let ansibleSSHConfig = await getSSHConfig(machine);
 
+        await copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
+
+        return machine;
+    }
+}
+
+async function copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig)
+{
+    return new Promise( async (resolve, reject) => 
+    {
+        // Copying ansible script to ansible vm
         if(bakerScriptPath != undefined){
             await copyFromHostToVM(
                 path.resolve(bakerScriptPath, doc.bake.ansible.source),
@@ -162,8 +165,15 @@ async function prepareAnsibleServer(bakerScriptPath) {
                 false
             );
         }
-        return machine;
-    }
+        // Copy common ansible scripts files
+        await copyFromHostToVM(
+            path.resolve(__dirname, './config/common/registerhost.yml'),
+            `/home/vagrant/baker/registerhost.yml`,
+            ansibleSSHConfig,
+            false
+        );
+        resolve();
+    });
 }
 
 /**
@@ -325,17 +335,19 @@ async function chmod(key, sshConfig) {
 async function addToAnsibleHosts(ip, name, sshConfig){
     return sshExec(`echo "[${name}]\n${ip}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
 }
+async function setKnownHosts(ip, sshConfig) {
+    return sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," registerhost.yml -e "ip=${ip}" -c local`, sshConfig);
+}
 
-async function runAnsibleVault(doc, pass, vaultFile, dest, sshConfig)
+async function runAnsibleVault(doc, pass, vaultFile, dest, sshConfig, vmSSHConfigUser)
 {
-    let fn = async () => 
+    return new Promise( async (resolve, reject) => 
     {
         await sshExec(`cd /home/vagrant/baker/${doc.name} && echo "${pass}" > vault-pwd &&  ansible-vault view ${vaultFile} --vault-password-file=vault-pwd > checkout.key`, sshConfig);
-        await sshExec(`cd /home/vagrant/baker/${doc.name} && ansible all -i baker_inventory -m copy -a "src=checkout.key dest=${dest} mode=0600"`, sshConfig)
+        await sshExec(`cd /home/vagrant/baker/${doc.name} && ansible all -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} -m copy -a "src=checkout.key dest=${dest} mode=0600"`, sshConfig)
         await sshExec(`cd /home/vagrant/baker/${doc.name} && rm vault-pwd && rm checkout.key`, sshConfig)
-
-    };
-    return fn();
+        resolve();
+    });
 }
 
 
@@ -431,16 +443,16 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
     machine.up(async function(err, out) {
         console.log(err || chalk.green('==> New VM is ready'));
         let sshConfig = await getSSHConfig(machine);
+        let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
         await copyFromHostToVM(
             sshConfig.private_key,
             `/home/vagrant/baker/${doc.name}/id_rsa`,
             ansibleSSHConfig
         );
-        await addToAnsibleHosts(
-            doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip,
-            doc.name,
-            ansibleSSHConfig
-        )
+
+        await addToAnsibleHosts(ip, doc.name, ansibleSSHConfig)
+        await setKnownHosts(ip, ansibleSSHConfig);
+
         console.log(chalk.green('==> Running Ansible playbooks'));
         console.log( doc.bake.ansible.playbooks );
         for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ )
@@ -462,7 +474,7 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
             // prompt vault pass
             let pass = await promptValue(`vault pass for ${doc.bake.vault.source}`);
             // ansible-vault to checkout key and copy to dest.
-            await runAnsibleVault(doc, pass, vaultFile, doc.bake.vault.dest, ansibleSSHConfig)
+            await runAnsibleVault(doc, pass, vaultFile, doc.bake.vault.dest, ansibleSSHConfig, sshConfig)
         }
     });
 

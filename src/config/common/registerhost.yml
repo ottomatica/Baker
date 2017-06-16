@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+
+  tasks:
+    - name: Get host signatures and add to known_hosts.
+      command: ssh-keyscan -H "{{ip}}"
+      register: known_host_key
+
+      #- debug: msg="Signature is {{ known_host_key.stdout }}"
+    - name: Register VM ip address to ansible server
+      known_hosts: name="{{ip}}" key="{{known_host_key.stdout }}"
