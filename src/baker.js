@@ -324,6 +324,17 @@ async function addToAnsibleHosts(ip, name, sshConfig){
     return sshExec(`echo "[${name}]\n${ip}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
 }
 
+async function runAnsibleVault(doc, pass, vaultFile, dest, sshConfig)
+{
+    let fn = async () => 
+    {
+        await sshExec(`cd /home/vagrant/baker/${doc.name} && ansible-vault view ${vaultFile} < ${pass} > checkout.key`, sshConfig);
+        await sshExec(`/home/vagrant/baker/${doc.name} && ansible all -i baker_inventory -m copy -a "src=checkout.key dest=${dest}" mode=0600"`)
+    };
+    return fn();
+}
+
+
 // TODO: Need to be cleaning cmd so they don't do things like
 // ; sudo rm -rf / on our server...
 async function runAnsiblePlaybook(doc, cmd, sshConfig)
@@ -434,6 +445,19 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
             await runAnsiblePlaybook(
                 doc, cmd, ansibleSSHConfig
             )
+        }
+        if( doc.bake.vault && doc.bake.vault.checkout && doc.bake.vault.checkout.key)
+        {
+            console.log(chalk.green('==> Checking out keys from vault'));
+            await copyFromHostToVM(
+                path.resolve( project, doc.bake.vault.source ),
+                `/home/vagrant/baker/${doc.name}/${doc.bake.vault.checkout.key}`,
+                ansibleSSHConfig
+            );
+            // prompt vault pass
+            let pass = await promptValue(`vault pass for ${doc.bake.vault.source}:`);
+            // ansible-vault to checkout key and copy to dest.
+            await runAnsibleVault(doc, pass, vaultFile, doc.bake.vault.dest, sshConfig)
         }
     });
 
