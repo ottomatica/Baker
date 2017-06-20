@@ -120,9 +120,19 @@ async function prepareAnsibleServer(bakerScriptPath) {
     let machine = vagrant.create({ cwd: ansible });
     let doc = yaml.safeLoad(fs.readFileSync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
 
-    // if(await getVagrantIDByName() == undefined)
-    //     // TODO
-    if ((await getState(await getVagrantIDByName('ansible-srv'))) != 'running') {
+    let state = await getState(await getVagrantIDByName('ansible-srv'));
+    if (state == 'running')
+    {
+        console.log(chalk.green('==> Ansible server is now ready!'));
+        let ansibleSSHConfig = await getSSHConfig(machine);
+
+        await copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
+
+        return machine;
+    }
+    // state can be aborted, suspended, or not provisioned.
+    else
+    {
         console.log(chalk.green('==> Starting ansible server...'));
         return new Promise((resolve, reject) => {
             machine.up(async function(err, out) {
@@ -142,19 +152,12 @@ async function prepareAnsibleServer(bakerScriptPath) {
                 verbose(data);
             });
         });
-    } else {
-        console.log(chalk.green('==> Ansible server is now ready!'));
-        let ansibleSSHConfig = await getSSHConfig(machine);
-
-        await copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
-
-        return machine;
     }
 }
 
 async function copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig)
 {
-    return new Promise( async (resolve, reject) => 
+    return new Promise( async (resolve, reject) =>
     {
         // Copying ansible script to ansible vm
         if(bakerScriptPath != undefined){
@@ -349,7 +352,7 @@ async function setKnownHosts(ip, sshConfig) {
 
 async function runAnsibleVault(doc, pass, dest, sshConfig, vmSSHConfigUser)
 {
-    return new Promise( async (resolve, reject) => 
+    return new Promise( async (resolve, reject) =>
     {
         let key = doc.bake.vault.checkout.key;
         await sshExec(`cd /home/vagrant/baker/${doc.name} && echo "${pass}" > vault-pwd`, sshConfig);
