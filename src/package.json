@@ -8,7 +8,11 @@
   "main": "baker.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "pkg": "pkg ./package.json"
+    "build-macos": "pkg --targets latest-macos-x64 --output ./builds/macos/baker ./package.json",
+    "build-win": "pkg --targets latest-win-x64 --output ./builds/win/baker.exe ./package.json",
+    "build-linux": "pkg --targets latest-linux-x64 --output ./builds/linux/baker ./package.json",
+    "package-macos": "npm run build-macos && ./installers/macos/package.sh",
+    "package-win": ""
   },
   "repository": {
     "type": "git",

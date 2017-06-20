@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Symlink baker binary to /usr/local/bin/baker
+ln -s /opt/baker/bin/baker /usr/local/bin

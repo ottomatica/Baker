@@ -1,5 +1,5 @@
 node_modules/
 package-lock.json
-src/baker-linux
-src/baker-macos
-src/baker-win.exe
+builds/
+src/installers/macos/output/
+src/installers/win/output/
