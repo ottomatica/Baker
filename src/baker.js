@@ -28,14 +28,14 @@ async function main() {
         fs.mkdirSync(ansible);
     }
 
-    if (argv.install) await installAnsibleServer();
+    if (argv.setup) await installAnsibleServer();
     else if (argv.reinstall) await reinstallAnsibleServer();
     else if(argv.ssh){
         bakerSSH(argv.ssh);
     }
     else {
         let ansibleVM;
-        if(argv.script){
+        if(argv.local){
             ansibleVM = await prepareAnsibleServer(argv.script);
             let sshConfig = await getSSHConfig(ansibleVM);
             bake(sshConfig, ansibleVM, argv.script);
