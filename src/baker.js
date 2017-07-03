@@ -33,6 +33,9 @@ async function main() {
     else if(argv.ssh){
         bakerSSH(argv.ssh);
     }
+    else if(argv.init){
+        init();
+    }
     else {
         let ansibleVM;
         if(argv.local){
@@ -52,6 +55,12 @@ async function main() {
 }
 
 main();
+
+function init(){
+    let bakerYML = fs.readFileSync(path.join(__dirname, './config/bakerTemplate.yml'), 'utf8');
+    let dir = path.resolve(process.cwd());
+    fs.writeFileSync('baker.yml', bakerYML, {encoding:'utf8'});
+}
 
 async function cloneRepo(repoURL){
     let name = path.basename(repoURL);

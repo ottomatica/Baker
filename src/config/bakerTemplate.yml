@@ -1,0 +1,76 @@
+---
+# All virtual machine configuration is done in "vagrant:" parameter and
+# All the provisioning steps are done in "baker:"
+
+# Common configuration options are shown in this template,
+# This has probably all you will need, but if you want to
+# lean more about available `baker.yml` configurations, please visit:
+# https://docs.getbaker.io/
+
+# Set a name for your environment which will be used in virtualbox and vagrant.
+name: baker-demo
+
+########################################################
+#
+# Creating the virtual machine
+#
+########################################################
+
+# Define virtual machine configurations here
+vagrant:
+  # Creation of vagrant environment needs a box.
+  # You can find list of all available boxes at
+  # https://atlas.hashicorp.com/search.
+  box: "ubuntu/trusty64"
+
+#   # Configure the amount of your host machine's memory that you want to
+#   # share with the virtual machin
+#   memory: "512"
+
+#   network:
+#     # You can create a forwarded port mapping(s) which vagrant will set
+#     - forwarded_port:
+#         guest: 80
+#         host: 8080
+#
+#     # *Note* You can also prompt user to ask for values at runtime. For example:
+#     #     host:
+#     #       prompt: "Forward VM port to what port on your host machine?"
+#
+#     # Create a private network for your virtual machine and set the local IP for your VM
+#     - private_network:
+#         ip: "192.168.33.10"
+
+#   # Share your host machines folder with your VM.
+#   # By default Baker will sync the directory of baker.yml with the VM it creates.
+#   # You can configure more sync folders like this:
+#   synced_folders:
+#     - folder:
+#         src: "~/projects"
+#         dest: "/projects"
+#
+#         # *Note* You can also prompt user to ask for values at runtime. For example:
+#         # src:
+#         #   prompt: "What host folder to sync for projects?"
+
+########################################################
+#
+# Provisioning the virtual machine
+#
+########################################################
+
+# # Define provisioning steps here
+# bake:
+#   # The ansible playbooks that you want to run for the VM
+#   ansible:
+#     # source is the directory of the ansible playbooks
+#     source: src/env/
+#     playbooks:
+#       - provision.yml
+
+#   # The ansible vault configurations
+#   vault:
+#     source: src/env/vault.yml
+#     checkout:
+#       key: ottomatica-key
+#       dest: ~/.ssh/alt-code_rsa
