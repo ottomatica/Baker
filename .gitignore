@@ -1,5 +1,5 @@
 node_modules/
 package-lock.json
 builds/
-src/installers/macos/output/
-src/installers/win/output/
+src/installers/macos/bin/
+src/installers/win/bin/

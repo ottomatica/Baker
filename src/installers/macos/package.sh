@@ -25,16 +25,16 @@ find $PACKAGEREL/files/ -name '*.DS_Store' -type f -delete
 # Set full read, write, execute permissions for owner and just read and execute permissions for group and other.
 /bin/chmod -R 755 $PACKAGEREL/files
 
-# Make output dir if doesn't exist
-if [ ! -d "$PACKAGEREL/output" ]; then
-    mkdir "$PACKAGEREL/output"
+# Make bin dir if doesn't exist
+if [ ! -d "$PACKAGEREL/bin" ]; then
+    mkdir "$PACKAGEREL/bin"
 fi
 
 # Build package.
 /usr/bin/pkgbuild \
-    --root builds/macos/ \
+    --root installers/macos/bin/ \
     --install-location "$INSTALL_LOCATION" \
     --scripts $PACKAGEREL/scripts/ \
     --identifier "$IDENTIFIER" \
     --version "$VERSION" \
-    "$PACKAGEREL/output/$NAME-$VERSION.pkg"
+    "$PACKAGEREL/bin/$NAME-$VERSION.pkg"
