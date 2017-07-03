@@ -48,6 +48,7 @@
   },
   "bin": "baker.js",
   "devDependencies": {
+    "grunt": "^1.0.1",
     "pkg": "^4.1.0"
   }
 }
