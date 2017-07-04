@@ -20,10 +20,12 @@ VERSION="0.0.1"
 INSTALL_LOCATION="/opt/baker/bin"
 
 # Remove any unwanted .DS_Store files.
-find $PACKAGEREL/files/ -name '*.DS_Store' -type f -delete
+find $PACKAGEREL/bin/ -name '*.DS_Store' -type f -delete
 
 # Set full read, write, execute permissions for owner and just read and execute permissions for group and other.
-/bin/chmod -R 755 $PACKAGEREL/files
+/bin/chmod -R 755 $PACKAGEREL/bin/baker
+/bin/chmod -R 755 $PACKAGEREL/scripts
+
 
 # Make bin dir if doesn't exist
 if [ ! -d "$PACKAGEREL/bin" ]; then
@@ -32,7 +34,7 @@ fi
 
 # Build package.
 /usr/bin/pkgbuild \
-    --root installers/macos/bin/ \
+    --root $PACKAGEREL/bin/ \
     --install-location "$INSTALL_LOCATION" \
     --scripts $PACKAGEREL/scripts/ \
     --identifier "$IDENTIFIER" \

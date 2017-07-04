@@ -11,8 +11,7 @@
         "build-macos": "pkg --targets latest-macos-x64 --output ./installers/macos/bin/baker ./package.json",
         "build-win": "pkg --targets latest-win-x64 --output ./installers/win/bin/baker.exe ./package.json",
         "build-linux": "pkg --targets latest-linux-x64 --output ./installers/linux/bin/baker ./package.json",
-        "package-macos": "npm run build-macos && ./installers/macos/package.sh",
-        "package-win": ""
+        "package-macos": "npm run build-macos && ./installers/macos/package.sh"
     },
     "repository": {
         "type": "git",
