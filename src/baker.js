@@ -39,9 +39,9 @@ async function main() {
     else {
         let ansibleVM;
         if(argv.local){
-            ansibleVM = await prepareAnsibleServer(argv.local);
+            ansibleVM = await prepareAnsibleServer(path.resolve(argv.local));
             let sshConfig = await getSSHConfig(ansibleVM);
-            bake(sshConfig, ansibleVM, argv.local);
+            bake(sshConfig, ansibleVM, path.resolve(argv.local));
         }
         else if (argv.repo){
             let localRepoPath = await cloneRepo(argv.repo);
