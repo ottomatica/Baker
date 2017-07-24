@@ -435,7 +435,8 @@ async function traverse(o) {
 async function initVagrantFile(vagrantFilePath, doc, template, scriptPath) {
     const vagrant = doc.vagrant;
     await traverse(vagrant);
-    doc.vagrant.synced_folders = [...doc.vagrant.synced_folders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
+    let syncFolders = doc.vagrant.synced_folders || [];
+    doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
     const output = mustache.render(template, doc);
 
     fs.writeFileSync(vagrantFilePath, output);
