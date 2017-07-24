@@ -39,9 +39,9 @@ async function main() {
     else {
         let ansibleVM;
         if(argv.local){
-            ansibleVM = await prepareAnsibleServer(argv.script);
+            ansibleVM = await prepareAnsibleServer(argv.local);
             let sshConfig = await getSSHConfig(ansibleVM);
-            bake(sshConfig, ansibleVM, argv.script);
+            bake(sshConfig, ansibleVM, argv.local);
         }
         else if (argv.repo){
             let localRepoPath = await cloneRepo(argv.repo);
@@ -50,7 +50,7 @@ async function main() {
             bake(sshConfig, ansibleVM, localRepoPath);
         }
         else
-            throw `==> User --script to give local path or --repo to give git repository with baker.yml`
+            throw `==> User --local to give local path or --repo to give git repository with baker.yml`
     }
 }
 
