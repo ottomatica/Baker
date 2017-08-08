@@ -36,6 +36,10 @@ async function main() {
     else if(argv.init){
         init();
     }
+    else if(argv.prune){
+        // TODO: After added --status command, update this to show that after completed.
+        child_process.execSync('vagrant global-status --prune', { stdio: 'inherit' });
+    }
     else {
         let ansibleVM;
         if(argv.local){
@@ -166,34 +170,37 @@ async function prepareAnsibleServer(bakerScriptPath) {
 
 async function copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig)
 {
-    return new Promise( async (resolve, reject) =>
-    {
-        // Copying ansible script to ansible vm
-        if(bakerScriptPath != undefined){
+        return new Promise( async (resolve, reject) =>
+        {
+            if(doc.bake && doc.bake.ansible && doc.bake.ansible.source){
+                // Copying ansible script to ansible vm
+                if(bakerScriptPath != undefined){
+                    await copyFromHostToVM(
+                        path.resolve(bakerScriptPath, doc.bake.ansible.source),
+                        `/home/vagrant/baker/${doc.name}`,
+                        ansibleSSHConfig,
+                        false
+                    );
+                }
+            }
+
+            // Copy common ansible scripts files
             await copyFromHostToVM(
-                path.resolve(bakerScriptPath, doc.bake.ansible.source),
-                `/home/vagrant/baker/${doc.name}`,
+                path.resolve(__dirname, './config/common/registerhost.yml'),
+                `/home/vagrant/baker/registerhost.yml`,
                 ansibleSSHConfig,
                 false
             );
-        }
-        // Copy common ansible scripts files
-        await copyFromHostToVM(
-            path.resolve(__dirname, './config/common/registerhost.yml'),
-            `/home/vagrant/baker/registerhost.yml`,
-            ansibleSSHConfig,
-            false
-        );
 
-        await copyFromHostToVM(
-            path.resolve(__dirname, './config/common/CheckoutFromVault.yml'),
-            `/home/vagrant/baker/CheckoutFromVault.yml`,
-            ansibleSSHConfig,
-            false
-        );
+            await copyFromHostToVM(
+                path.resolve(__dirname, './config/common/CheckoutFromVault.yml'),
+                `/home/vagrant/baker/CheckoutFromVault.yml`,
+                ansibleSSHConfig,
+                false
+            );
 
-        resolve();
-    });
+            resolve();
+        });
 }
 
 /**
@@ -223,7 +230,7 @@ async function installAnsibleServer() {
             path.resolve(ansible, 'provision.shell.sh')
         );
 
-        console.log(chalk.green('==> Creating ansible server...'));
+        console.log(chalk.green('==> Creating Ansible server...'));
 
         machine.up(function(err, out) {
             // console.log( out );
@@ -477,16 +484,19 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
         await addToAnsibleHosts(ip, doc.name, ansibleSSHConfig)
         await setKnownHosts(ip, ansibleSSHConfig);
 
-        console.log(chalk.green('==> Running Ansible playbooks'));
-        console.log( doc.bake.ansible.playbooks );
-        for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ )
-        {
-            var cmd = doc.bake.ansible.playbooks[i];
-            await runAnsiblePlaybook(
-                doc, cmd, ansibleSSHConfig
-            )
+        if(doc.bake && doc.bake.ansible && doc.bake.playbooks){
+            console.log(chalk.green('==> Running Ansible playbooks'));
+            // console.log( doc.bake.ansible.playbooks );
+            for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ )
+            {
+                var cmd = doc.bake.ansible.playbooks[i];
+                await runAnsiblePlaybook(
+                    doc, cmd, ansibleSSHConfig
+                )
+            }
         }
-        if( doc.bake.vault && doc.bake.vault.checkout && doc.bake.vault.checkout.key)
+
+        if( doc.bake && doc.bake.vault && doc.bake.vault.checkout && doc.bake.vault.checkout.key)
         {
             console.log(chalk.green('==> Checking out keys from vault'));
             let vaultFile = `/home/vagrant/baker/${doc.name}/baker-vault.yml`;

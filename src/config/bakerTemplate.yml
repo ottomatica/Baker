@@ -23,11 +23,11 @@ vagrant:
   # https://atlas.hashicorp.com/search.
   box: "ubuntu/trusty64"
 
-#   # Configure the amount of your host machine's memory that you want to
-#   # share with the virtual machin
-#   memory: "512"
+  # Configure the amount of your host machine's memory that you want to
+  # share with the virtual machin (* required)
+  memory: "512"
 
-#   network:
+  network:
 #     # You can create a forwarded port mapping(s) which vagrant will set
 #     - forwarded_port:
 #         guest: 80
@@ -37,9 +37,11 @@ vagrant:
 #     #     host:
 #     #       prompt: "Forward VM port to what port on your host machine?"
 #
-#     # Create a private network for your virtual machine and set the local IP for your VM
-#     - private_network:
-#         ip: "192.168.33.10"
+    # Create a private network for your virtual machine and set the local IP for your VM
+    # A private network with a static IP is required by Baker server to be able to communicate with your VM.
+    # (* required)
+    - private_network:
+        ip: "192.168.33.10"
 
 #   # Share your host machines folder with your VM.
 #   # By default Baker will sync the directory of baker.yml with the VM it creates.
