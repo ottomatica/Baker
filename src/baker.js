@@ -40,6 +40,9 @@ async function main() {
         // TODO: After added --status command, update this to show that after completed.
         child_process.execSync('vagrant global-status --prune', { stdio: 'inherit' });
     }
+    else if(argv.destroy){
+        destroyVM(await getVagrantIDByName(argv.destroy));
+    }
     else {
         let ansibleVM;
         if(argv.local){
