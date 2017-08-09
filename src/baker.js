@@ -196,7 +196,7 @@ async function prepareAnsibleServer(bakerScriptPath) {
     let state = await getState(await getVagrantIDByName('ansible-srv'));
     if (state == 'running')
     {
-        console.log(chalk.green('==> Ansible server is now ready!'));
+        print.success('Baker server is now ready and running.');
         let ansibleSSHConfig = await getSSHConfig(machine);
 
         await copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
@@ -206,15 +206,17 @@ async function prepareAnsibleServer(bakerScriptPath) {
     // state can be aborted, suspended, or not provisioned.
     else
     {
-        console.log(chalk.green('==> Starting ansible server...'));
+        print.success('Starting Baker server.');
         return new Promise((resolve, reject) => {
             machine.up(async function(err, out) {
                 let ansibleSSHConfig = await getSSHConfig(machine);
 
-                // console.log( out );
-                console.log(
-                    err || chalk.green('==> Ansible server is now ready!')
-                );
+                if(err)
+                    print.error(err);
+                else
+                    let state = await getState(await getVagrantIDByName('ansible-srv'));
+                    if(state === 'running')
+                        print.success('Baker server is now ready and running.')
 
                 await copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
 
@@ -268,8 +270,8 @@ async function copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig)
  * @param {String} id
  */
 function destroyVM(id) {
-    console.log(chalk.green('==> Destroying ansible server...'));
-    child_process.execSync(`vagrant destroy ${id}`, { stdio: 'inherit' });
+    child_process.execSync(`vagrant destroy ${id}`, { stdio: (argv.verbose? 'inherit' : 'ignore') });
+    print.success(`Destroyed VM: ${id}`);
 }
 
 /**
@@ -277,7 +279,7 @@ function destroyVM(id) {
  */
 async function installAnsibleServer() {
     if ((await getVagrantIDByName('ansible-srv')) != undefined) {
-        console.log(chalk.green('==> Ansible server already provisioned...'));
+        print.success('Baker server already provisioned.');
         return;
     } else {
         let machine = vagrant.create({ cwd: ansible });
@@ -290,15 +292,15 @@ async function installAnsibleServer() {
             path.resolve(ansible, 'provision.shell.sh')
         );
 
-        console.log(chalk.green('==> Creating Ansible server...'));
+        print.info('Creating Baker server.');
 
         machine.up(function(err, out) {
-            // console.log( out );
-            if (err) throw `==> Couldn't start ansible server!!: ${err}`;
+            if (err)
+                print.error(`Couldn't start Baker server!: ${err}`, 1);
             else
-                console.log(
-                    chalk.green('==> Ansible server is now ready!')
-                );
+                let state = await getState(await getVagrantIDByName('ansible-srv'));
+                if(state === 'running')
+                    print.success('Baker server is now ready and running.');
             return;
         });
 
@@ -330,7 +332,7 @@ async function getSSHConfig(machine) {
                 resolve(sshConfig[0]);
             } else {
                 // callback(err);
-                throw `==> Couldn't get private ssh key of new VM: ${err}`; // err
+                print.error(`Couldn't get private ssh key of new VM: ${err}`);
             }
         });
     });
@@ -351,7 +353,7 @@ async function copyFromHostToVM(src, dest, destSSHConfig, chmod_=true) {
             async function(err) {
                 if (err)
                 {
-                    console.log(chalk.bold.red(`==> Failed to configure ssh keys: ${err}`));
+                    print.error(`Failed to configure ssh keys: ${err}`);
                     reject();
                 }
                 else
@@ -460,7 +462,7 @@ async function promptValue(propertyName, description,hidden=false) {
             result
         ) {
             if (err) {
-                console.log(chalk.bold.red(err));
+                pritn.error(err);
             }
             //prompt.stop();
             resolve(result[propertyName]);
@@ -529,10 +531,14 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
     let machine = vagrant.create({ cwd: dir });
 
     await initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
-    console.log(chalk.green('==> Baking vm...'));
+    print.bold('Baking VM...');
 
     machine.up(async function(err, out) {
-        console.log(err || chalk.green('==> New VM is ready'));
+        if(err)
+            print.error(err, 1);
+        else
+            print.success('New VM is ready and running.', 1);
+
         let sshConfig = await getSSHConfig(machine);
         let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
         await copyFromHostToVM(
@@ -545,8 +551,7 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
         await setKnownHosts(ip, ansibleSSHConfig);
 
         if(doc.bake && doc.bake.ansible && doc.bake.playbooks){
-            console.log(chalk.green('==> Running Ansible playbooks'));
-            // console.log( doc.bake.ansible.playbooks );
+            print.info('Running your Ansible playbooks.', 1);
             for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ )
             {
                 var cmd = doc.bake.ansible.playbooks[i];
@@ -558,7 +563,7 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
 
         if( doc.bake && doc.bake.vault && doc.bake.vault.checkout && doc.bake.vault.checkout.key)
         {
-            console.log(chalk.green('==> Checking out keys from vault'));
+            print.info('Checking out keys from vault.', 1);
             let vaultFile = `/home/vagrant/baker/${doc.name}/baker-vault.yml`;
             await copyFromHostToVM(
                 path.resolve( scriptPath, doc.bake.vault.source ),
