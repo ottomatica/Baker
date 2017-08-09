@@ -51,12 +51,14 @@ async function main() {
     else {
         let ansibleVM;
         if(argv.local){
+            validateBakerScript(path.resolve(argv.local));
             ansibleVM = await prepareAnsibleServer(path.resolve(argv.local));
             let sshConfig = await getSSHConfig(ansibleVM);
             bake(sshConfig, ansibleVM, path.resolve(argv.local));
         }
         else if (argv.repo){
             let localRepoPath = await cloneRepo(argv.repo);
+            validateBakerScript(path.resolve(localRepoPath));
             ansibleVM = await prepareAnsibleServer(localRepoPath);
             let sshConfig = await getSSHConfig(ansibleVM);
             bake(sshConfig, ansibleVM, localRepoPath);
@@ -214,9 +216,7 @@ async function prepareAnsibleServer(bakerScriptPath) {
                 if(err)
                     print.error(err);
                 else
-                    let state = await getState(await getVagrantIDByName('ansible-srv'));
-                    if(state === 'running')
-                        print.success('Baker server is now ready and running.')
+                    print.success('Baker server is now ready and running.');
 
                 await copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
 
@@ -270,7 +270,7 @@ async function copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig)
  * @param {String} id
  */
 function destroyVM(id) {
-    child_process.execSync(`vagrant destroy ${id}`, { stdio: (argv.verbose? 'inherit' : 'ignore') });
+    child_process.execSync(`vagrant destroy ${id} -f`, { stdio: (argv.verbose? 'inherit' : 'ignore') });
     print.success(`Destroyed VM: ${id}`);
 }
 
@@ -298,9 +298,8 @@ async function installAnsibleServer() {
             if (err)
                 print.error(`Couldn't start Baker server!: ${err}`, 1);
             else
-                let state = await getState(await getVagrantIDByName('ansible-srv'));
-                if(state === 'running')
-                    print.success('Baker server is now ready and running.');
+                print.success('Baker server is now ready and running.');
+
             return;
         });
 
