@@ -299,7 +299,7 @@ module.exports = function(dep) {
         const vagrant = doc.vagrant;
         await traverse(vagrant);
         let syncFolders = doc.vagrant.synced_folders || [];
-        doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
+        doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `~/${path.basename(scriptPath)}`}}]];
         const output = mustache.render(template, doc);
 
         fs.writeFileSync(vagrantFilePath, output);
