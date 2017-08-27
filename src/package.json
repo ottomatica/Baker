@@ -46,7 +46,8 @@
         "yargs": "^8.0.2"
     },
     "pkg": {
-        "assets": "config/**"
+        "assets": "config/**",
+        "scripts": "lib/**"
     },
     "bin": "cmd.js",
     "devDependencies": {

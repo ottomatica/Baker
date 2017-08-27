@@ -3,7 +3,7 @@
 
 const { join, resolve } = require('path')
 const yargs = require('yargs')
-const { homepage, version } = require(join(__dirname, './package.json'))
+const { homepage, version } = require('./package.json')
 const { commands } = require('./baker.js')
 
 // Switch CWD if specified from options

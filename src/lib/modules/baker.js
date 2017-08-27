@@ -132,7 +132,7 @@ module.exports = function(dep) {
      * Creates ansible server, if already doesn't exist
      */
     result.installAnsibleServer = async function() {
-        const { baker, print, fs, mustache, path, configPath } = dep;
+        const { baker, print, fs, mustache, path, configPath, vagrant, ansible } = dep;
 
         if ((await baker.getVagrantIDByName('ansible-srv')) != undefined) {
             print.success('Baker server already provisioned.');
@@ -140,7 +140,7 @@ module.exports = function(dep) {
         } else {
             let machine = vagrant.create({ cwd: ansible });
             let template = fs.readFileSync(path.join(configPath, './AnsibleVM.mustache'), 'utf8');
-            let vagrantfile = mustache.render(template, require(path.join(configPath, './AnsibleVM')));
+            let vagrantfile = mustache.render(template, require('../../config/AnsibleVM'));
             fs.writeFileSync(path.join(ansible, 'Vagrantfile'), vagrantfile)
 
             fs.copySync(
