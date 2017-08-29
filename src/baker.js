@@ -487,7 +487,9 @@ async function bake(ansibleSSHConfig, ansibleVM, scriptPath) {
         await addToAnsibleHosts(ip, doc.name, ansibleSSHConfig)
         await setKnownHosts(ip, ansibleSSHConfig);
 
-        if(doc.bake && doc.bake.ansible && doc.bake.playbooks){
+        //if(doc.bake && doc.bake.ansible && doc.bake.playbooks){
+        if(doc.bake && doc.bake.ansible && doc.bake.ansible.playbooks)
+        {            
             console.log(chalk.green('==> Running Ansible playbooks'));
             // console.log( doc.bake.ansible.playbooks );
             for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ )
