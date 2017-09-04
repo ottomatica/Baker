@@ -20,6 +20,8 @@ var child_process = require('child_process');
 var boxes = path.join(require('os').homedir(), '.baker');
 var ansible = path.join(boxes, 'ansible-srv');
 
+exports.getVagrantIDByName = getVagrantIDByName;
+
 async function main() {
     if (!fs.existsSync(boxes)) {
         fs.mkdirSync(boxes);
@@ -212,7 +214,7 @@ async function copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig)
  */
 function destroyVM(id) {
     console.log(chalk.green('==> Destroying ansible server...'));
-    child_process.execSync(`vagrant destroy ${id}`, { stdio: 'inherit' });
+    child_process.execSync(`vagrant destroy ${id} -f`, { stdio: 'inherit' });
 }
 
 /**
