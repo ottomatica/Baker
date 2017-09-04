@@ -8,6 +8,7 @@
     "main": "baker.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
+        "int-test": "mocha test/integration/*.js",
         "build-macos": "pkg --targets latest-macos-x64 --output ./installers/macos/bin/baker ./package.json",
         "build-win": "pkg --targets latest-win-x64 --output ./installers/win/bin/baker.exe ./package.json",
         "build-linux": "pkg --targets latest-linux-x64 --output ./installers/linux/bin/baker ./package.json",
@@ -38,6 +39,7 @@
         "node-vagrant": "^1.0.8",
         "prompt": "^1.0.0",
         "require-dir": "^0.3.2",
+        "request": "^2.81.0",
         "scp2": "^0.5.0",
         "slash": "^1.0.0",
         "ssh2": "^0.5.5",
@@ -52,8 +54,10 @@
     },
     "bin": "cmd.js",
     "devDependencies": {
+        "chai": "^4.1.2",
         "grunt": "^1.0.1",
         "innosetup-compiler": "^5.5.9",
+        "mocha": "^3.5.0",
         "pkg": "^4.1.0"
     }
 }
