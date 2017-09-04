@@ -75,7 +75,7 @@ module.exports = function(dep) {
             passed = false;
         } else if (
             !doc.vagrant.network.some(network =>
-                validator.isIP(network.private_network.ip)
+                network.private_network && validator.isIP(network.private_network.ip)
             )
         ) {
             print.error(
