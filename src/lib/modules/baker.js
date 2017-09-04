@@ -82,6 +82,7 @@ module.exports = function(dep) {
         let machine = vagrant.create({ cwd: ansible });
         let doc = yaml.safeLoad(fs.readFileSync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
 
+        // TODO: Check if baker vm exists
         let state = await baker.getState(await baker.getVagrantIDByName('ansible-srv'));
         if (state == 'running') {
             print.success('Baker server is now ready and running.');
@@ -135,7 +136,23 @@ module.exports = function(dep) {
         const { baker, print, fs, mustache, path, configPath, vagrant, ansible } = dep;
 
         if ((await baker.getVagrantIDByName('ansible-srv')) != undefined) {
-            print.success('Baker server already provisioned.');
+            print.success('Baker server is already provisioned.');
+
+            // Starting Baker VM, if not running
+            if (await baker.getState(await baker.getVagrantIDByName('ansible-srv')) != 'running'){
+                let machine = vagrant.create({ cwd: ansible });
+                machine.up(function(err, out) {
+                    if (err)
+                        print.error(`Couldn't start Baker server!: ${err}`, 1);
+                    else
+                        print.success('Baker server is now ready and running.');
+
+                    return;
+                });
+            } else {
+                print.success('Baker server is already running.')
+            }
+
             return;
         } else {
             let machine = vagrant.create({ cwd: ansible });
@@ -266,6 +283,7 @@ module.exports = function(dep) {
      * Traverse yaml and do prompts
      */
     async function traverse(o) {
+        const { baker } = dep;
         const stack = [{ obj: o, parent: null, parentKey: '' }];
 
         while (stack.length) {
@@ -299,7 +317,7 @@ module.exports = function(dep) {
         const vagrant = doc.vagrant;
         await traverse(vagrant);
         let syncFolders = doc.vagrant.synced_folders || [];
-        doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `~/${path.basename(scriptPath)}`}}]];
+        doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
         const output = mustache.render(template, doc);
 
         fs.writeFileSync(vagrantFilePath, output);
@@ -315,8 +333,22 @@ module.exports = function(dep) {
     //     }
     }
 
+    result.status = async function() {
+        const { chalk, vagrant, print } = dep;
+
+        vagrant.globalStatus(function(err, out) {
+            if (err) print.error(err);
+
+            // Only showing baker VMs
+            out = out.filter(vm => vm.cwd.includes('.baker/'));
+
+            console.table(chalk.bold('Baker status'), out);
+            return;
+        });
+    }
+
     result.bake = async function(ansibleSSHConfig, ansibleVM, scriptPath) {
-        const { yaml, path, fs, vagrant, baker, print, ssh, boxes, configPath } = dep;
+        var { yaml, path, fs, vagrant, baker, print, ssh, boxes, configPath } = dep;
 
         // TODO: Use version fetched from github.
         let doc = yaml.safeLoad(fs.readFileSync(path.join(scriptPath, 'baker.yml'), 'utf8'));

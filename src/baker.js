@@ -13,6 +13,7 @@ const chalk = require('chalk');
 const validator = require('validator');
 const yaml = require('js-yaml');
 const slash = require("slash");
+require('console.table');
 
 
 const boxes = path.join(require('os').homedir(), '.baker');
