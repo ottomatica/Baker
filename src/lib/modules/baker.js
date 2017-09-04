@@ -57,12 +57,15 @@ module.exports = function(dep) {
      * @param {String} name
      */
     result.bakerSSH = async function(name) {
-        const { baker, child_process } = dep;
+        const { print, baker, child_process } = dep;
 
         let id = await baker.getVagrantIDByName(name);
         if (id != undefined)
             child_process.execSync(`vagrant ssh ${id}`, { stdio: 'inherit' });
-        else throw `==> No VM found with this name!`;
+        else {
+            print.error(`No VM found with this name!`);
+            process.exit(1);
+        }
     };
 
 
