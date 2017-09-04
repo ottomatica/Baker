@@ -385,11 +385,11 @@ module.exports = function(dep) {
             await baker.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig)
             await baker.setKnownHosts(ip, ansibleSSHConfig);
 
-            if(doc.bake && doc.bake.ansible && doc.bake.playbooks){
+            if(doc.bake && doc.bake.ansible && doc.bake.ansible.playbooks){
                 print.info('Running your Ansible playbooks.', 1);
                 for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ ) {
                     var cmd = doc.bake.ansible.playbooks[i];
-                    await runAnsiblePlaybook(
+                    await baker.runAnsiblePlaybook(
                         doc, cmd, ansibleSSHConfig
                     )
                 }
