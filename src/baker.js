@@ -47,7 +47,7 @@ let dep = {
 // Internal dependencies
 const inDepFns = requireDir(path.join(__dirname, 'lib', 'modules'));
 
-let temp = {}; // TODO: This is too hacky, find a better way
+let temp = {}; // TODO: This might be too hacky, find a better way
 Object.keys(inDepFns).forEach(name => {
     temp[camelCase(name)] = inDepFns[name](dep);
 });
@@ -55,10 +55,6 @@ Object.keys(inDepFns).forEach(name => {
 Object.keys(inDepFns).forEach(name => {
     dep[camelCase(name)] = inDepFns[name](Object.assign(temp, dep));
 });
-
-
-
-// console.log(dep.baker.getVagrantIDByName);
 
 // Load commands from folder and pass dependencies
 const commandsFn = requireDir(path.join(__dirname, 'lib', 'commands'));
