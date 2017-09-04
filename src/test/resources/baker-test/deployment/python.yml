@@ -1,0 +1,9 @@
+---
+- hosts: baker-test
+  gather_facts: no
+
+  # Python 2 is missing by default in ubuntu 16.
+  # https://stackoverflow.com/questions/32429259/ansible-fails-with-bin-sh-1-usr-bin-python-not-found
+  tasks:
+    - name: install python 2
+      raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
