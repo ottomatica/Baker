@@ -1,0 +1,51 @@
+---
+- hosts: baker-test
+  gather_facts: no
+
+  tasks:
+    - name: Installing dependencies
+      become: yes
+      apt:
+        pkg: "{{item}}"
+        state: latest
+        update_cache: true
+        cache_valid_time: 86400 
+      with_items:
+        - build-essential
+        - git
+        - curl
+
+    - name: Ensure the system can use the HTTPS transport for APT
+      stat: path=/usr/lib/apt/methods/https
+      register: apt_https_transport
+
+    - name: Install HTTPS transport for APT
+      become: yes
+      apt: pkg=apt-transport-https state=installed
+      when: not apt_https_transport.stat.exists
+
+    - name: Import the NodeSource GPG key into apt
+      become: yes
+      apt_key: >
+        id=68576280 
+        url="https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x1655A0AB68576280"
+        validate_certs=False
+    - name: Add NodeSource deb repository
+      become: yes
+      apt_repository: repo='deb https://deb.nodesource.com/node_6.x trusty main' state=present
+
+    - name: Install Node.js
+      become: yes
+      apt: pkg=nodejs state=installed update_cache=yes
+
+    - name: Copy express server files
+      copy:
+        src: express/
+        dest: "/home/{{ansible_user}}/express"
+        mode: 0700
+
+    - name: Install dependencies
+      shell: "cd /home/{{ansible_user}}/express/ && npm install"
+
+    - name: Start express server
+      shell: "cd /home/{{ansible_user}}/express/ && npm run forever"
