@@ -16,5 +16,6 @@ yargs
   .help()
   .options({ cwd: { desc: 'Change the current working directory' } })
   .demand(1)
+  .strict()
   .epilog((homepage ? `| Documentation: ${homepage}\n` : '') + (version ? `| Version: ${version}` : ''))
   .argv
