@@ -7,12 +7,14 @@ module.exports = function(dep) {
     cmd.desc = 'prunes invalid VMs (e.g. partially removed due to a failure)';
     cmd.builder = {};
     cmd.handler = async function(argv) {
-        const { child_process } = dep;
+        const { child_process, baker } = dep;
 
-        // TODO: After added --status command, update this to show that after completed.
         child_process.execSync('vagrant global-status --prune', {
             stdio: 'inherit'
         });
+
+        // Show status after prune completed
+        await baker.status();
     };
 
     return cmd;
