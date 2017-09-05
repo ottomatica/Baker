@@ -76,14 +76,16 @@ module.exports = function(dep) {
     }
 
     result.sshExec = async function(cmd, sshConfig) {
-        const { Client, fs } = dep;
+        const { Client, fs, print } = dep;
 
         return new Promise((resolve, reject) => {
             var c = new Client();
             c
                 .on('ready', function() {
                     c.exec(cmd, function(err, stream) {
-                        if (err) throw err;
+                        if (err){
+                            print.error(err);
+                        }
                         stream
                             .on('close', function(code, signal) {
                                 c.end();
