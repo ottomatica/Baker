@@ -128,7 +128,7 @@ module.exports = function(dep) {
     }
 
     /**
-     * Destroy a vagrant vm sync
+     * Destroy VM
      * @param {String} id
      */
     result.destroyVM = function(id) {
@@ -136,6 +136,17 @@ module.exports = function(dep) {
 
         child_process.execSync(`vagrant destroy ${id} -f`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
         print.success(`Destroyed VM: ${id}`);
+    }
+
+    /**
+     * Shut down VM
+     * @param {String} id
+     */
+    result.haltVM = function(id, force=false) {
+        const { child_process, print } = dep;
+
+        child_process.execSync(`vagrant halt ${id} ${force ? '-f' : '' }`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
+        print.success(`Stopped VM: ${id}`);
     }
 
     /**
