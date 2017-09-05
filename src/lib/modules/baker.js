@@ -83,43 +83,52 @@ module.exports = function(dep) {
         let machine = vagrant.create({ cwd: ansible });
         let doc = yaml.safeLoad(fs.readFileSync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
 
-        // TODO: Check if baker vm exists
-        let state = await baker.getState(await baker.getVagrantIDByName('ansible-srv'));
-        if (state == 'running') {
-            print.success('Baker server is now ready and running.');
-            let ansibleSSHConfig = await baker.getSSHConfig(machine);
+        let bakerVMID = await baker.getVagrantIDByName('ansible-srv');
 
-            await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
+        if(bakerVMID){
+            let state = await baker.getState(bakerVMID);
+            if (state == 'running') {
+                print.success('Baker server is now ready and running.');
+                let ansibleSSHConfig = await baker.getSSHConfig(machine);
 
-            return machine;
+                await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
+
+                return machine;
+            }
+
+            // state can be aborted, suspended, or not provisioned.
+            else {
+                print.success('Starting Baker server.');
+                return new Promise((resolve, reject) => {
+                    machine.up(async function(err, out) {
+                        let ansibleSSHConfig = await baker.getSSHConfig(machine);
+
+                        if(err)
+                            print.error(err);
+                        else
+                            print.success('Baker server is now ready and running.');
+
+                        await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
+
+                        resolve(machine);
+                    });
+
+                    machine.on('up-progress', function(data) {
+                        print.info(data);
+                    });
+                });
+            }
         }
 
-        // state can be aborted, suspended, or not provisioned.
         else {
-            print.success('Starting Baker server.');
-            return new Promise((resolve, reject) => {
-                machine.up(async function(err, out) {
-                    let ansibleSSHConfig = await baker.getSSHConfig(machine);
-
-                    if(err)
-                        print.error(err);
-                    else
-                        print.success('Baker server is now ready and running.');
-
-                    await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
-
-                    resolve(machine);
-                });
-
-                machine.on('up-progress', function(data) {
-                    print.info(data);
-                });
-            });
+            print.error('Baker server is not installed.');
+            print.error('To install Baker server run: ', 1);
+            print.error('$ baker setup', 1);
         }
     }
 
     /**
-     * Destroy a vagrant vm sync
+     * Destroy VM
      * @param {String} id
      */
     result.destroyVM = function(id) {
@@ -128,6 +137,35 @@ module.exports = function(dep) {
         child_process.execSync(`vagrant destroy ${id} -f`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
         print.success(`Destroyed VM: ${id}`);
     }
+
+    /**
+     * Shut down VM
+     * @param {String} id
+     */
+    result.haltVM = function(id, force=false) {
+        const { child_process, print } = dep;
+
+        child_process.execSync(`vagrant halt ${id} ${force ? '-f' : '' }`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
+        print.success(`Stopped VM: ${id}`);
+    }
+
+    /**
+     * Start VM
+     * @param {String} id
+     * TODO: make sure the VM exists before attempting to start it
+     */
+    result.upVM = async function(name) {
+        const { vagrant, path, print, boxes } = dep;
+
+        let machine = vagrant.create({ cwd: path.join(boxes, name) });
+        machine.up(async function(err, out) {
+            if (err) print.error(err);
+            else print.success(`Started VM: ${name}`);
+
+            return;
+        });
+    };
+
 
     /**
      * Creates ansible server, if already doesn't exist
