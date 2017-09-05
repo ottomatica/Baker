@@ -1,16 +1,16 @@
-'use strict'
+'use strict';
 
-module.exports = function (dep) {
-  let cmd = {}
+module.exports = function(dep) {
+    let cmd = {};
 
-  cmd.command = 'status'
-  cmd.desc = `show status for all Baker VMs`
-  cmd.builder = { }
-  cmd.handler = async function (argv) {
-    const { baker } = dep
+    cmd.command = 'status';
+    cmd.desc = `show status for all Baker VMs`;
+    cmd.builder = {};
+    cmd.handler = async function(argv) {
+        const { baker } = dep;
 
-    await baker.status();
-  }
+        await baker.status();
+    };
 
-  return cmd
-}
+    return cmd;
+};

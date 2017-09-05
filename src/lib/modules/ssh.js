@@ -1,7 +1,6 @@
 'use strict';
 
 module.exports = function(dep) {
-    // const { path, scp2, fs, Client, print, ssh } = dep;
     let result = {};
 
     result.copyFilesForAnsibleServer = async function(

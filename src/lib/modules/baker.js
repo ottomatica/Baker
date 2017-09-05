@@ -1,8 +1,6 @@
 'use strict';
 
 module.exports = function(dep) {
-    // const { vagrant, chalk, child_process, fs, yaml, mustache, path, prompt, ansible, boxes, configPath, print, ssh, baker } = dep;
-
     let result = {};
 
     result.init = function(){
@@ -91,7 +89,6 @@ module.exports = function(dep) {
             print.success('Baker server is now ready and running.');
             let ansibleSSHConfig = await baker.getSSHConfig(machine);
 
-            // HERE
             await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
 
             return machine;
@@ -115,7 +112,7 @@ module.exports = function(dep) {
                 });
 
                 machine.on('up-progress', function(data) {
-                    verbose(data);
+                    print.info(data);
                 });
             });
         }
@@ -180,7 +177,7 @@ module.exports = function(dep) {
             });
 
             machine.on('up-progress', function(data) {
-                verbose(data);
+                print.info(data);
             });
         }
     }
@@ -326,16 +323,6 @@ module.exports = function(dep) {
         fs.writeFileSync(vagrantFilePath, output);
     }
 
-    /**
-     * Private function
-     * @param {String} details
-     */
-    function verbose(details) {
-    //    if (argv.verbose || argv.v) {
-    //         console.log(details);
-    //     }
-    }
-
     result.status = async function() {
         const { chalk, vagrant, print } = dep;
 
@@ -412,7 +399,7 @@ module.exports = function(dep) {
 
         machine.on('up-progress', function(data) {
             //console.log(machine, progress, rate, remaining);
-            verbose(data);
+            print.info(data);
         });
     }
 
