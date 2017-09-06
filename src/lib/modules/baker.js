@@ -128,22 +128,49 @@ module.exports = function(dep) {
     }
 
     /**
+     * Private function
+     * Checks if a VM extery with given name exists
+     * @param {String} VMName
+     */
+    async function VMExists(VMName){
+        const { vagrant, print } = dep;
+
+        vagrant.globalStatus(function(err, out) {
+            if (err) print.error(err);
+            // Checking if the VM exists
+            return out.some(vm => vm.name === VMName);
+        });
+    }
+
+    /**
+     * // TODO:
+     * Private function
+     * Checks if a VM status matches given status
+     * @param {String} VMName
+     * @param {String} status = running | poweroff | ...
+     */
+    async function VMStatusIs(VMName, status){
+
+    }
+
+    /**
      * Destroy VM
      * @param {String} VMName
      */
-    result.destroyVM = function(VMName) {
+    result.destroyVM = async function(VMName) {
         const { child_process, print, baker } = dep;
 
-        let id = await baker.getVagrantIDByName(VMName)
+        let id = await baker.getVagrantIDByName(VMName);
 
         child_process.execSync(`vagrant destroy ${id} -f`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
         print.success(`Destroyed VM: ${id}`);
+        return;
     }
 
     /**
      * Prune
      */
-    result.prune = function() {
+    result.prune = async function() {
         const { child_process, print, baker } = dep;
 
         child_process.execSync('vagrant global-status --prune', {
@@ -154,49 +181,45 @@ module.exports = function(dep) {
 
         // Show status after prune completed
         await baker.status();
+        return;
     }
 
     /**
      * Shut down VM
      * @param {String} id
      */
-    result.haltVM = function(VMName, force=false) {
+    result.haltVM = async function(VMName, force=false) {
         const { child_process, print, baker } = dep;
 
         let id = await baker.getVagrantIDByName(VMName);
         child_process.execSync(`vagrant halt ${id} ${force ? '-f' : '' }`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
         print.success(`Stopped VM: ${id}`);
+        return;
     }
 
     /**
      * Start VM
      * @param {String} name
      */
-    result.upVM = async function(name) {
-        const { vagrant, path, print, boxes } = dep;
+    result.upVM = async function(VMName) {
+        const { vagrant, print } = dep;
 
-        vagrant.globalStatus(function(err, out) {
-            if (err) print.error(err);
+        let exists = await VMExists(VMName);
 
-            // Checking if the VM exists
-            let exists = out.some(vm => vm.name === name);
-
-            if(exists){
-                let VMPath = out.find(vm => vm.name === name).cwd;
-                let machine = vagrant.create({ cwd: VMPath });
-                machine.up(async function(err, out) {
-                    if (err) print.error(err);
-                    else print.success(`Started VM: ${name}`);
-                    return;
-                });
-            }
-
-            else {
-                print.error(`cannot find machine '${name}'.`);
-                print.error(`Please check status by running: $ baker status`, 1);
+        if(exists){
+            let VMPath = out.find(vm => vm.name === VMName).cwd;
+            let machine = vagrant.create({ cwd: VMPath });
+            machine.up(async function(err, out) {
+                if (err) print.error(err);
+                else print.success(`Started VM: ${VMName}`);
                 return;
-            }
-        });
+            });
+        }
+        else {
+            print.error(`cannot find machine '${VMName}'.`);
+            print.error(`Please check status by running: $ baker status`, 1);
+            return;
+        }
     };
 
     /**
@@ -262,7 +285,6 @@ module.exports = function(dep) {
         baker.destroyVM(await baker.getVagrantIDByName('ansible-srv'));
         await baker.installAnsibleServer();
     }
-
 
     /**
      * Get ssh configurations

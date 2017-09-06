@@ -9,7 +9,7 @@ module.exports = function(dep) {
     cmd.handler = async function(argv) {
         const { baker } = dep;
 
-        baker.prune();
+        await baker.prune();
     };
 
     return cmd;

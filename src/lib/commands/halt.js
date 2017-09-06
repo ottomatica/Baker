@@ -18,7 +18,7 @@ module.exports = function(dep) {
         const { baker } = dep;
         const { VMName, force } = argv;
 
-        baker.haltVM(VMName, force)
+        await baker.haltVM(VMName, force)
     };
 
     return cmd;
