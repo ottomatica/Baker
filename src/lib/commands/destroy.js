@@ -10,7 +10,7 @@ module.exports = function(dep) {
         const { baker } = dep;
         const { VMName } = argv;
 
-        baker.destroyVM(await baker.getVagrantIDByName(VMName));
+        baker.destroyVM(VMName);
     };
 
     return cmd;

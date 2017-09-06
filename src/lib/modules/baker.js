@@ -129,10 +129,12 @@ module.exports = function(dep) {
 
     /**
      * Destroy VM
-     * @param {String} id
+     * @param {String} VMName
      */
-    result.destroyVM = function(id) {
-        const { child_process, print } = dep;
+    result.destroyVM = function(VMName) {
+        const { child_process, print, baker } = dep;
+
+        let id = await baker.getVagrantIDByName(VMName)
 
         child_process.execSync(`vagrant destroy ${id} -f`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
         print.success(`Destroyed VM: ${id}`);
