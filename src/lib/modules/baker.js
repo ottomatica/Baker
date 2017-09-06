@@ -141,6 +141,22 @@ module.exports = function(dep) {
     }
 
     /**
+     * Prune
+     */
+    result.prune = function() {
+        const { child_process, print, baker } = dep;
+
+        child_process.execSync('vagrant global-status --prune', {
+            stdio: 'inherit'
+        });
+
+        print.info('Removed invalid VM enteries.')
+
+        // Show status after prune completed
+        await baker.status();
+    }
+
+    /**
      * Shut down VM
      * @param {String} id
      */
