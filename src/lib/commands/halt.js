@@ -18,8 +18,7 @@ module.exports = function(dep) {
         const { baker } = dep;
         const { VMName, force } = argv;
 
-        let VMID = await baker.getVagrantIDByName(VMName);
-        baker.haltVM(VMID, force)
+        baker.haltVM(VMName, force)
     };
 
     return cmd;

@@ -144,9 +144,10 @@ module.exports = function(dep) {
      * Shut down VM
      * @param {String} id
      */
-    result.haltVM = function(id, force=false) {
-        const { child_process, print } = dep;
+    result.haltVM = function(VMName, force=false) {
+        const { child_process, print, baker } = dep;
 
+        let id = await baker.getVagrantIDByName(VMName);
         child_process.execSync(`vagrant halt ${id} ${force ? '-f' : '' }`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
         print.success(`Stopped VM: ${id}`);
     }
