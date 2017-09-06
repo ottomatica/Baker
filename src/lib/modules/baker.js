@@ -151,21 +151,34 @@ module.exports = function(dep) {
 
     /**
      * Start VM
-     * @param {String} id
-     * TODO: make sure the VM exists before attempting to start it
+     * @param {String} name
      */
     result.upVM = async function(name) {
         const { vagrant, path, print, boxes } = dep;
 
-        let machine = vagrant.create({ cwd: path.join(boxes, name) });
-        machine.up(async function(err, out) {
+        vagrant.globalStatus(function(err, out) {
             if (err) print.error(err);
-            else print.success(`Started VM: ${name}`);
 
-            return;
+            // Checking if the VM exists
+            let exists = out.some(vm => vm.name === name);
+
+            if(exists){
+                let VMPath = out.find(vm => vm.name === name).cwd;
+                let machine = vagrant.create({ cwd: VMPath });
+                machine.up(async function(err, out) {
+                    if (err) print.error(err);
+                    else print.success(`Started VM: ${name}`);
+                    return;
+                });
+            }
+
+            else {
+                print.error(`cannot find machine '${name}'.`);
+                print.error(`Please check status by running: $ baker status`, 1);
+                return;
+            }
         });
     };
-
 
     /**
      * Creates ansible server, if already doesn't exist
