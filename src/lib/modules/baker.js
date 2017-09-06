@@ -410,7 +410,6 @@ module.exports = function(dep) {
     result.bake = async function(ansibleSSHConfig, ansibleVM, scriptPath) {
         var { yaml, path, fs, vagrant, baker, print, ssh, boxes, configPath } = dep;
 
-        // TODO: Use version fetched from github.
         let doc = yaml.safeLoad(fs.readFileSync(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         let dir = path.join(boxes, doc.name);
