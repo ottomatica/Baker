@@ -21,9 +21,7 @@ module.exports = function(dep) {
         return new Promise((resolve, reject) => {
             vagrant.globalStatus(function(err, out) {
                 if (err) chalk.red(err);
-                out.forEach(vm => {
-                    if (vm.id == id) resolve(vm.state);
-                });
+                resolve(out.filter(vm => vm.id == id).state);
             });
         });
     };
@@ -135,22 +133,35 @@ module.exports = function(dep) {
     async function VMExists(VMName){
         const { vagrant, print } = dep;
 
-        vagrant.globalStatus(function(err, out) {
-            if (err) print.error(err);
-            // Checking if the VM exists
-            return out.some(vm => vm.name === VMName);
-        });
+        return new Promise((resolve, reject)=>{
+            vagrant.globalStatus(function(err, out) {
+                if (err) print.error(err);
+                // Checking if the VM exists
+                resolve(out.some(vm => vm.name === VMName));
+            });
+        })
     }
 
     /**
-     * // TODO:
      * Private function
-     * Checks if a VM status matches given status
+     * Returns the path of the VM, undefined if VM doesn't exist
      * @param {String} VMName
-     * @param {String} status = running | poweroff | ...
      */
-    async function VMStatusIs(VMName, status){
+    async function getVMPath(VMName){
+        const { vagrant, print } = dep;
 
+        return new Promise((resolve, reject)=>{
+            vagrant.globalStatus(function(err, out) {
+                if (err) print.error(err);
+
+                let VM = out.find(vm => vm.name === VMName);
+
+                if(VM)
+                    resolve(VM.cwd);
+                else
+                    resolve(undefined);
+            });
+        })
     }
 
     /**
@@ -204,10 +215,9 @@ module.exports = function(dep) {
     result.upVM = async function(VMName) {
         const { vagrant, print } = dep;
 
-        let exists = await VMExists(VMName);
+        let VMPath = await getVMPath(VMName);
 
-        if(exists){
-            let VMPath = out.find(vm => vm.name === VMName).cwd;
+        if(VMPath){
             let machine = vagrant.create({ cwd: VMPath });
             machine.up(async function(err, out) {
                 if (err) print.error(err);
