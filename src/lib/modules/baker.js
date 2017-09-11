@@ -16,7 +16,7 @@ module.exports = function(dep) {
      * @param {String} id
      */
     result.getState = async function(id) {
-        const { vagrant, chalk } = dep;
+        const { vagrant, chalk, Promise } = dep;
 
         return new Promise((resolve, reject) => {
             vagrant.globalStatus(function(err, out) {
@@ -30,7 +30,7 @@ module.exports = function(dep) {
      * get vagrant id of VMs by name
      */
     result.getVagrantIDByName = async function(name) {
-        const { vagrant } = dep;
+        const { vagrant, Promise } = dep;
 
         return new Promise((resolve, reject) => {
             vagrant.globalStatus(function(err, out) {
@@ -76,7 +76,7 @@ module.exports = function(dep) {
      * ------
      */
     result.prepareAnsibleServer = async function(bakerScriptPath) {
-        const { vagrant, fs, yaml, baker, print, ssh, ansible, path } = dep;
+        const { vagrant, fs, yaml, baker, print, ssh, ansible, path, Promise } = dep;
 
         let machine = vagrant.create({ cwd: ansible });
         let doc = yaml.safeLoad(fs.readFileSync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
@@ -131,7 +131,7 @@ module.exports = function(dep) {
      * @param {String} VMName
      */
     async function VMExists(VMName){
-        const { vagrant, print } = dep;
+        const { vagrant, print, Promise } = dep;
 
         return new Promise((resolve, reject)=>{
             vagrant.globalStatus(function(err, out) {
@@ -148,7 +148,7 @@ module.exports = function(dep) {
      * @param {String} VMName
      */
     async function getVMPath(VMName){
-        const { vagrant, print } = dep;
+        const { vagrant, print, Promise } = dep;
 
         return new Promise((resolve, reject)=>{
             vagrant.globalStatus(function(err, out) {
@@ -301,7 +301,7 @@ module.exports = function(dep) {
      * @param {Obj} machine
      */
     result.getSSHConfig = async function(machine) {
-        const { print } = dep;
+        const { print, Promise } = dep;
 
         return new Promise((resolve, reject) => {
             machine.sshConfig(function(err, sshConfig) {
@@ -337,7 +337,7 @@ module.exports = function(dep) {
     }
 
     result.runAnsibleVault = async function(doc, pass, dest, sshConfig, vmSSHConfigUser) {
-        const { ssh } = dep;
+        const { ssh, Promise } = dep;
 
         return new Promise( async (resolve, reject) => {
             let key = doc.bake.vault.checkout.key;
@@ -363,7 +363,7 @@ module.exports = function(dep) {
     }
 
     result.promptValue = async function(propertyName, description,hidden=false) {
-        const { prompt } = dep;
+        const { prompt, Promise } = dep;
 
         return new Promise((resolve, reject) => {
             prompt.start();
