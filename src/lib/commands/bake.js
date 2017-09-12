@@ -22,7 +22,7 @@ module.exports = function(dep) {
     };
     cmd.handler = async function(argv) {
         const { local, repo } = argv;
-        const { path, baker, cloneRepo, validator } = dep;
+        const { path, baker, cloneRepo, validator, print } = dep;
 
         let ansibleVM;
 
