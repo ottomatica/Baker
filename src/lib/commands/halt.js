@@ -15,10 +15,15 @@ module.exports = function(dep) {
     };
 
     cmd.handler = async function(argv) {
-        const { baker } = dep;
+        const { baker, print } = dep;
         const { VMName, force } = argv;
 
-        await baker.haltVM(VMName, force)
+        try {
+            await baker.haltVM(VMName, force);
+            print.success(`Stopped VM: ${VMName}`);
+        } catch(err) {
+            print.error(err);
+        }
     };
 
     return cmd;

@@ -7,10 +7,15 @@ module.exports = function(dep) {
     cmd.desc = `remove a VM and it's associated files`;
     cmd.builder = {};
     cmd.handler = async function(argv) {
-        const { baker } = dep;
+        const { baker, print } = dep;
         const { VMName } = argv;
 
-        await baker.destroyVM(VMName);
+        try {
+            await baker.destroyVM(VMName);
+            print.success(`Destroyed VM: ${VMName}`);
+        } catch (err) {
+            print.error(err);
+        }
     };
 
     return cmd;

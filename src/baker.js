@@ -2,7 +2,7 @@ const Promise = require('bluebird');
 const path = require('path');
 const camelCase = require('camelcase');
 const requireDir = require('require-dir');
-const fs = require('fs-extra');
+const fs = Promise.promisifyAll(require('fs-extra'));
 const mustache = require('mustache');
 const child_process = require('child_process');
 const vagrant = Promise.promisifyAll(require('node-vagrant'));
@@ -14,6 +14,7 @@ const chalk = require('chalk');
 const validator = require('validator');
 const yaml = require('js-yaml');
 const slash = require('slash');
+const git = require('simple-git');
 require('console.table');
 
 const boxes = path.join(require('os').homedir(), '.baker');
@@ -38,6 +39,7 @@ let dep = {
     yaml,
     slash,
     prompt,
+    git,
     boxes,
     ansible,
     configPath

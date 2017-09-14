@@ -15,12 +15,18 @@ module.exports = function (dep) {
   }
   cmd.handler = async function (argv) {
     const { force } = argv
-    const { baker } = dep
+    const { baker, print } = dep
 
-    if(force)
-        await baker.reinstallAnsibleServer()
-    else
-        await baker.installAnsibleServer()
+    try {
+        if(force)
+            await baker.reinstallAnsibleServer();
+        else
+            await baker.installAnsibleServer();
+        print.info('Baker control machine installed successfully.')
+    } catch (err) {
+        print.error(err);
+    }
+
   }
 
   return cmd

@@ -8,9 +8,13 @@ module.exports = function(dep) {
     cmd.builder = {};
     cmd.handler = async function(argv) {
         const { VMName } = argv;
-        const { baker } = dep;
+        const { baker, print } = dep;
 
-        baker.bakerSSH(VMName);
+        try {
+            await baker.bakerSSH(VMName);
+        } catch (err) {
+            print.error(err);
+        }
     };
 
     return cmd;

@@ -8,10 +8,15 @@ module.exports = function(dep) {
     cmd.builder = {};
 
     cmd.handler = async function(argv) {
-        const { baker } = dep;
+        const { baker, print } = dep;
         const { VMName } = argv;
 
-        await baker.upVM(VMName);
+        try{
+            await baker.upVM(VMName);
+            print.success(`Started VM: ${VMName}`);
+        } catch (err){
+            print.error(err);
+        }
     };
 
     return cmd;
