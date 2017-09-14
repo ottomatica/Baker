@@ -18,14 +18,6 @@ module.exports = function(dep) {
     result.getState = async function(id) {
         const { vagrant, chalk, Promise } = dep;
 
-        // return new Promise((resolve, reject) => {
-        //     vagrant.globalStatus(function(err, out) {
-        //         if (err) chalk.red(err);
-        //         resolve(out.filter(vm => vm.id == id)[0].state);
-        //     });
-        // });
-
-        //Check
         try {
             let VMs = await vagrant.globalStatusAsync();
             let VM = VMs.filter(VM => VM.id == id)[0];
@@ -116,74 +108,7 @@ module.exports = function(dep) {
                 throw err;
             }
         }
-
-        // if(bakerVMID){
-        //     let state = await baker.getState(bakerVMID);
-        //     if (state == 'running') {
-        //         print.success('Baker server is now ready and running.');
-        //         let ansibleSSHConfig = await baker.getSSHConfig(machine);
-
-        //         await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
-
-        //         return machine;
-        //     }
-
-        //     // state can be aborted, suspended, or not provisioned.
-        //     else {
-        //         print.success('Starting Baker server.');
-        //         return new Promise((resolve, reject) => {
-        //             machine.up(async function(err, out) {
-        //                 let ansibleSSHConfig = await baker.getSSHConfig(machine);
-
-        //                 if(err)
-        //                     print.error(err);
-        //                 else
-        //                     print.success('Baker server is now ready and running.');
-
-        //                 await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
-
-        //                 resolve(machine);
-        //             });
-
-        //             machine.on('up-progress', function(data) {
-        //                 print.info(data);
-        //             });
-        //         });
-        //     }
-        // }
-
-        // else {
-        //     print.error('Baker server is not installed.');
-        //     print.error('To install Baker server run: ', 1);
-        //     print.error('$ baker setup', 1);
-        // }
     }
-
-    /**
-     * Private function
-     * Checks if a VM extery with given name exists
-     * @param {String} VMName
-     */
-    // async function VMExists(VMName){
-    //     const { vagrant, print, Promise } = dep;
-
-    //     // return new Promise((resolve, reject)=>{
-    //     //     vagrant.globalStatus(function(err, out) {
-    //     //         if (err) print.error(err);
-    //     //         // Checking if the VM exists
-    //     //         resolve(out.some(vm => vm.name === VMName));
-    //     //     });
-    //     // })
-
-    //     return vagrant.globalStatusAsync()
-    //         .then((VMs)=>{
-    //             resolve(VMs.some(VM => VM.name === VMName));
-    //         })
-    //         .catch((err)=>{
-    //             print.error(err);
-    //         })
-
-    // }
 
     /**
      * Private function
@@ -358,19 +283,6 @@ module.exports = function(dep) {
      */
     result.getSSHConfig = async function(machine) {
         const { print, Promise } = dep;
-
-        // return new Promise((resolve, reject) => {
-        //     machine.sshConfig(function(err, sshConfig) {
-        //         // console.log( err || "ssh info:" );
-        //         if (sshConfig && sshConfig.length > 0) {
-        //             // callback(sshConfig[0])
-        //             resolve(sshConfig[0]);
-        //         } else {
-        //             // callback(err);
-        //             print.error(`Couldn't get private ssh key of new VM: ${err}`);
-        //         }
-        //     });
-        // });
 
         try {
             let sshConfig = await machine.sshConfigAsync();
@@ -571,53 +483,6 @@ module.exports = function(dep) {
         } catch (err) {
             throw err;
         }
-
-        // machine.up(async function(err, out) {
-        //     if(err)
-        //         print.error(err, 1);
-        //     else
-        //         print.success('New VM is ready and running.', 1);
-
-        //     let sshConfig = await baker.getSSHConfig(machine);
-        //     let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
-        //     await ssh.copyFromHostToVM(
-        //         sshConfig.private_key,
-        //         `/home/vagrant/baker/${doc.name}/id_rsa`,
-        //         ansibleSSHConfig
-        //     );
-
-        //     await baker.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig)
-        //     await baker.setKnownHosts(ip, ansibleSSHConfig);
-
-        //     if(doc.bake && doc.bake.ansible && doc.bake.ansible.playbooks){
-        //         print.info('Running your Ansible playbooks.', 1);
-        //         for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ ) {
-        //             var cmd = doc.bake.ansible.playbooks[i];
-        //             await baker.runAnsiblePlaybook(
-        //                 doc, cmd, ansibleSSHConfig
-        //             )
-        //         }
-        //     }
-
-        //     if( doc.bake && doc.bake.vault && doc.bake.vault.checkout && doc.bake.vault.checkout.key) {
-        //         print.info('Checking out keys from vault.', 1);
-        //         let vaultFile = `/home/vagrant/baker/${doc.name}/baker-vault.yml`;
-        //         await ssh.copyFromHostToVM(
-        //             path.resolve( scriptPath, doc.bake.vault.source ),
-        //             vaultFile,
-        //             ansibleSSHConfig
-        //         );
-        //         // prompt vault pass
-        //         let pass = await baker.promptValue('pass', `vault pass for ${doc.bake.vault.source}`, hidden=true);
-        //         // ansible-vault to checkout key and copy to dest.
-        //         await baker.runAnsibleVault(doc, pass, doc.bake.vault.checkout.dest, ansibleSSHConfig, sshConfig)
-        //     }
-        // });
-
-        // machine.on('up-progress', function(data) {
-        //     //console.log(machine, progress, rate, remaining);
-        //     print.info(data);
-        // });
     }
 
     return result;
