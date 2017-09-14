@@ -19,7 +19,7 @@ module.exports = function(dep) {
         const { VMName, force } = argv;
 
         try {
-            await spinner.spinPromise(baker.haltVM(VMName, force), `Setopping VM: ${VMName}`, spinnerDot);
+            await spinner.spinPromise(baker.haltVM(VMName, force), `Stopping VM: ${VMName}`, spinnerDot);
         } catch(err) {
             print.error(err);
         }
