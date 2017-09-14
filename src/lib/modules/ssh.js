@@ -91,7 +91,7 @@ module.exports = function(dep) {
                                 resolve();
                             })
                             .on('data', function(data) {
-                                console.log('STDOUT: ' + data);
+                                // console.log('STDOUT: ' + data);
                             })
                             .stderr.on('data', function(data) {
                                 console.log('STDERR: ' + data);

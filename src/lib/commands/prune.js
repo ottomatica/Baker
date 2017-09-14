@@ -7,11 +7,10 @@ module.exports = function(dep) {
     cmd.desc = 'prunes invalid VMs (e.g. partially removed due to a failure)';
     cmd.builder = {};
     cmd.handler = async function(argv) {
-        const { baker, print } = dep;
+        const { baker, print, spinner, spinnerDot } = dep;
 
         try {
-            await baker.prune();
-            print.info('Removed invalid VM enteries.')
+            await spinner.spinPromise(baker.prune(), 'Removing invalid VM enteries.', spinnerDot);
         } catch(err){
             print.error(err);
         }

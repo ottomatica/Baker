@@ -15,12 +15,11 @@ module.exports = function(dep) {
     };
 
     cmd.handler = async function(argv) {
-        const { baker, print } = dep;
+        const { baker, print, spinner, spinnerDot } = dep;
         const { VMName, force } = argv;
 
         try {
-            await baker.haltVM(VMName, force);
-            print.success(`Stopped VM: ${VMName}`);
+            await spinner.spinPromise(baker.haltVM(VMName, force), `Setopping VM: ${VMName}`, spinnerDot);
         } catch(err) {
             print.error(err);
         }

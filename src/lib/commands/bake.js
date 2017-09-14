@@ -22,7 +22,7 @@ module.exports = function(dep) {
     };
     cmd.handler = async function(argv) {
         const { local, repo } = argv;
-        const { path, baker, cloneRepo, validator, print } = dep;
+        const { path, baker, cloneRepo, validator, print, spinner, spinnerDot } = dep;
 
         try{
             let ansibleVM;
@@ -39,12 +39,16 @@ module.exports = function(dep) {
                 process.exit(1);
             }
 
-            validator.validateBakerScript(bakePath);
-            ansibleVM = await baker.prepareAnsibleServer(bakePath);
-            let sshConfig = await baker.getSSHConfig(ansibleVM);
-            await baker.bake(sshConfig, ansibleVM, bakePath);
+            let validation = await spinner.spinPromise(validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
 
-            print.info('Baking VM finished.');
+            ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+
+            let sshConfig = await baker.getSSHConfig(ansibleVM);
+
+            let baking = baker.bake(sshConfig, ansibleVM, bakePath);
+            await spinner.spinPromise(baking, 'Baking VM', spinnerDot);
+
+            // print.info('Baking VM finished.');
         } catch (err) {
             print.error(err);
         }

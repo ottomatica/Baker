@@ -15,11 +15,13 @@ const validator = require('validator');
 const yaml = require('js-yaml');
 const slash = require('slash');
 const git = require('simple-git');
+const ora = require('ora');
 require('console.table');
 
 const boxes = path.join(require('os').homedir(), '.baker');
 const ansible = path.join(boxes, 'ansible-srv');
 const configPath = path.join(__dirname, './config');
+const spinnerDot = 'monkey';
 
 // External dependencies to pass to the commands
 let dep = {
@@ -40,6 +42,8 @@ let dep = {
     slash,
     prompt,
     git,
+    ora,
+    spinnerDot,
     boxes,
     ansible,
     configPath

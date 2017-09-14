@@ -8,11 +8,10 @@ module.exports = function(dep) {
         'initializes a new Baker environment by creating a baker.yml file';
     cmd.builder = {};
     cmd.handler = async function(argv) {
-        const { baker, print } = dep;
+        const { baker, print, spinner, spinnerDot } = dep;
 
         try {
-            await baker.init();
-            print.info('Created baker.yml in current directory')
+            await spinner.spinPromise(baker.init(), 'Creating baker.yml in current directory', spinnerDot);
         } catch (err){
             print.error(err);
         }

@@ -7,10 +7,10 @@ module.exports = function(dep) {
     cmd.desc = `show status for all Baker VMs`;
     cmd.builder = {};
     cmd.handler = async function(argv) {
-        const { baker, print } = dep;
+        const { baker, print, spinner, spinnerDot } = dep;
 
         try {
-            await baker.status();
+            await spinner.spinPromise(baker.status(), `Getting status of Baker VMs`, spinnerDot);
         } catch (err) {
             print.error(err);
         }

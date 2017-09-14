@@ -292,7 +292,7 @@ module.exports = function(dep) {
                 throw '';
             }
         } catch (err) {
-            throw `Couldn't get private ssh key of machine`;
+            throw `Couldn't get private ssh key of machine ${err}`;
         }
     }
 
@@ -410,7 +410,7 @@ module.exports = function(dep) {
             let VMs = await vagrant.globalStatusAsync();
             // Only showing baker VMs
             VMs = VMs.filter(VM => VM.cwd.includes('.baker/'));
-            console.table('Baker status: ', VMs);
+            console.table('\nBaker status: ', VMs);
         } catch (err) {
             throw err
         }
