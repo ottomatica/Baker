@@ -3,6 +3,21 @@
 module.exports = function(dep) {
     let result = {};
 
+    result.validateDependencies = async function(){
+        const { hasbin, Promise } = dep;
+
+        return new Promise((resolve, reject)=>{
+            hasbin('vagrant', (hasVagrant)=>{
+                hasbin('virtualbox', (hasVB)=>{
+                    if(hasVB && hasVagrant)
+                        resolve(true);
+                    else
+                        reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
+                })
+            })
+        })
+    }
+
     result.validateBakerScript = async function(bakerScriptPath) {
         const { path, fs, yaml, validator, print } = dep;
 

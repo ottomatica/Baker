@@ -15,7 +15,14 @@ module.exports = function (dep) {
   }
   cmd.handler = async function (argv) {
     const { force } = argv
-    const { baker, print, spinner, spinnerDot } = dep
+    const { baker, print, spinner, spinnerDot, validator } = dep
+
+    try {
+        await spinner.spinPromise(validator.validateDependencies(), 'Checking dependencies', spinnerDot);
+    } catch (err){
+        print.error(err);
+        process.exit(1);
+    }
 
     try {
         if(force)

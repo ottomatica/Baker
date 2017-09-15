@@ -16,6 +16,7 @@ const yaml = require('js-yaml');
 const slash = require('slash');
 const git = require('simple-git');
 const ora = require('ora');
+const hasbin = require('hasbin');
 require('console.table');
 
 const boxes = path.join(require('os').homedir(), '.baker');
@@ -43,6 +44,7 @@ let dep = {
     prompt,
     git,
     ora,
+    hasbin,
     spinnerDot,
     boxes,
     ansible,
