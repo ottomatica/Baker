@@ -3,12 +3,12 @@
 module.exports = function(dep) {
     let result = {};
 
-    result.init = function(){
+    result.init = async function(){
         const { fs, path, configPath } = dep;
 
-        let bakerYML = fs.readFileSync(path.join(configPath, './bakerTemplate.yml'), 'utf8');
+        let bakerYML = await fs.readFileAsync(path.join(configPath, './bakerTemplate.yml'), 'utf8');
         let dir = path.resolve(process.cwd());
-        fs.writeFileSync('baker.yml', bakerYML, {encoding:'utf8'});
+        await fs.writeFileAsync('baker.yml', bakerYML, {encoding:'utf8'});
     }
 
     /**
@@ -16,39 +16,32 @@ module.exports = function(dep) {
      * @param {String} id
      */
     result.getState = async function(id) {
-        const { vagrant, chalk } = dep;
+        const { vagrant, chalk, Promise } = dep;
 
-        return new Promise((resolve, reject) => {
-            vagrant.globalStatus(function(err, out) {
-                if (err) chalk.red(err);
-                out.forEach(vm => {
-                    if (vm.id == id) resolve(vm.state);
-                });
-            });
-        });
+        try {
+            let VMs = await vagrant.globalStatusAsync();
+            let VM = VMs.filter(VM => VM.id == id)[0];
+            if(!VM)
+                throw  `Cannot find machine: ${id}`;
+            return VM.state;
+        } catch (err) {
+            throw err;
+        }
     };
 
     /**
      * get vagrant id of VMs by name
      */
-    result.getVagrantIDByName = async function(name) {
+    result.getVagrantIDByName = async function(VMName) {
         const { vagrant } = dep;
 
-        return new Promise((resolve, reject) => {
-            vagrant.globalStatus(function(err, out) {
-                out.forEach(vm => {
-                    if (
-                        new RegExp(name.toLowerCase()).test(
-                            vm.cwd.toLowerCase()
-                        )
-                    ) {
-                        resolve(vm.id);
-                    }
-                });
-                resolve(undefined);
-            });
-        });
-    };
+        let VMs = await vagrant.globalStatusAsync();
+        let VM = VMs.filter(VM => VM.name == VMName)[0];
+
+        if(!VM)
+            throw  `Cannot find machine: ${VMName}`;
+        return VM.id;
+    }
 
     /**
      * It will ssh to the vagrant box
@@ -57,12 +50,15 @@ module.exports = function(dep) {
     result.bakerSSH = async function(name) {
         const { print, baker, child_process } = dep;
 
-        let id = await baker.getVagrantIDByName(name);
-        if (id != undefined)
-            child_process.execSync(`vagrant ssh ${id}`, { stdio: 'inherit' });
-        else {
-            print.error(`No VM found with this name!`);
-            process.exit(1);
+        try {
+            let id = await baker.getVagrantIDByName(name);
+            try {
+                child_process.execSync(`vagrant ssh ${id}`, {stdio: ['inherit', 'inherit', 'ignore']});
+            } catch (err) {
+                throw `VM must be running to open SSH connection. Run \`baker status\` to check status of your VMs.`
+            }
+        } catch(err) {
+            throw err;
         }
     };
 
@@ -78,165 +74,189 @@ module.exports = function(dep) {
      * ------
      */
     result.prepareAnsibleServer = async function(bakerScriptPath) {
-        const { vagrant, fs, yaml, baker, print, ssh, ansible, path } = dep;
+        const { vagrant, fs, yaml, baker, print, ssh, ansible, path, Promise } = dep;
 
         let machine = vagrant.create({ cwd: ansible });
-        let doc = yaml.safeLoad(fs.readFileSync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
+        let doc = yaml.safeLoad(await fs.readFileAsync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
 
-        let bakerVMID = await baker.getVagrantIDByName('ansible-srv');
-
-        if(bakerVMID){
+        try {
+            let bakerVMID = await baker.getVagrantIDByName('baker');
             let state = await baker.getState(bakerVMID);
-            if (state == 'running') {
-                print.success('Baker server is now ready and running.');
+            if (state === 'running') {
+                let ansibleSSHConfig = await baker.getSSHConfig(machine);
+                await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
+                return machine;
+            } else {
+                try {
+                    await machine.upAsync();
+                    // machine.on('up-progress', function(data) {
+                    //     print.info(data);
+                    // });
+                } catch (err) {
+                    throw err;
+                }
                 let ansibleSSHConfig = await baker.getSSHConfig(machine);
 
                 await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
 
                 return machine;
             }
-
-            // state can be aborted, suspended, or not provisioned.
-            else {
-                print.success('Starting Baker server.');
-                return new Promise((resolve, reject) => {
-                    machine.up(async function(err, out) {
-                        let ansibleSSHConfig = await baker.getSSHConfig(machine);
-
-                        if(err)
-                            print.error(err);
-                        else
-                            print.success('Baker server is now ready and running.');
-
-                        await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
-
-                        resolve(machine);
-                    });
-
-                    machine.on('up-progress', function(data) {
-                        print.info(data);
-                    });
-                });
+        } catch (err) {
+            if (err === `Cannot find machine: baker`) {
+                throw `Baker control machine is not installed. run \`baker setup\` to install control machine`;
+            } else {
+                throw err;
             }
-        }
-
-        else {
-            print.error('Baker server is not installed.');
-            print.error('To install Baker server run: ', 1);
-            print.error('$ baker setup', 1);
         }
     }
 
     /**
-     * Destroy VM
-     * @param {String} id
+     * Private function
+     * Returns the path of the VM, undefined if VM doesn't exist
+     * @param {String} VMName
      */
-    result.destroyVM = function(id) {
-        const { child_process, print } = dep;
+    async function getVMPath(VMName){
+        const { vagrant, print, Promise } = dep;
 
-        child_process.execSync(`vagrant destroy ${id} -f`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
-        print.success(`Destroyed VM: ${id}`);
+        let VMs = await vagrant.globalStatusAsync();
+        let VM = VMs.find(VM => VM.name === VMName);
+
+        if(VM)
+            return VM.cwd;
+        else
+            throw `Cannot find machine: ${VMName}`;
+    }
+
+    /**
+     * Destroy VM
+     * @param {String} VMName
+     */
+    result.destroyVM = async function(VMName) {
+        const { vagrant } = dep;
+
+        try {
+            let VMPath = await getVMPath(VMName);
+            let machine = vagrant.create({ cwd: VMPath });
+
+            try {
+                await machine.destroyAsync();
+            } catch (err){
+                throw `Failed to destroy machine ${VMName}`;
+            }
+        } catch (err) {
+            throw err;
+        }
+
+        return;
+    }
+
+    /**
+     * Prune
+     */
+    result.prune = async function() {
+        const { child_process, print, baker, vagrant } = dep;
+
+        try {
+            await vagrant.globalStatusAsync('--prune');
+            await baker.status();
+            return;
+        } catch (err) {
+            throw err;
+        }
     }
 
     /**
      * Shut down VM
      * @param {String} id
      */
-    result.haltVM = function(id, force=false) {
-        const { child_process, print } = dep;
+    result.haltVM = async function(VMName, force=false) {
+        const { print, vagrant, baker } = dep;
 
-        child_process.execSync(`vagrant halt ${id} ${force ? '-f' : '' }`); // { stdio: (argv.verbose? 'inherit' : 'ignore') }
-        print.success(`Stopped VM: ${id}`);
+        try {
+            let VMPath = await getVMPath(VMName);
+            let machine = vagrant.create({ cwd: VMPath });
+
+            try {
+                await machine.haltAsync();
+            } catch (err){
+                throw `Failed to shutdown machine ${VMName}`;
+            }
+        } catch (err) {
+            throw err;
+        }
+
+        return;
     }
 
     /**
      * Start VM
      * @param {String} name
      */
-    result.upVM = async function(name) {
-        const { vagrant, path, print, boxes } = dep;
+    result.upVM = async function(VMName) {
+        const { vagrant, print } = dep;
 
-        vagrant.globalStatus(function(err, out) {
-            if (err) print.error(err);
-
-            // Checking if the VM exists
-            let exists = out.some(vm => vm.name === name);
-
-            if(exists){
-                let VMPath = out.find(vm => vm.name === name).cwd;
-                let machine = vagrant.create({ cwd: VMPath });
-                machine.up(async function(err, out) {
-                    if (err) print.error(err);
-                    else print.success(`Started VM: ${name}`);
-                    return;
-                });
+        try {
+            let VMPath = await getVMPath(VMName);
+            let machine = vagrant.create({ cwd: VMPath });
+            try {
+                await machine.upAsync();
+            } catch (err){
+                throw `Failed to start machine ${VMName}`;
             }
+        } catch (err){
+            throw err;
+        }
 
-            else {
-                print.error(`cannot find machine '${name}'.`);
-                print.error(`Please check status by running: $ baker status`, 1);
-                return;
-            }
-        });
+        return;
     };
 
     /**
      * Creates ansible server, if already doesn't exist
      */
     result.installAnsibleServer = async function() {
-        const { baker, print, fs, mustache, path, configPath, vagrant, ansible, boxes } = dep;
+        const { baker, fs, mustache, path, configPath, vagrant, ansible, boxes } = dep;
 
-        if ((await baker.getVagrantIDByName('ansible-srv')) != undefined) {
-            print.success('Baker server is already provisioned.');
-
-            // Starting Baker VM, if not running
-            if (await baker.getState(await baker.getVagrantIDByName('ansible-srv')) != 'running'){
-                let machine = vagrant.create({ cwd: ansible });
-                machine.up(function(err, out) {
-                    if (err)
-                        print.error(`Couldn't start Baker server!: ${err}`, 1);
-                    else
-                        print.success('Baker server is now ready and running.');
-
-                    return;
-                });
-            } else {
-                print.success('Baker server is already running.')
-            }
-
-            return;
-        } else {
-            if (!fs.existsSync(boxes)) {
-                fs.mkdirSync(boxes);
-            }
-            if (!fs.existsSync(ansible)) {
-                fs.mkdirSync(ansible);
-            }
-            let machine = vagrant.create({ cwd: ansible });
-            let template = fs.readFileSync(path.join(configPath, './AnsibleVM.mustache'), 'utf8');
-            let vagrantfile = mustache.render(template, require('../../config/AnsibleVM'));
-            fs.writeFileSync(path.join(ansible, 'Vagrantfile'), vagrantfile)
-
-            fs.copySync(
-                path.resolve(configPath, './provision.shell.sh'),
-                path.resolve(ansible, 'provision.shell.sh')
-            );
-
-            print.bold('Creating Baker server.');
-
-            machine.up(function(err, out) {
-                if (err)
-                    print.error(`Couldn't start Baker server!: ${err}`, 1);
-                else
-                    print.success('Baker server is now ready and running.');
-
-                return;
-            });
-
-            machine.on('up-progress', function(data) {
-                print.info(data);
-            });
+        try {
+            await fs.ensureDir(boxes);
+            await fs.ensureDir(ansible);
+        } catch (err) {
+            throw err;
         }
+
+        let machine = vagrant.create({ cwd: ansible });
+        let bakerVMID;
+        let bakerVMState;
+
+        try {
+            bakerVMID = await baker.getVagrantIDByName('baker');
+            bakerVMState = await baker.getState(bakerVMID);
+            if(bakerVMState == 'running') return;
+        } catch (err) {
+            if (err === `Cannot find machine: baker`) {
+                let template = await fs.readFileAsync(path.join(configPath, './AnsibleVM.mustache'), 'utf8');
+                let vagrantfile = mustache.render(template, require('../../config/AnsibleVM'));
+                await fs.writeFileAsync(path.join(ansible, 'Vagrantfile'), vagrantfile)
+
+                await fs.copy(
+                    path.resolve(configPath, './provision.shell.sh'),
+                    path.resolve(ansible, 'provision.shell.sh')
+                );
+            } else {
+                throw err;
+            }
+        }
+
+        try {
+            await machine.upAsync();
+        } catch (err) {
+            throw `Failed to start Baker control machine`;
+        }
+
+        // machine.on('up-progress', function(data) {
+        //     print.info(data);
+        // });
+
+        return;
     }
 
     /**
@@ -246,30 +266,34 @@ module.exports = function(dep) {
     result.reinstallAnsibleServer = async function() {
         const { baker } = dep;
 
-        baker.destroyVM(await baker.getVagrantIDByName('ansible-srv'));
+        try {
+            await baker.destroyVM('baker');
+        } catch (err) {
+            if (err != `Cannot find machine: baker`) {
+                throw err;
+            }
+        }
         await baker.installAnsibleServer();
+        return;
     }
-
 
     /**
      * Get ssh configurations
      * @param {Obj} machine
      */
     result.getSSHConfig = async function(machine) {
-        const { print } = dep;
+        const { print, Promise } = dep;
 
-        return new Promise((resolve, reject) => {
-            machine.sshConfig(function(err, sshConfig) {
-                // console.log( err || "ssh info:" );
-                if (sshConfig && sshConfig.length > 0) {
-                    // callback(sshConfig[0])
-                    resolve(sshConfig[0]);
-                } else {
-                    // callback(err);
-                    print.error(`Couldn't get private ssh key of new VM: ${err}`);
-                }
-            });
-        });
+        try {
+            let sshConfig = await machine.sshConfigAsync();
+            if(sshConfig && sshConfig.length > 0){
+                return sshConfig[0];
+            } else{
+                throw '';
+            }
+        } catch (err) {
+            throw `Couldn't get private ssh key of machine ${err}`;
+        }
     }
 
     /**
@@ -292,7 +316,7 @@ module.exports = function(dep) {
     }
 
     result.runAnsibleVault = async function(doc, pass, dest, sshConfig, vmSSHConfigUser) {
-        const { ssh } = dep;
+        const { ssh, Promise } = dep;
 
         return new Promise( async (resolve, reject) => {
             let key = doc.bake.vault.checkout.key;
@@ -318,7 +342,7 @@ module.exports = function(dep) {
     }
 
     result.promptValue = async function(propertyName, description,hidden=false) {
-        const { prompt } = dep;
+        const { prompt, Promise, print } = dep;
 
         return new Promise((resolve, reject) => {
             prompt.start();
@@ -376,47 +400,50 @@ module.exports = function(dep) {
         let syncFolders = doc.vagrant.synced_folders || [];
         doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
         const output = mustache.render(template, doc);
-
-        fs.writeFileSync(vagrantFilePath, output);
+        await fs.writeFileAsync(vagrantFilePath, output);
     }
 
     result.status = async function() {
-        const { chalk, vagrant, print } = dep;
+        const { vagrant } = dep;
 
-        vagrant.globalStatus(function(err, out) {
-            if (err) print.error(err);
-
+        try {
+            let VMs = await vagrant.globalStatusAsync();
             // Only showing baker VMs
-            out = out.filter(vm => vm.cwd.includes('.baker/'));
+            VMs = VMs.filter(VM => VM.cwd.includes('.baker/'));
+            console.table('\nBaker status: ', VMs);
+        } catch (err) {
+            throw err
+        }
 
-            console.table(chalk.bold('Baker status'), out);
-            return;
-        });
+        return;
     }
 
     result.bake = async function(ansibleSSHConfig, ansibleVM, scriptPath) {
         var { yaml, path, fs, vagrant, baker, print, ssh, boxes, configPath } = dep;
 
-        // TODO: Use version fetched from github.
-        let doc = yaml.safeLoad(fs.readFileSync(path.join(scriptPath, 'baker.yml'), 'utf8'));
+        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         let dir = path.join(boxes, doc.name);
-        let template = fs.readFileSync(path.join(configPath, './BaseVM.mustache')).toString();
+        let template = await fs.readFile(path.join(configPath, './BaseVM.mustache'), 'utf8');
 
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir);
+        try {
+            await fs.ensureDir(dir);
+        } catch (err) {
+            throw `Creating directory failed: ${dir}`;
         }
 
         let machine = vagrant.create({ cwd: dir });
 
-        await baker.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
-        print.bold('Baking VM...');
 
-        machine.up(async function(err, out) {
-            if(err)
-                print.error(err, 1);
-            else
-                print.success('New VM is ready and running.', 1);
+        await baker.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
+
+        try {
+            await machine.upAsync();
+
+            machine.on('up-progress', function(data) {
+                //console.log(machine, progress, rate, remaining);
+                print.info(data);
+            });
 
             let sshConfig = await baker.getSSHConfig(machine);
             let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
@@ -452,12 +479,10 @@ module.exports = function(dep) {
                 // ansible-vault to checkout key and copy to dest.
                 await baker.runAnsibleVault(doc, pass, doc.bake.vault.checkout.dest, ansibleSSHConfig, sshConfig)
             }
-        });
 
-        machine.on('up-progress', function(data) {
-            //console.log(machine, progress, rate, remaining);
-            print.info(data);
-        });
+        } catch (err) {
+            throw err;
+        }
     }
 
     return result;

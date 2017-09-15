@@ -22,27 +22,35 @@ module.exports = function(dep) {
     };
     cmd.handler = async function(argv) {
         const { local, repo } = argv;
-        const { path, baker, cloneRepo, validator, print } = dep;
+        const { path, baker, cloneRepo, validator, print, spinner, spinnerDot } = dep;
 
-        let ansibleVM;
+        try{
+            let ansibleVM;
+            let bakePath;
 
-        if (local) {
-            // console.log(path.resolve(local))
-            validator.validateBakerScript(path.resolve(local));
-            ansibleVM = await baker.prepareAnsibleServer(path.resolve(local));
+            if (local) {
+                bakePath = path.resolve(local);
+            } else if (repo) {
+                bakePath = path.resolve(await cloneRepo.cloneRepo(repo));
+            } else {
+                print.error(
+                    `User --local to give local path or --repo to give git repository with baker.yml`
+                );
+                process.exit(1);
+            }
+
+            let validation = await spinner.spinPromise(validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
+
+            ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+
             let sshConfig = await baker.getSSHConfig(ansibleVM);
-            baker.bake(sshConfig, ansibleVM, path.resolve(local));
-        } else if (repo) {
-            let localRepoPath = await cloneRepo.cloneRepo(repo);
-            validator.validateBakerScript(path.resolve(localRepoPath));
-            ansibleVM = await baker.prepareAnsibleServer(localRepoPath);
-            let sshConfig = await baker.getSSHConfig(ansibleVM);
-            baker.bake(sshConfig, ansibleVM, localRepoPath);
-        } else {
-            print.error(
-                `User --local to give local path or --repo to give git repository with baker.yml`
-            );
-            process.exit(1);
+
+            let baking = baker.bake(sshConfig, ansibleVM, bakePath);
+            await spinner.spinPromise(baking, 'Baking VM', spinnerDot);
+
+            // print.info('Baking VM finished.');
+        } catch (err) {
+            print.error(err);
         }
     };
 

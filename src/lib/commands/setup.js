@@ -15,12 +15,24 @@ module.exports = function (dep) {
   }
   cmd.handler = async function (argv) {
     const { force } = argv
-    const { baker } = dep
+    const { baker, print, spinner, spinnerDot, validator } = dep
 
-    if(force)
-        await baker.reinstallAnsibleServer()
-    else
-        await baker.installAnsibleServer()
+    try {
+        await spinner.spinPromise(validator.validateDependencies(), 'Checking dependencies', spinnerDot);
+    } catch (err){
+        print.error(err);
+        process.exit(1);
+    }
+
+    try {
+        if(force)
+            await spinner.spinPromise(baker.reinstallAnsibleServer(), 'Re-installing Baker control machine', spinnerDot);
+        else
+            await spinner.spinPromise(baker.installAnsibleServer(), 'Installing Baker control machine', spinnerDot);
+    } catch (err) {
+        print.error(err);
+    }
+
   }
 
   return cmd

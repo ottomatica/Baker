@@ -15,11 +15,14 @@ module.exports = function(dep) {
     };
 
     cmd.handler = async function(argv) {
-        const { baker } = dep;
+        const { baker, print, spinner, spinnerDot } = dep;
         const { VMName, force } = argv;
 
-        let VMID = await baker.getVagrantIDByName(VMName);
-        baker.haltVM(VMID, force)
+        try {
+            await spinner.spinPromise(baker.haltVM(VMName, force), `Stopping VM: ${VMName}`, spinnerDot);
+        } catch(err) {
+            print.error(err);
+        }
     };
 
     return cmd;

@@ -1,10 +1,11 @@
+const Promise = require('bluebird');
 const path = require('path');
 const camelCase = require('camelcase');
 const requireDir = require('require-dir');
-const fs = require('fs-extra');
+const fs = Promise.promisifyAll(require('fs-extra'));
 const mustache = require('mustache');
 const child_process = require('child_process');
-const vagrant = require('node-vagrant');
+const vagrant = Promise.promisifyAll(require('node-vagrant'));
 const scp2 = require('scp2');
 const ssh2 = require('ssh2');
 const Client = require('ssh2').Client;
@@ -12,13 +13,16 @@ const prompt = require('prompt');
 const chalk = require('chalk');
 const validator = require('validator');
 const yaml = require('js-yaml');
-const slash = require("slash");
+const slash = require('slash');
+const git = require('simple-git');
+const ora = require('ora');
+const hasbin = require('hasbin');
 require('console.table');
-
 
 const boxes = path.join(require('os').homedir(), '.baker');
 const ansible = path.join(boxes, 'ansible-srv');
 const configPath = path.join(__dirname, './config');
+const spinnerDot = 'monkey';
 
 // External dependencies to pass to the commands
 let dep = {
@@ -26,6 +30,7 @@ let dep = {
     child_process,
     process,
     fs,
+    Promise,
     vagrant,
     scp2,
     ssh2,
@@ -37,12 +42,14 @@ let dep = {
     yaml,
     slash,
     prompt,
+    git,
+    ora,
+    hasbin,
+    spinnerDot,
     boxes,
     ansible,
     configPath
 };
-
-
 
 // Internal dependencies
 const inDepFns = requireDir(path.join(__dirname, 'lib', 'modules'));

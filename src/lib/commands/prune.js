@@ -7,14 +7,13 @@ module.exports = function(dep) {
     cmd.desc = 'prunes invalid VMs (e.g. partially removed due to a failure)';
     cmd.builder = {};
     cmd.handler = async function(argv) {
-        const { child_process, baker } = dep;
+        const { baker, print, spinner, spinnerDot } = dep;
 
-        child_process.execSync('vagrant global-status --prune', {
-            stdio: 'inherit'
-        });
-
-        // Show status after prune completed
-        await baker.status();
+        try {
+            await spinner.spinPromise(baker.prune(), 'Removing invalid VM enteries.', spinnerDot);
+        } catch(err){
+            print.error(err);
+        }
     };
 
     return cmd;
