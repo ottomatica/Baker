@@ -41,7 +41,15 @@ module.exports = function(dep) {
 
             let validation = await spinner.spinPromise(validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
 
-            ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+            try
+            {
+                ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+            }
+            catch(ex)
+            {
+                await spinner.spinPromise(baker.upVM('baker'), `Restarting Baker control machine: `, spinnerDot);
+                ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+            }
 
             let sshConfig = await baker.getSSHConfig(ansibleVM);
 
