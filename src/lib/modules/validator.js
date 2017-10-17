@@ -74,11 +74,11 @@ module.exports = function(dep) {
             passed = false;
             throw 'baker.yml error: You need to specify how much RAM you want Baker to share with your VM.';
         } else if (doc.vagrant.memory > 2048) {
-            // print.warning(
-            //     `baker.yml warning: Sharing big amounts of RAM with your VM can possibly slow down your computer.`,
-            //     1
-            // );
-            throw `baker.yml warning: Sharing big amounts of RAM with your VM can possibly slow down your computer.`;
+            print.warning(
+                 `baker.yml warning: Sharing big amounts of RAM with your VM can possibly slow down your computer.`,
+                 1
+            );
+            //throw `baker.yml warning: Sharing big amounts of RAM with your VM can possibly slow down your computer.`;
         }
 
         if (
