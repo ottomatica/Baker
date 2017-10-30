@@ -22,7 +22,7 @@ require('console.table');
 const boxes = path.join(require('os').homedir(), '.baker');
 const ansible = path.join(boxes, 'ansible-srv');
 const configPath = path.join(__dirname, './config');
-const spinnerDot = 'monkey';
+const spinnerDot = 'dots';
 
 // External dependencies to pass to the commands
 let dep = {
