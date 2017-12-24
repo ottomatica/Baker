@@ -1,5 +1,5 @@
 const yaml = require('js-yaml');
-
+const fs   = require('fs');
 
 
 module.exports.resolveBakerlet = async function(config)
@@ -7,25 +7,39 @@ module.exports.resolveBakerlet = async function(config)
     let doc;
     try {
         doc = yaml.safeLoad(
-            await fs.readFile(config, 'utf8')
+            fs.readFileSync(config, 'utf8')
         );
-    
-        if( doc.services )
+
+        console.log( doc )
+        
+        if( doc.lang )
         {
-            for (var i = 0; i < doc.services.length; i++) 
+            for (var i = 0; i < doc.lang.length; i++) 
             {
-                resolve("services", baker.services[i]);
+                await resolve("lang", doc.lang[i]);
             }
         }
         
 
     } catch (error) {
-        throw `baker.yml error: Couldn't parse baker.yml: ${error}`
+        throw `Error: ${error}`
     }
 }
 
-function resolve(dir, bakerlet)
+async function resolve(dir, bakerlet)
 {
-    // TODO: Logic for things like java8 matching to java
-    // Get associated roles/playbooks and copy to baker vm.
+    let regex = /([a-zA-Z-]+)([0-9]*)/;
+    let mod = './' + dir + "/" + bakerlet;
+    let match = "java8".match(regex);
+    let version = null;
+    if( match.length == 3)
+    {
+        mod = './' + dir + "/" + match[1];
+        version = match[2];
+    }
+
+    let classFoo = require(mod)
+    let j = new classFoo("bakerletsPath", version);
+    j.load();
+    // TODO: Get associated roles/playbooks and copy to baker vm.
 }

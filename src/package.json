@@ -7,7 +7,7 @@
     },
     "main": "baker.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "mocha test/bake/*.js",
         "int-test": "mocha test/integration/*.js",
         "build-macos": "pkg --targets latest-macos-x64 --output ./installers/macos/bin/baker ./package.json",
         "build-win": "pkg --targets latest-win-x64 --output ./installers/win/bin/baker.exe ./package.json",

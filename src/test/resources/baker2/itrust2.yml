@@ -6,6 +6,4 @@ lang:
   - java8
 config:
   - copy: mysql to x.
-  - copy: hibernate. 
-  should config be a thing, or should it be embedded in tool?
-  
+  - copy: hibernate. should config be a thing, or should it be embedded in tool?
