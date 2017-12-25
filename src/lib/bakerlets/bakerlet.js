@@ -1,8 +1,11 @@
+const { commands, modules } = require('../../baker');
+const ssh = modules['ssh'];
+const path = require('path');
+
 class Bakerlet
 {
-    constructor(configPath,ansibleSSHConfig)
+    constructor(ansibleSSHConfig)
     {
-        this.configPath = configPath;
         this.ansibleSSHConfig = ansibleSSHConfig;
     }
 
@@ -10,9 +13,9 @@ class Bakerlet
     {
         // Copy common ansible scripts files
         await ssh.copyFromHostToVM(
-            path.resolve(configPath, src),
+            src,
             dest,
-            ansibleSSHConfig,
+            this.ansibleSSHConfig,
             false
         );
     }

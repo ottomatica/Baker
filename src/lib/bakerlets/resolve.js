@@ -4,13 +4,6 @@ const path = require('path');
 const Promise = require('bluebird');
 const vagrant = Promise.promisifyAll(require('node-vagrant'));
 
-
-const scp2 = require('scp2');
-const ssh2 = require('ssh2');
-
-const baker = require('../modules/baker')({scp2: scp2, ssh2: ssh2});
-
-
 module.exports.resolveBakerlet = async function(config)
 {
     let doc;
@@ -35,6 +28,19 @@ module.exports.resolveBakerlet = async function(config)
     }
 }
 
+async function getSSHConfig(machine) {
+    try {
+        let sshConfig = await machine.sshConfigAsync();
+        if(sshConfig && sshConfig.length > 0){
+            return sshConfig[0];
+        } else{
+            throw '';
+        }
+    } catch (err) {
+        throw `Couldn't get private ssh key of machine ${err}`;
+    }
+}
+
 async function resolve(dir, bakerlet)
 {
     let regex = /([a-zA-Z-]+)([0-9]*)/;
@@ -55,13 +61,12 @@ async function resolve(dir, bakerlet)
 
     let machine = vagrant.create({ cwd: ansible });
 
-    let ansibleSSHConfig = await baker.getSSHConfig(machine);
+    let ansibleSSHConfig = await getSSHConfig(machine);
 
-    let j = new classFoo("baker-test","C:/dev/Baker/src/remotes/bakerlets-source/",
-                         ansibleSSHConfig, "bakerletsPath", version);
+    let j = new classFoo("baker-test", ansibleSSHConfig, version);
 
     // TODO: Get associated roles/playbooks and copy to baker vm.
-    j.load();
+    await j.load();
     // Execute?
     //j.install();
 

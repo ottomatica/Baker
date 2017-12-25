@@ -1,24 +1,25 @@
 // Can handle java8 by looking up
 
 const Bakerlet = require('../bakerlet');
+const path = require('path');
 
 class Java extends Bakerlet {
     
-    constructor(name,configPath,ansibleSSHConfig, bakerletsPath, version) {
+    constructor(name,ansibleSSHConfig, version) {
+        super(ansibleSSHConfig);
+
         this.name = name;
-        this.bakerletsPath = bakerletsPath;
         this.version = version;
 
-        super(configPath,ansibleSSHConfig)
     }
 
-    load()
+    async load()
     {
-        console.log("load", this.bakerletsPath, this.version);
+        console.log("load", "java", this.version);
         console.log("Copying files to baker VM");
 
-        let playbook = path.resolve(`remotes/baker-lets-source/lang/java/java${this.version}.yml`);
-        this.copy(playbook,`/home/vagrant/baker/${this.name}/java${this.version}.yml`)
+        let playbook = path.resolve(`remotes/bakerlets-source/lang/java/java${this.version}.yml`);
+        await this.copy(playbook,`/home/vagrant/baker/${this.name}/java${this.version}.yml`);
         
     }
 
