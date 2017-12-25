@@ -4,6 +4,11 @@ const path = require('path');
 const Promise = require('bluebird');
 const vagrant = Promise.promisifyAll(require('node-vagrant'));
 
+
+const { commands, modules } = require('../../baker');
+const spinnerDot = modules['spinnerDot'];
+const spinner = modules['spinner'];
+
 module.exports.resolveBakerlet = async function(config)
 {
     let doc;
@@ -65,9 +70,7 @@ async function resolve(dir, bakerlet)
 
     let j = new classFoo("baker-test", ansibleSSHConfig, version);
 
-    // TODO: Get associated roles/playbooks and copy to baker vm.
-    await j.load();
-    // Execute?
-    await j.install();
+    await spinner.spinPromise(j.load(), `Preparing java scripts`, spinnerDot);
+    await spinner.spinPromise(j.install(), `Installing Java`, spinnerDot);
 
 }
