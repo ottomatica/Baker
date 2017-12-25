@@ -331,14 +331,14 @@ module.exports = function(dep) {
 
     // TODO: Need to be cleaning cmd so they don't do things like
     // ; sudo rm -rf / on our server...
-    result.runAnsiblePlaybook = async function(doc, cmd, sshConfig) {
+    result.runAnsiblePlaybook = async function(doc, cmd, sshConfig, verbose) {
         const { path, vagrant, baker, ssh, boxes } = dep;
 
         let dir = path.join(boxes, doc.name);
         let vm = vagrant.create({ cwd: dir });
         let vmSSHConfigUser = await baker.getSSHConfig(vm);
 
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}`, sshConfig);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}`, sshConfig, verbose);
     }
 
     result.promptValue = async function(propertyName, description,hidden=false) {

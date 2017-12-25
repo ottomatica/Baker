@@ -74,7 +74,7 @@ module.exports = function(dep) {
         });
     }
 
-    result.sshExec = async function(cmd, sshConfig) {
+    result.sshExec = async function(cmd, sshConfig, verbose) {
         const { Client, fs, print } = dep;
 
         return new Promise((resolve, reject) => {
@@ -91,7 +91,10 @@ module.exports = function(dep) {
                                 resolve();
                             })
                             .on('data', function(data) {
-                                console.log('STDOUT: ' + data);
+                                if( verbose )
+                                {
+                                    console.log('STDOUT: ' + data);
+                                }
                             })
                             .stderr.on('data', function(data) {
                                 console.log('STDERR: ' + data);
