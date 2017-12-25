@@ -68,6 +68,6 @@ async function resolve(dir, bakerlet)
     // TODO: Get associated roles/playbooks and copy to baker vm.
     await j.load();
     // Execute?
-    //j.install();
+    await j.install();
 
 }

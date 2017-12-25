@@ -1,4 +1,5 @@
-// Can handle java8 by looking up
+const { commands, modules } = require('../../../baker');
+const baker = modules['baker'];
 
 const Bakerlet = require('../bakerlet');
 const path = require('path');
@@ -22,6 +23,16 @@ class Java extends Bakerlet {
         await this.copy(playbook,`/home/vagrant/baker/${this.name}/java${this.version}.yml`);
         
     }
+
+    async install()
+    {
+        var cmd = `java${this.version}.yml`;
+        await baker.runAnsiblePlaybook(
+            {name: this.name}, cmd, this.ansibleSSHConfig
+        );
+        console.log(`installed java ${this.version}`);
+    }
+
 
 }
 
