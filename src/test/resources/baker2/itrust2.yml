@@ -1,7 +1,7 @@
 tools:
   - maven
 services:
-  - mysql
+  - mysql5.7
 lang:
   - java8
 config:

@@ -17,8 +17,6 @@ module.exports.resolveBakerlet = async function(config)
             fs.readFileSync(config, 'utf8')
         );
 
-        console.log( doc )
-        
         if( doc.lang )
         {
             for (var i = 0; i < doc.lang.length; i++) 
@@ -26,6 +24,15 @@ module.exports.resolveBakerlet = async function(config)
                 await resolve("lang", doc.lang[i]);
             }
         }
+
+        if( doc.services )
+        {
+            for (var i = 0; i < doc.services.length; i++) 
+            {
+                await resolve("services", doc.services[i]);
+            }
+        }
+
         
 
     } catch (error) {
@@ -48,18 +55,18 @@ async function getSSHConfig(machine) {
 
 async function resolve(dir, bakerlet)
 {
-    let regex = /([a-zA-Z-]+)([0-9]*)/;
+    let regex = /([a-zA-Z-]+)([0-9]*\.?[0-9]*)/;
     let mod = './' + dir + "/" + bakerlet;
-    let match = "java8".match(regex);
+    let match = bakerlet.match(regex);
     let version = null;
     if( match.length == 3)
     {
         mod = './' + dir + "/" + match[1];
         version = match[2];
     }
+    console.log("Found", mod, version);
 
     let classFoo = require(mod)
-
 
     const boxes = path.join(require('os').homedir(), '.baker');
     const ansible = path.join(boxes, 'ansible-srv');
@@ -70,7 +77,7 @@ async function resolve(dir, bakerlet)
 
     let j = new classFoo("baker-test", ansibleSSHConfig, version);
 
-    await spinner.spinPromise(j.load(), `Preparing java scripts`, spinnerDot);
-    await spinner.spinPromise(j.install(), `Installing Java`, spinnerDot);
+    await spinner.spinPromise(j.load(), `Preparing ${bakerlet} scripts`, spinnerDot);
+    await spinner.spinPromise(j.install(), `Installing ${bakerlet}`, spinnerDot);
 
 }
