@@ -1,5 +1,14 @@
 const yaml = require('js-yaml');
 const fs   = require('fs');
+const path = require('path');
+const Promise = require('bluebird');
+const vagrant = Promise.promisifyAll(require('node-vagrant'));
+
+
+const scp2 = require('scp2');
+const ssh2 = require('ssh2');
+
+const baker = require('../modules/baker')({scp2: scp2, ssh2: ssh2});
 
 
 module.exports.resolveBakerlet = async function(config)
@@ -39,7 +48,21 @@ async function resolve(dir, bakerlet)
     }
 
     let classFoo = require(mod)
-    let j = new classFoo("bakerletsPath", version);
-    j.load();
+
+
+    const boxes = path.join(require('os').homedir(), '.baker');
+    const ansible = path.join(boxes, 'ansible-srv');
+
+    let machine = vagrant.create({ cwd: ansible });
+
+    let ansibleSSHConfig = await baker.getSSHConfig(machine);
+
+    let j = new classFoo("baker-test","C:/dev/Baker/src/remotes/bakerlets-source/",
+                         ansibleSSHConfig, "bakerletsPath", version);
+
     // TODO: Get associated roles/playbooks and copy to baker vm.
+    j.load();
+    // Execute?
+    //j.install();
+
 }
