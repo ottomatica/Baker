@@ -33,6 +33,13 @@ module.exports.resolveBakerlet = async function(config)
             }
         }
 
+        if( doc.tools )
+        {
+            for (var i = 0; i < doc.tools.length; i++) 
+            {
+                await resolve("tools", doc.tools[i]);
+            }
+        }
         
 
     } catch (error) {
