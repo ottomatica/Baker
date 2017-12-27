@@ -53,8 +53,8 @@ module.exports = function(dep) {
 
             let sshConfig = await baker.getSSHConfig(ansibleVM);
 
-            let baking = baker.bake2(sshConfig, ansibleVM, bakePath);
-            await spinner.spinPromise(baking, 'Baking VM', spinnerDot);
+            await baker.bake2(sshConfig, ansibleVM, bakePath);
+            //await spinner.spinPromise(baking, 'Baking VM', spinnerDot);
 
             // print.info('Baking VM finished.');
         } catch (err) {
