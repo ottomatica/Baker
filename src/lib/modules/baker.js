@@ -507,5 +507,52 @@ module.exports = function(dep) {
         }
     }
 
+    result.bake2 = async function(ansibleSSHConfig, ansibleVM, scriptPath) {
+        var { yaml, path, fs, vagrant, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
+
+        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
+
+        let dir = path.join(boxes, doc.name);
+        let template = await fs.readFile(path.join(configPath, './BaseVM.mustache'), 'utf8');
+
+        try {
+            await fs.ensureDir(dir);
+        } catch (err) {
+            throw `Creating directory failed: ${dir}`;
+        }
+
+        let machine = vagrant.create({ cwd: dir });
+
+        await baker.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
+
+        try {
+            await machine.upAsync();
+
+            machine.on('up-progress', function(data) {
+                //console.log(machine, progress, rate, remaining);
+                print.info(data);
+            });
+
+            let sshConfig = await baker.getSSHConfig(machine);
+            let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
+            await ssh.copyFromHostToVM(
+                sshConfig.private_key,
+                `/home/vagrant/baker/${doc.name}/id_rsa`,
+                ansibleSSHConfig
+            );
+
+            await baker.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig)
+            await baker.setKnownHosts(ip, ansibleSSHConfig);
+
+            // Installing stuff.
+            let resolveB = require('../bakerlets/resolve');
+            await resolveB.resolveBakerlet(bakerletsPath, remotesPath,
+                path.join(scriptPath, 'baker.yml'))
+
+        } catch (err) {
+            throw err;
+        }
+    }
+
     return result;
 };

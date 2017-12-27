@@ -18,8 +18,7 @@ class Java extends Bakerlet {
     {
         //console.log("load", "java", this.version);
         //console.log("Copying files to baker VM");
-
-        let playbook = path.resolve(`remotes/bakerlets-source/lang/java/java${this.version}.yml`);
+        let playbook = path.resolve(this.remotesPath, `bakerlets-source/lang/java/java${this.version}.yml`);
         await this.copy(playbook,`/home/vagrant/baker/${this.name}/java${this.version}.yml`);
         
     }

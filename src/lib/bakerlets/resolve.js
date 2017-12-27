@@ -9,7 +9,7 @@ const { commands, modules } = require('../../baker');
 const spinnerDot = modules['spinnerDot'];
 const spinner = modules['spinner'];
 
-module.exports.resolveBakerlet = async function(config)
+module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,config)
 {
     let doc;
     try {
@@ -29,7 +29,7 @@ module.exports.resolveBakerlet = async function(config)
         {
             for (var i = 0; i < doc.lang.length; i++) 
             {
-                await resolve("lang", doc.lang[i], extra_vars);
+                await resolve(doc.name, remotesPath, path.join(bakerletsPath,"lang"), doc.lang[i], extra_vars);
             }
         }
 
@@ -37,7 +37,7 @@ module.exports.resolveBakerlet = async function(config)
         {
             for (var i = 0; i < doc.config.length; i++) 
             {
-                await resolve("config", doc.config[i], extra_vars);
+                await resolve(doc.name, remotesPath, path.join(bakerletsPath,"config"), doc.config[i], extra_vars);
             }
         }
 
@@ -45,7 +45,7 @@ module.exports.resolveBakerlet = async function(config)
         {
             for (var i = 0; i < doc.services.length; i++) 
             {
-                await resolve("services", doc.services[i], extra_vars);
+                await resolve(doc.name, remotesPath, path.join(bakerletsPath,"services"), doc.services[i], extra_vars);
             }
         }
 
@@ -53,7 +53,7 @@ module.exports.resolveBakerlet = async function(config)
         {
             for (var i = 0; i < doc.tools.length; i++) 
             {
-                await resolve("tools", doc.tools[i], extra_vars);
+                await resolve(doc.name, remotesPath, path.join(bakerletsPath,"tools"), doc.tools[i], extra_vars);
             }
         }
         
@@ -81,24 +81,24 @@ async function getSSHConfig(machine) {
     }
 }
 
-async function resolve(dir, bakerlet, extra_vars)
+async function resolve(vmName, remotesPath, dir, bakerlet, extra_vars)
 {
     let mod = "";
     let version = "";
     if( isObject(bakerlet) )
     {
         // complex objects, like templates.
-        mod = './' + dir + "/" + Object.keys(bakerlet)[0];
+        mod = dir + "/" + Object.keys(bakerlet)[0];
     }
     else
     {
         let regex = /([a-zA-Z-]+)([0-9]*\.?[0-9]*)/;
-        mod = './' + dir + "/" + bakerlet;
+        mod =  dir + "/" + bakerlet;
         let match = bakerlet.match(regex);
         version = null;
         if( match.length == 3)
         {
-            mod = './' + dir + "/" + match[1];
+            mod =  dir + "/" + match[1];
             version = match[2];
         }
         console.log("Found", mod, version);
@@ -108,12 +108,11 @@ async function resolve(dir, bakerlet, extra_vars)
 
     const boxes = path.join(require('os').homedir(), '.baker');
     const ansible = path.join(boxes, 'ansible-srv');
-
     let machine = vagrant.create({ cwd: ansible });
-
     let ansibleSSHConfig = await getSSHConfig(machine);
 
-    let j = new classFoo("baker-test", ansibleSSHConfig, version);
+    let j = new classFoo(vmName, ansibleSSHConfig, version);
+    j.setRemotesPath(remotesPath);
 
     await spinner.spinPromise(j.load(bakerlet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
     await spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);

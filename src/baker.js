@@ -22,6 +22,10 @@ require('console.table');
 const boxes = path.join(require('os').homedir(), '.baker');
 const ansible = path.join(boxes, 'ansible-srv');
 const configPath = path.join(__dirname, './config');
+const bakerletsPath = path.join(__dirname, './lib/bakerlets');
+const remotesPath = path.join(__dirname, './remotes');
+
+
 const spinnerDot = 'dots';
 
 // External dependencies to pass to the commands
@@ -48,7 +52,9 @@ let dep = {
     spinnerDot,
     boxes,
     ansible,
-    configPath
+    configPath,
+    bakerletsPath,
+    remotesPath
 };
 
 // Internal dependencies

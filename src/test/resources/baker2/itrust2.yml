@@ -9,5 +9,5 @@ lang:
 config:
   #- copy: mysql to x.
   - template: 
-      src: templates/hibernate-template.cfg.xml 
+      src: env/templates/hibernate-template.cfg.xml 
       dest: /Onboarding/CoffeeMaker/src/main/resources/hibernate.cfg.xml

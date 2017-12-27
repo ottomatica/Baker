@@ -16,6 +16,7 @@ class Template extends Bakerlet {
 
     async load(obj, variables)
     {
+
         this.src = obj.template.src;
         this.dest = obj.template.dest;
         this.variables = variables;

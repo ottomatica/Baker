@@ -9,6 +9,11 @@ class Bakerlet
         this.ansibleSSHConfig = ansibleSSHConfig;
     }
 
+    setRemotesPath(remotesPath)
+    {
+        this.remotesPath = remotesPath;
+    }
+
     async copy(src,dest)
     {
         // Copy common ansible scripts files

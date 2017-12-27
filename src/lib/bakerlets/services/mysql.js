@@ -16,7 +16,7 @@ class MySql extends Bakerlet {
 
     async load()
     {
-        let playbook = path.resolve(`remotes/bakerlets-source/services/mysql/mysql${this.version}.yml`);
+        let playbook = path.resolve(this.remotesPath, `bakerlets-source/services/mysql/mysql${this.version}.yml`);
         await this.copy(playbook,`/home/vagrant/baker/${this.name}/mysql${this.version}.yml`);
     }
 
@@ -24,7 +24,7 @@ class MySql extends Bakerlet {
     {
         var cmd = `mysql${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, false
+            {name: this.name}, cmd, this.ansibleSSHConfig, true
         );
     }
 }
