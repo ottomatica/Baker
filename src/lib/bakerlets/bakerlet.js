@@ -14,6 +14,12 @@ class Bakerlet
         this.remotesPath = remotesPath;
     }
 
+    setBakePath(bakePath)
+    {
+        this.bakePath = bakePath;
+    }
+
+
     async copy(src,dest)
     {
         // Copy common ansible scripts files
