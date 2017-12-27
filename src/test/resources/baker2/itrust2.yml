@@ -1,3 +1,5 @@
+vars: 
+  - root_db_password: 326
 tools:
   - maven
 services:
@@ -5,5 +7,7 @@ services:
 lang:
   - java8
 config:
-  - copy: mysql to x.
-  - copy: hibernate. should config be a thing, or should it be embedded in tool?
+  #- copy: mysql to x.
+  - template: 
+      src: templates/hibernate-template.cfg.xml 
+      dest: /Onboarding/CoffeeMaker/src/main/resources/hibernate.cfg.xml

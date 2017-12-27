@@ -334,21 +334,32 @@ module.exports = function(dep) {
     result.runAnsiblePlaybook = async function(doc, cmd, sshConfig, verbose) {
         const { path, vagrant, baker, ssh, boxes } = dep;
 
-        let dir = path.join(boxes, doc.name);
-        let vm = vagrant.create({ cwd: dir });
-        let vmSSHConfigUser = await baker.getSSHConfig(vm);
+        //let dir = path.join(boxes, doc.name);
+        //let vm = vagrant.create({ cwd: dir });
+        //let vmSSHConfigUser = await baker.getSSHConfig(vm);
 
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ${sshConfig.user}`, sshConfig, verbose);
     }
 
     result.runAnsibleAptInstall = async function(doc, cmd, sshConfig, verbose) {
         const { path, vagrant, baker, ssh, boxes } = dep;
 
-        let dir = path.join(boxes, doc.name);
-        let vm = vagrant.create({ cwd: dir });
-        let vmSSHConfigUser = await baker.getSSHConfig(vm);
+        //let dir = path.join(boxes, doc.name);
+        //let vm = vagrant.create({ cwd: dir });
+        //let vmSSHConfigUser = await baker.getSSHConfig(vm);
 
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} --become`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --private-key id_rsa -u ${sshConfig.user} --become`, sshConfig, verbose);
+    }
+
+    result.runAnsibleTemplateCmd = async function(doc, src, dest, variables, sshConfig, verbose) {
+        const { path, vagrant, baker, ssh, boxes } = dep;
+
+        //let dir = path.join(boxes, doc.name);
+        //let vm = vagrant.create({ cwd: dir });
+        //let vmSSHConfigUser = await baker.getSSHConfig(vm);
+
+        let extravars = JSON.stringify(variables);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo ${extravars} > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory --private-key id_rsa -u ${sshConfig.user}`, sshConfig, verbose);
     }
 
 
