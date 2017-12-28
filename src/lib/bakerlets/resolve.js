@@ -9,15 +9,14 @@ const { commands, modules } = require('../../baker');
 const spinnerDot = modules['spinnerDot'];
 const spinner = modules['spinner'];
 
-module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,config)
+module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,bakerScriptPath)
 {
-    let bakerScriptPath = path.dirname(config);
 
-    let doc;
+    //let doc;
     try {
-        doc = yaml.safeLoad(
-            fs.readFileSync(config, 'utf8')
-        );
+        //doc = yaml.safeLoad(
+        //    fs.readFileSync(config, 'utf8')
+        //);
 
         console.log( doc );
 
@@ -91,6 +90,12 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extr
     {
         // complex objects, like templates.
         mod = dir + "/" + Object.keys(bakerlet)[0];
+        //version for mysql.
+        //mysql:
+        // version: 
+        // server_config:
+        // client_config:
+        // password:
     }
     else
     {

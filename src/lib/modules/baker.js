@@ -331,14 +331,25 @@ module.exports = function(dep) {
 
     // TODO: Need to be cleaning cmd so they don't do things like
     // ; sudo rm -rf / on our server...
-    result.runAnsiblePlaybook = async function(doc, cmd, sshConfig, verbose) {
+    result.runAnsiblePlaybook = async function(doc, cmd, sshConfig, verbose, variables) {
         const { path, vagrant, baker, ssh, boxes } = dep;
 
         let dir = path.join(boxes, doc.name);
         let vm = vagrant.create({ cwd: dir });
         let vmSSHConfigUser = await baker.getSSHConfig(vm);
 
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible-playbook -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}`, sshConfig, verbose);
+        let flatVars = {};
+        for( var i =0; i < variables.length; i++ )
+        {
+            for( var key in variables[i] )
+            {
+                flatVars[key] = variables[i][key];
+            }
+        }
+        let extravars = JSON.stringify(flatVars);
+        //let extravars = yaml.dump(variables); 
+
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}; rm playbook.args.json`, sshConfig, verbose);
     }
 
     result.runAnsibleAptInstall = async function(doc, cmd, sshConfig, verbose) {
@@ -349,6 +360,12 @@ module.exports = function(dep) {
         let vmSSHConfigUser = await baker.getSSHConfig(vm);
 
         return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} --become`, sshConfig, verbose);
+    }
+
+    result.mkTemplatesDir = async function(doc, sshConfig) {
+        const { path, vagrant, baker, ssh, boxes } = dep;
+
+        return ssh.sshExec(`mkdir -p /home/vagrant/baker/${doc.name}/templates`, sshConfig);
     }
 
     result.runAnsibleTemplateCmd = async function(doc, src, dest, variables, sshConfig, verbose) {
@@ -368,7 +385,7 @@ module.exports = function(dep) {
         }
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables); 
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user}`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user}; rm template.args.json`, sshConfig, verbose);
     }
 
 
@@ -492,7 +509,7 @@ module.exports = function(dep) {
                 for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ ) {
                     var cmd = doc.bake.ansible.playbooks[i];
                     await baker.runAnsiblePlaybook(
-                        doc, cmd, ansibleSSHConfig
+                        doc, cmd, ansibleSSHConfig, false, {}
                     )
                 }
             }
@@ -552,11 +569,15 @@ module.exports = function(dep) {
 
             await baker.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig)
             await baker.setKnownHosts(ip, ansibleSSHConfig);
+            await baker.mkTemplatesDir(doc, ansibleSSHConfig);
+
+            // prompt for passwords
+            await traverse(doc.vars);
 
             // Installing stuff.
             let resolveB = require('../bakerlets/resolve');
             await resolveB.resolveBakerlet(bakerletsPath, remotesPath,
-                path.join(scriptPath, 'baker.yml'))
+                doc, scriptPath)
 
         } catch (err) {
             throw err;
