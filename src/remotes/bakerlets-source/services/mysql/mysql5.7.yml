@@ -1,7 +1,7 @@
 ---
 - hosts: all 
   vars:
-    - root_db_password: "326"
+    - root_db_password: "{{mysql_password}}"
 
   tasks:
     - name: Try to specify preference for mysql
