@@ -1,0 +1,32 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+    - name: Ensure the system can use the HTTPS transport for APT
+      stat: path=/usr/lib/apt/methods/https
+      register: apt_https_transport
+
+    - name: Install HTTPS transport for APT
+      become: yes
+      apt: pkg=apt-transport-https state=installed
+      when: not apt_https_transport.stat.exists
+
+    - name: Add Nodesource apt key.
+      apt_key:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x1655A0AB68576280
+        id: "68576280"
+        state: present
+
+    - name: Add NodeSource repositories for Node.js.
+      apt_repository:
+        repo: "{{ item }}"
+        state: present
+      with_items:
+        - "deb https://deb.nodesource.com/node_9 {{ ansible_distribution_release }} main"
+        - "deb-src https://deb.nodesource.com/node_9 {{ ansible_distribution_release }} main"
+      register: node_repo
+
+    - name: Install Node.js
+      become: yes
+      apt: pkg=nodejs state=installed update_cache=yes
