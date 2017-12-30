@@ -445,6 +445,17 @@ module.exports = function(dep) {
 
         const vagrant = doc.vagrant;
         await traverse(vagrant);
+
+        // Defaults
+        vagrant.box = vagrant.box || "ubuntu/xenial64"
+        vagrant.memory = vagrant.memory || "1024"
+
+        // Adaptor pattern: Support baker2 and baker format
+        if( vagrant.ip )
+        {
+            vagrant.network = [{private_network: {ip: vagrant.ip}}];
+        }
+
         let syncFolders = doc.vagrant.synced_folders || [];
         doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
         const output = mustache.render(template, doc);
@@ -561,7 +572,8 @@ module.exports = function(dep) {
             await spinner.spinPromise(machine.upAsync(), `Provisioning VM in VirtualBox`, spinnerDot);      
 
             let sshConfig = await baker.getSSHConfig(machine);
-            let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
+            //let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
+            let ip = doc.vagrant.ip;
             await ssh.copyFromHostToVM(
                 sshConfig.private_key,
                 `/home/vagrant/baker/${doc.name}/id_rsa`,
