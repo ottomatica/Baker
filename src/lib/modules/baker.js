@@ -534,7 +534,7 @@ module.exports = function(dep) {
     }
 
     result.bake2 = async function(ansibleSSHConfig, ansibleVM, scriptPath) {
-        var { yaml, path, fs, vagrant, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
+        var { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
@@ -552,12 +552,13 @@ module.exports = function(dep) {
         await baker.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
 
         try {
-            await machine.upAsync();
 
-            machine.on('up-progress', function(data) {
-                //console.log(machine, progress, rate, remaining);
-                print.info(data);
-            });
+            //machine.on('up-progress', function(data) {
+            //    //console.log(machine, progress, rate, remaining);
+            //    print.info(data);
+            //});
+
+            await spinner.spinPromise(machine.upAsync(), `Provisioning VM in VirtualBox`, spinnerDot);      
 
             let sshConfig = await baker.getSSHConfig(machine);
             let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
@@ -572,7 +573,10 @@ module.exports = function(dep) {
             await baker.mkTemplatesDir(doc, ansibleSSHConfig);
 
             // prompt for passwords
-            await traverse(doc.vars);
+            if( doc.vars )
+            {
+                await traverse(doc.vars);
+            }
 
             // Installing stuff.
             let resolveB = require('../bakerlets/resolve');
