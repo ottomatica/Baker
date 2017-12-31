@@ -4,10 +4,13 @@ const path = require('path');
 const Promise = require('bluebird');
 const vagrant = Promise.promisifyAll(require('node-vagrant'));
 
+const start = require('./start');
 
 const { commands, modules } = require('../../baker');
 const spinnerDot = modules['spinnerDot'];
 const spinner = modules['spinner'];
+const boxes = modules['boxes'];
+const baker = modules['baker'];
 
 module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,bakerScriptPath)
 {
@@ -57,6 +60,17 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
                 await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"tools"), doc.tools[i], extra_vars);
             }
         }
+
+        if( doc.start )
+        {
+            let dir = path.join(boxes, doc.name);
+            let vm = vagrant.create({ cwd: dir });
+            let vmSSHConfigUser = await baker.getSSHConfig(vm);
+
+            console.log("Starting command", doc.start);
+            start(doc.start, vmSSHConfigUser);
+        }
+
         
 
     } catch (error) {
