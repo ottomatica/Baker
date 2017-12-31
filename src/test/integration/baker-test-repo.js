@@ -7,6 +7,7 @@ const expect = chai.expect;
 describe('Command line tests', function() {
 });
 
+/*
 describe('baker should create VM and destroy it', function() {
     this.timeout(600000);
 
@@ -40,3 +41,4 @@ describe('baker should create VM and destroy it', function() {
     });
 
 });
+*/
