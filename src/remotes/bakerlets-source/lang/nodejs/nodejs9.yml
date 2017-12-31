@@ -3,14 +3,8 @@
   become: yes
 
   tasks:
-    - name: Ensure the system can use the HTTPS transport for APT
-      stat: path=/usr/lib/apt/methods/https
-      register: apt_https_transport
-
-    - name: Install HTTPS transport for APT
-      become: yes
-      apt: pkg=apt-transport-https state=installed
-      when: not apt_https_transport.stat.exists
+    - name: Ensure apt-transport-https is installed.
+      apt: name=apt-transport-https state=present
 
     - name: Add Nodesource apt key.
       apt_key:
@@ -23,10 +17,15 @@
         repo: "{{ item }}"
         state: present
       with_items:
-        - "deb https://deb.nodesource.com/node_9 {{ ansible_distribution_release }} main"
-        - "deb-src https://deb.nodesource.com/node_9 {{ ansible_distribution_release }} main"
-      register: node_repo
+        - "deb https://deb.nodesource.com/node_9.x {{ ansible_distribution_release }} main"
+        - "deb-src https://deb.nodesource.com/node_9.x {{ ansible_distribution_release }} main"
 
     - name: Install Node.js
       become: yes
-      apt: pkg=nodejs state=installed update_cache=yes
+      apt:
+        pkg: "{{item}}"
+        state: installed
+        update_cache: yes
+      with_items:
+        - nodejs
+        - build-essential
