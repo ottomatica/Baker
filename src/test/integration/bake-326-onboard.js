@@ -17,18 +17,22 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
         // echo value for prompt input for password.
         var child = child_process.exec('echo 326 | baker bake2 --repo https://github.ncsu.edu/engr-csc326-staff/Onboarding', 
                                        {cwd: os.tmpdir()  }, function(error, stdout, stderr) {
-            expect(stderr).to.be.empty;
-
-            var options = {
-                url: "http://192.168.8.8:8080/",
-                method: 'GET'
-            };
-
-            request(options, function (error, response, body)
+            setTimeout( function()
             {
-                console.log(error || body);
-                done();
-            });
+                expect(stderr).to.be.empty;
+
+                var options = {
+                    url: "http://192.168.8.8:8080/api/v1/inventory",
+                    method: 'GET'
+                };
+
+                request(options, function (error, response, body)
+                {
+                    console.log(error || body);
+                    done();
+                });
+
+            },30000);
 
         });
         child.stdout.pipe(process.stdout);
