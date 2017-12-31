@@ -19,12 +19,13 @@ class Template extends Bakerlet {
     {
         await ssh.copyFromHostToVM(
             path.resolve(this.bakePath, obj.template.src),
-            `/home/vagrant/baker/${this.name}`,
+            `/home/vagrant/baker/${this.name}/templates/`,
             this.ansibleSSHConfig,
             false
         );
 
-        this.src = path.basename(obj.template.src);
+        this.src = `templates/${path.basename(path.resolve(this.bakePath, obj.template.src))}`;
+        console.log("template src", this.src)
         this.dest = obj.template.dest;
         this.variables = variables;
     }
