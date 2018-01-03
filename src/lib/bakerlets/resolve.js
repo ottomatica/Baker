@@ -104,12 +104,6 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extr
     {
         // complex objects, like templates.
         mod = dir + "/" + Object.keys(bakerlet)[0];
-        //version for mysql.
-        //mysql:
-        // version: 
-        // server_config:
-        // client_config:
-        // password:
     }
     else
     {
