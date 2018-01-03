@@ -5,4 +5,4 @@ vagrant:
 
 lang:
   - R:
-      packages: tidyverse, xml
+      packages: tidyverse, xml, ggplot2

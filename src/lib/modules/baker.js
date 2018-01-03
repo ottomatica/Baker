@@ -349,7 +349,7 @@ module.exports = function(dep) {
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables); 
 
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}; rm playbook.args.json`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}; rm -f playbook.args.json`, sshConfig, verbose);
     }
 
     result.runAnsibleAptInstall = async function(doc, cmd, sshConfig, verbose) {
@@ -385,7 +385,7 @@ module.exports = function(dep) {
         }
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables); 
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user}; rm template.args.json`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user}; rm -f template.args.json`, sshConfig, verbose);
     }
 
 
