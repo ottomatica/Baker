@@ -31,6 +31,10 @@ class Bakerlet
         );
     }
 
+    async exec(cmd) {
+        // Run cmd on remote server
+        await ssh.sshExec(cmd, this.ansibleSSHConfig, true);
+    }
 }
 
 module.exports = Bakerlet;
