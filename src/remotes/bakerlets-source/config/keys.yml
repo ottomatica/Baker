@@ -15,4 +15,5 @@
       copy: 
         src: "{{item}}"
         dest: "/keys/{{item}}"
+        mode: 0600
       with_items: "{{baker_client_keys}}"
