@@ -309,6 +309,17 @@ module.exports = function(dep) {
         return ssh.sshExec(`echo "[${name}]\n${ip}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
     }
 
+    result.retrieveSSHConfigByName = async function(name) {
+        const { ssh,baker,boxes, path, vagrant } = dep;
+
+        let dir = path.join(boxes, name);
+        let vm = vagrant.create({ cwd: dir });
+        let vmSSHConfigUser = await baker.getSSHConfig(vm);
+
+        return vmSSHConfigUser;
+    }
+
+
     result.setKnownHosts = async function(ip, sshConfig) {
         const { ssh } = dep;
 
