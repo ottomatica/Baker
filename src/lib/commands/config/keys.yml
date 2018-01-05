@@ -11,8 +11,6 @@
 
     # Passed in from extra-vars
     - copy: ensure keys directory exists
-      file:
-        path: "/keys/{{item}}"
-        owner: "{{ansible_user}}"
-        mode: 0700
+        src: "{{item}}"
+        dest: "/keys/{{item}}"
       with-items: "{{baker_client_keys}}"
