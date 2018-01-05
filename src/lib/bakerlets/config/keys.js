@@ -34,7 +34,8 @@ class Keys extends Bakerlet {
                 );
             }
 
-            this.variables = {baker_client_keys: obj.keys.map( k => `${k}_id_rsa`) };
+            variables.push({baker_client_keys : obj.keys.map( k => `${k}_id_rsa`) });
+            this.variables = variables;
             let playbook = path.resolve(this.remotesPath, `bakerlets-source/config/keys${this.version}.yml`);
             await this.copy(playbook,`/home/vagrant/baker/${this.name}/keys${this.version}.yml`);
         }
@@ -44,11 +45,11 @@ class Keys extends Bakerlet {
     {
         var cmd = `keys${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, false, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, true, this.variables
         );
     }
 
-    
+
 }
 
 module.exports = Keys;

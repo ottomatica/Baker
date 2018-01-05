@@ -23,7 +23,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
 
         console.log( doc );
 
-        let extra_vars = {}
+        let extra_vars = [];
         if( doc.vars )
         {
             extra_vars = doc.vars;
