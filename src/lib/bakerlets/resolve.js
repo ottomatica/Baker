@@ -31,7 +31,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
 
         if( doc.lang )
         {
-            for (var i = 0; i < doc.lang.length; i++) 
+            for (var i = 0; i < doc.lang.length; i++)
             {
                 await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"lang"), doc.lang[i], extra_vars);
             }
@@ -39,7 +39,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
 
         if( doc.config )
         {
-            for (var i = 0; i < doc.config.length; i++) 
+            for (var i = 0; i < doc.config.length; i++)
             {
                 await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"config"), doc.config[i], extra_vars);
             }
@@ -47,7 +47,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
 
         if( doc.services )
         {
-            for (var i = 0; i < doc.services.length; i++) 
+            for (var i = 0; i < doc.services.length; i++)
             {
                 await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"services"), doc.services[i], extra_vars);
             }
@@ -55,9 +55,17 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
 
         if( doc.tools )
         {
-            for (var i = 0; i < doc.tools.length; i++) 
+            for (var i = 0; i < doc.tools.length; i++)
             {
                 await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"tools"), doc.tools[i], extra_vars);
+            }
+        }
+
+        if( doc.packages )
+        {
+            for (var i = 0; i < doc.packages.length; i++)
+            {
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"packages"), doc.packages[i], extra_vars);
             }
         }
 
@@ -71,7 +79,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
             start(doc.start, vmSSHConfigUser);
         }
 
-        
+
 
     } catch (error) {
         throw `Error: ${error}`
@@ -80,7 +88,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
 
 function isObject(obj)
 {
-    return obj === Object(obj) && Object.prototype.toString.call(obj) !== '[object Array]'    
+    return obj === Object(obj) && Object.prototype.toString.call(obj) !== '[object Array]'
 }
 
 async function getSSHConfig(machine) {
