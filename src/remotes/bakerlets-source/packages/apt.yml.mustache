@@ -3,7 +3,7 @@
   become: yes
 
   tasks:
-    {{#packages}}
+    {{#packages.default}}
     - name: Ensure {{{name}}} is installed.
       apt:
         pkg: {{{name}}}
@@ -12,5 +12,14 @@
         cache_valid_time: 3600
         update_cache: yes
       become: yes
-    {{/packages}}
 
+    {{/packages.default}}
+    {{#packages.deb}}
+    - name: Ensure {{{name}}} is installed
+      apt:
+        deb: {{{deb}}}
+
+    {{/packages.deb}}
+
+    {{#packages.ppa}}
+    {{/packages.ppa}}
