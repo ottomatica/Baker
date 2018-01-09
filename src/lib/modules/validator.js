@@ -9,26 +9,33 @@ module.exports = function(dep) {
 
         return new Promise((resolve, reject)=>{
             hasbin('vagrant', (hasVagrant)=>{
+                if(!hasVagrant)
+                    reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
+
+                let hasVirtualBox = false;
                 if(platform === 'darwin' || platform === 'linux'){
                     hasbin('virtualbox', (hasVB)=>{
-                        if(hasVB && hasVagrant)
-                            resolve(true);
-                        else
-                            reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
+                        hasVirtualBox = hasVB;
                     })
                 }
                 else if(platform === 'win32'){
-                    fs.access(path.resolve(`C:/Program Files/Oracle/VirtualBox`), fs.constants.R_OK , (err) => {
-                        if(err){
-                            fs.access(path.resolve(`C:/Program Files (x86)/Oracle/VirtualBox`), fs.constants.R_OK , (err) => {
-                                if(err)
-                                    reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
-                                else
-                                    resolve(true);
-                            });
+                    try {
+                        fs.accessSync(path.resolve(`C:/Program Files/Oracle/VirtualBox`));
+                        hasVirtualBox = true;
+                    } catch (err) {
+                        try {
+                            fs.accessSync(path.resolve(`C:/Program Files (x86)/Oracle/VirtualBox`));
+                            hasVirtualBox = true;
                         }
-                    });
+                        catch(err){
+                        }
+                    }
                 }
+
+                if(hasVirtualBox && hasVagrant)
+                    resolve(true);
+                else
+                    reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
             })
         })
     }
