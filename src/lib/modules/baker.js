@@ -358,7 +358,7 @@ module.exports = function(dep) {
             }
         }
         let extravars = JSON.stringify(flatVars);
-        //let extravars = yaml.dump(variables); 
+        //let extravars = yaml.dump(variables);
 
         return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}; rm -f playbook.args.json`, sshConfig, verbose);
     }
@@ -395,7 +395,7 @@ module.exports = function(dep) {
             }
         }
         let extravars = JSON.stringify(flatVars);
-        //let extravars = yaml.dump(variables); 
+        //let extravars = yaml.dump(variables);
         return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user}; rm -f template.args.json`, sshConfig, verbose);
     }
 
@@ -454,6 +454,10 @@ module.exports = function(dep) {
     result.initVagrantFile = async function(vagrantFilePath, doc, template, scriptPath) {
         const { mustache, fs, path, slash } = dep;
 
+        if (doc.vm ) {
+            doc.vagrant = doc.vm;
+            delete doc.vm;
+        }
         const vagrant = doc.vagrant;
         await traverse(vagrant);
 
@@ -580,7 +584,7 @@ module.exports = function(dep) {
             //    print.info(data);
             //});
 
-            await spinner.spinPromise(machine.upAsync(), `Provisioning VM in VirtualBox`, spinnerDot);      
+            await spinner.spinPromise(machine.upAsync(), `Provisioning VM in VirtualBox`, spinnerDot);
 
             let sshConfig = await baker.getSSHConfig(machine);
             //let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;

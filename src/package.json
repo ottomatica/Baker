@@ -54,7 +54,10 @@
         "yargs": "^8.0.2"
     },
     "pkg": {
-        "assets": ["config/**","remotes"],
+        "assets": [
+            "config/**",
+            "remotes"
+        ],
         "scripts": "lib/**"
     },
     "bin": "cmd.js",
