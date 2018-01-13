@@ -559,7 +559,7 @@ module.exports = function(dep) {
         }
     }
 
-    result.bake2 = async function(ansibleSSHConfig, ansibleVM, scriptPath) {
+    result.bake2 = async function(ansibleSSHConfig, ansibleVM, scriptPath,verbose) {
         var { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
@@ -608,7 +608,7 @@ module.exports = function(dep) {
             // Installing stuff.
             let resolveB = require('../bakerlets/resolve');
             await resolveB.resolveBakerlet(bakerletsPath, remotesPath,
-                doc, scriptPath)
+                doc, scriptPath, verbose)
 
         } catch (err) {
             throw err;

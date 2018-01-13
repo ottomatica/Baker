@@ -21,7 +21,7 @@ class Maven extends Bakerlet {
     async install()
     {
         await baker.runAnsibleAptInstall(
-            {name: this.name}, "maven", this.ansibleSSHConfig, false
+            {name: this.name}, "maven", this.ansibleSSHConfig, this.verbose
         );
     }
 

@@ -69,7 +69,7 @@ class Apt extends Bakerlet {
             { name: this.name },
             cmd,
             this.ansibleSSHConfig,
-            true,
+            this.verbose,
             this.variables
         );
     }
