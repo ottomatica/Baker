@@ -8,4 +8,4 @@ Just point to a github repo with a baker.yml file, and we do the rest.
 $ baker bake --repo https://github.com/alt-code/Dazed
 ```
 
-[![asciicast](https://asciinema.org/a/aHqNIx7NNIINaVwtxEwceHwhT.png)](https://asciinema.org/a/aHqNIx7NNIINaVwtxEwceHwhT)
+[![asciicast](https://asciinema.org/a/tc5QYoqkpDUlczVFKe9PQZRY4.png)](https://asciinema.org/a/tc5QYoqkpDUlczVFKe9PQZRY4)
