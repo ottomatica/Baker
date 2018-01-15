@@ -1,0 +1,25 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+    {{#packages.default}}
+    - name: Ensure {{{name}}} is installed.
+      apt:
+        pkg: {{{name}}}
+        force: yes
+        state: latest
+        cache_valid_time: 3600
+        update_cache: yes
+      become: yes
+
+    {{/packages.default}}
+    {{#packages.deb}}
+    - name: Ensure {{{name}}} is installed
+      apt:
+        deb: {{{deb}}}
+
+    {{/packages.deb}}
+
+    {{#packages.ppa}}
+    {{/packages.ppa}}

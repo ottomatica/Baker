@@ -1,0 +1,19 @@
+---
+- hosts: all 
+
+  tasks:
+    - name: ensure keys directory exists
+      file:
+        path: /keys
+        owner: "{{ansible_user}}"
+        mode: 0700
+        state: directory
+      become: yes
+
+    # Passed in from extra-vars
+    - name: copy client keys
+      copy: 
+        src: "{{item}}"
+        dest: "/keys/{{item}}"
+        mode: 0600
+      with_items: "{{baker_client_keys}}"

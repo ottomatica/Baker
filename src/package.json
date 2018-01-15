@@ -1,18 +1,19 @@
 {
     "name": "baker",
-    "version": "0.1.0",
+    "version": "0.2.1",
     "description": "baker creates ansible powered virtual machines",
     "engines": {
         "node": ">=7.10.0"
     },
     "main": "baker.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "mocha test/bake/*.js",
         "int-test": "mocha test/integration/*.js",
         "build-macos": "pkg --targets latest-macos-x64 --output ./installers/macos/bin/baker ./package.json",
         "build-win": "pkg --targets latest-win-x64 --output ./installers/win/bin/baker.exe ./package.json",
-        "build-linux": "pkg --targets latest-linux-x64 --output ./installers/linux/bin/baker ./package.json",
-        "package-macos": "npm run build-macos && ./installers/macos/package.sh"
+        "build-linux": "pkg --targets latest-linux-x64 --output ./installers/linux/executable/baker ./package.json",
+        "package-macos": "npm run build-macos && ./installers/macos/package.sh",
+        "package-linux": "npm run build-linux && cp ./installers/linux/executable/baker ./installers/linux/deb-template/baker/usr/bin/baker && dpkg --build installers/linux/deb-template/baker && mv ./installers/linux/deb-template/baker.deb ./installers/linux/deb/"
     },
     "repository": {
         "type": "git",
@@ -53,7 +54,10 @@
         "yargs": "^8.0.2"
     },
     "pkg": {
-        "assets": "config/**",
+        "assets": [
+            "config/**",
+            "remotes"
+        ],
         "scripts": "lib/**"
     },
     "bin": "cmd.js",

@@ -1,0 +1,9 @@
+---
+name: python-nb-test
+vagrant:
+  ip: "192.168.88.2"
+tools:
+  - jupyter
+lang:
+  - python2
+start: jupyter notebook --no-browser --ip 0.0.0.0 --NotebookApp.token=''

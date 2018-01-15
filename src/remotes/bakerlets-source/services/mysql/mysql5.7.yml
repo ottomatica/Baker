@@ -1,0 +1,112 @@
+---
+- hosts: all 
+  vars:
+    - root_db_password: "{{mysql_password}}"
+
+  tasks:
+    - name: Try to specify preference for mysql
+      shell: echo mysql-apt-config mysql-apt-config/select-server select mysql-5.7 | debconf-set-selections
+      become: yes
+
+    # Download mysql debian package
+    - name: Add mysql apt-config debian 
+      apt: deb=http://dev.mysql.com/get/mysql-apt-config_0.8.1-1_all.deb update-cache=yes cache_valid_time=86400
+      become: yes
+
+    # Basic nice dev stuff
+    - name: Install required system packages.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - python-dev
+        - python-pip
+        - gcc
+        - python-setuptools
+        - git-core
+        - python-setuptools
+        - debconf-utils
+      become: yes
+
+    # For 5.7, password is required during install. Normally, this is prompted by an interactive script.
+    # But by populating the debconf database, we can setup a password that gets asked during install.
+    - name: Mysql | Set root password
+      shell: echo mysql-server mysql-server/root_password password {{root_db_password}} | debconf-set-selections  
+      become: yes
+
+    - name: Mysql | Set root repassword
+      shell: echo mysql-server mysql-server/root_password_again password {{root_db_password}} | debconf-set-selections
+      become: yes
+
+    # There is a module that also allows this to work.
+    # Doing a different set of question keys, which seems to be the updated question key.
+    # https://gist.github.com/fideloper/e774cb62d8be28da8a93
+    - name: Set root Password
+      debconf:
+        name: mysql-community-server
+        question: 'mysql-community-server/root-pass'
+        value: '{{ root_db_password }}' # Set as a variable
+        vtype: password
+      become: yes
+
+    - name: Set root Password Again
+      debconf:
+        name: mysql-community-server
+        question: 'mysql-community-server/re-root-pass'
+        value: '{{ root_db_password }}' # Set as a variable
+        vtype: password
+      become: yes
+
+    # Install mysql
+      #dpkg_options="force-confnew"
+    - name: Install mysql components
+      apt: pkg={{ item }} state=latest force=yes update_cache=true cache_valid_time=86400       
+      with_items:
+        - mysql-server
+        - mysql-client
+        - libmysqlclient-dev
+      become: yes   
+
+    - name: Copy my.cnf settings
+      template: src=templates/mysql.cfg dest=/etc/mysql/mysql.conf.d/mysqld.cnf
+      become: yes
+
+    - name: ensure mysql is running and starts on boot
+      service: name=mysql state=restarted enabled=true
+      become: yes
+
+    - name: Install the Python MySQLB module
+      pip: name=MySQL-python
+      become: yes
+
+    - name: update mysql root password for all root accounts
+      mysql_user: name=root
+                  password="{{ root_db_password }}"
+                  check_implicit_admin=yes
+                  login_user=root
+                  login_password="{{root_db_password}}"
+                  state=present
+
+    # Need to do this for idempotency, see
+    # http://ansible.cc/docs/modules.html#mysql-user
+    - name: copy .my.cnf file with mysql root password credentials
+      #template: src=templates/root/.my.cnf dest=/root/.my.cnf owner=root mode=0600
+      template: src=templates/my.cnf dest={{ ansible_env.HOME}}/.my.cnf mode=0600
+
+    - name: update mysql root password for all root accounts on {{ inventory_hostname }}
+      mysql_user: name=root host={{ item }} password={{ root_db_password }} login_user=root login_password={{root_db_password}}
+      with_items:
+        - localhost
+        # IPV6 localhost
+        - ::1
+        # IP address of server
+        - "{{ inventory_hostname }}"
+
+
+    - name: ensure anonymous users are not in the database
+      mysql_user: name='' host={{ item }} state=absent
+      with_items:
+        - localhost
+        - ::1
+        - "{{ inventory_hostname }}"
+
+    - name: remove the test database
+      mysql_db: name=test state=absent

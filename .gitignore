@@ -3,3 +3,6 @@ package-lock.json
 builds/
 src/installers/macos/bin/
 src/installers/win/bin/
+src/installers/linux/deb/baker.deb
+src/installers/linux/executable/baker
+src/installers/linux/deb-template/baker/usr/bin/baker
