@@ -9,9 +9,6 @@ module.exports = function(dep) {
 
         return new Promise((resolve, reject)=>{
             hasbin('vagrant', (hasVagrant)=>{
-                if(!hasVagrant)
-                    reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
-
                 let hasVirtualBox = false;
                 if(platform === 'darwin' || platform === 'linux'){
                     hasbin('virtualbox', (hasVB)=>{
@@ -34,8 +31,10 @@ module.exports = function(dep) {
 
                 if(hasVirtualBox && hasVagrant)
                     resolve(true);
-                else
-                    reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
+                else{
+                    console.log('=> Dependencies not found. Make sure you have installed VirtualBox and Vagrant.\n');
+                    resolve(true);
+                }
             })
         })
     }
