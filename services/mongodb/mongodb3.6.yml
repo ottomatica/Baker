@@ -1,0 +1,22 @@
+---
+- hosts: localhost 
+
+  tasks:
+    - name: add an apt key of MongoDB
+      become: yes
+      apt_key:
+        keyserver: keyserver.ubuntu.com
+        id: 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
+
+    - name: create list file for MongoDB
+      command: echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.6 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.6.list
+
+    - name: Install mongodb
+      apt: pkg=mongodb-org state=latest force=yes update_cache=true cache_valid_time=86400       
+      with_items:
+        - mongodb-org
+      become: yes   
+
+    - name: ensure mongodb is running and starts on boot
+      service: name=mongod state=restarted enabled=true
+      become: yes
