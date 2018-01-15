@@ -466,10 +466,26 @@ module.exports = function(dep) {
         vagrant.memory = vagrant.memory || "1024"
 
         // Adaptor pattern: Support baker2 and baker format
+        let network = doc.vagrant.network || [];
         if( vagrant.ip )
         {
-            vagrant.network = [{private_network: {ip: vagrant.ip}}];
+            network = [...network, ...[{private_network: {ip: vagrant.ip}}]];
         }
+        if( vagrant.ports )
+        {
+            // ports: '8000, 9000,  1000:3000'
+            let ports = vagrant.ports.trim().split(/\s*,\s*/g);
+            for( var port of ports  )
+            {
+                let a = port.trim().split(/\s*:\s*/g);
+                let guest = a[0];
+                let host  = a[1] || a[0]; // if undefined use same as guest port for host port.
+                network = [...network, ...[{forwarded_port: {guest: guest, host: host}}]];
+            }
+        }
+        vagrant.network = network;
+        
+
 
         let syncFolders = doc.vagrant.synced_folders || [];
         doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
@@ -512,12 +528,9 @@ module.exports = function(dep) {
         await baker.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
 
         try {
+
             await machine.upAsync();
 
-            machine.on('up-progress', function(data) {
-                //console.log(machine, progress, rate, remaining);
-                print.info(data);
-            });
 
             let sshConfig = await baker.getSSHConfig(machine);
             let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
@@ -559,7 +572,7 @@ module.exports = function(dep) {
         }
     }
 
-    result.bake2 = async function(ansibleSSHConfig, ansibleVM, scriptPath,verbose) {
+    result.bake2 = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
         var { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
@@ -579,10 +592,10 @@ module.exports = function(dep) {
 
         try {
 
-            //machine.on('up-progress', function(data) {
-            //    //console.log(machine, progress, rate, remaining);
-            //    print.info(data);
-            //});
+            machine.on('up-progress', function(data) {
+                //console.log(machine, progress, rate, remaining);
+                if( verbose ) print.info(data);
+            });
 
             await spinner.spinPromise(machine.upAsync(), `Provisioning VM in VirtualBox`, spinnerDot);
 
