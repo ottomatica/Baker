@@ -12,7 +12,7 @@ const spinner = modules['spinner'];
 const boxes = modules['boxes'];
 const baker = modules['baker'];
 
-module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,bakerScriptPath)
+module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,bakerScriptPath,verbose)
 {
 
     //let doc;
@@ -21,7 +21,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
         //    fs.readFileSync(config, 'utf8')
         //);
 
-        console.log( doc );
+        if( verbose ) console.log( doc );
 
         let extra_vars = [];
         if( doc.vars )
@@ -33,7 +33,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
         {
             for (var i = 0; i < doc.lang.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"lang"), doc.lang[i], extra_vars);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"lang"), doc.lang[i], extra_vars, verbose);
             }
         }
 
@@ -41,7 +41,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
         {
             for (var i = 0; i < doc.config.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"config"), doc.config[i], extra_vars);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"config"), doc.config[i], extra_vars, verbose);
             }
         }
 
@@ -49,7 +49,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
         {
             for (var i = 0; i < doc.services.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"services"), doc.services[i], extra_vars);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"services"), doc.services[i], extra_vars, verbose);
             }
         }
 
@@ -57,7 +57,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
         {
             for (var i = 0; i < doc.tools.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"tools"), doc.tools[i], extra_vars);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"tools"), doc.tools[i], extra_vars, verbose);
             }
         }
 
@@ -65,7 +65,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
         {
             for (var i = 0; i < doc.packages.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"packages"), doc.packages[i], extra_vars);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"packages"), doc.packages[i], extra_vars, verbose);
             }
         }
 
@@ -76,7 +76,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
             let vmSSHConfigUser = await baker.getSSHConfig(vm);
 
             console.log("Starting command", doc.start);
-            start(doc.start, vmSSHConfigUser);
+            start(doc.start, vmSSHConfigUser, verbose);
         }
 
 
@@ -104,7 +104,7 @@ async function getSSHConfig(machine) {
     }
 }
 
-async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extra_vars)
+async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extra_vars, verbose)
 {
     let mod = "";
     let version = "";
@@ -124,7 +124,7 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extr
             mod =  dir + "/" + match[1];
             version = match[2];
         }
-        console.log("Found", mod, version);
+        if( verbose ) console.log("Found", mod, version);
     }
 
     let classFoo = require(mod)
@@ -137,6 +137,7 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extr
     let j = new classFoo(vmName, ansibleSSHConfig, version);
     j.setRemotesPath(remotesPath);
     j.setBakePath(bakerScriptPath);
+    j.setVerbose(verbose);
 
     await spinner.spinPromise(j.load(bakerlet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
     await spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);

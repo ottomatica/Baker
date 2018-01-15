@@ -27,7 +27,7 @@ class Nodejs extends Bakerlet {
     {
         var cmd = `nodejs${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, true, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
         //console.log(`installed java ${this.version}`);
     }

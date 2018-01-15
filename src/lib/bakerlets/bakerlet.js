@@ -19,6 +19,11 @@ class Bakerlet
         this.bakePath = bakePath;
     }
 
+    setVerbose(verbose)
+    {
+        this.verbose = verbose;
+    }
+
 
     async copy(src,dest)
     {
@@ -33,7 +38,7 @@ class Bakerlet
 
     async exec(cmd) {
         // Run cmd on remote server
-        await ssh.sshExec(cmd, this.ansibleSSHConfig, true);
+        await ssh.sshExec(cmd, this.ansibleSSHConfig, this.verbose);
     }
 }
 

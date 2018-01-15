@@ -45,7 +45,7 @@ class Keys extends Bakerlet {
     {
         var cmd = `keys${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, true, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
     }
 

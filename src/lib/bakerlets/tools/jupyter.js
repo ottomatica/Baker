@@ -25,7 +25,7 @@ class Jupyter extends Bakerlet {
     {
         var cmd = `jupyter${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, true, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
     }
 
