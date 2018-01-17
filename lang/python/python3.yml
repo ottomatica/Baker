@@ -20,11 +20,13 @@
     - name: Set python3 as default python using alternatives
       alternatives:
         name: python
+        link: /usr/bin/python
         path: /usr/bin/python3
 
     - name: Set pip3 as default pip using alternatives
       alternatives:
         name: pip
+        link: /usr/bin/pip
         path: /usr/bin/pip3
 
     - name: Upgrade pip
