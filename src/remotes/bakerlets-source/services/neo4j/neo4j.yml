@@ -1,8 +1,6 @@
 ---
 - hosts: all
 
-  vars_prompt:
-
   vars:
     - neo4j_initial_password: "{{neo4j_password}}"
 
