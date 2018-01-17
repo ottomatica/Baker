@@ -18,10 +18,16 @@ module.exports = function(dep) {
             describe: `give a git repository URL which has a baker.yml in it's root directory`,
             demand: false,
             type: 'string'
+        },
+        verbose: {
+            alias: 'v',
+            describe: `Provide extra output from baking process`,
+            demand: false,
+            type: 'boolean'
         }
     };
     cmd.handler = async function(argv) {
-        const { local, repo } = argv;
+        const { local, repo, verbose } = argv;
         const { path, baker, cloneRepo, validator, print, spinner, spinnerDot } = dep;
 
         try{
@@ -39,7 +45,7 @@ module.exports = function(dep) {
                 process.exit(1);
             }
 
-            let validation = await spinner.spinPromise(validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
+            //let validation = await spinner.spinPromise(validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
 
             try
             {
@@ -53,10 +59,8 @@ module.exports = function(dep) {
 
             let sshConfig = await baker.getSSHConfig(ansibleVM);
 
-            let baking = baker.bake(sshConfig, ansibleVM, bakePath);
-            await spinner.spinPromise(baking, 'Baking VM', spinnerDot);
+            await baker.bake2(sshConfig, ansibleVM, bakePath, verbose);
 
-            // print.info('Baking VM finished.');
         } catch (err) {
             print.error(err);
         }

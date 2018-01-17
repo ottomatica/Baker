@@ -16,7 +16,7 @@ describe('baker should create python notebook', function() {
         fs.mkdirpSync(tstDir);
         fs.copySync('test/resources/baker2/python-notebook.yml', path.join(tstDir,'baker.yml'));
         // echo value for prompt input for password.
-        var child = child_process.exec(`baker bake2 --local ${tstDir}`, 
+        var child = child_process.exec(`baker bake --local ${tstDir}`, 
                                        {cwd: os.tmpdir()  }, function(error, stdout, stderr) 
         {
             console.log(stderr || stdout);

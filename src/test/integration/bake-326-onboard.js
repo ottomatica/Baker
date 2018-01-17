@@ -15,7 +15,7 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
         const tstDir = path.join(os.tmpdir(), 'Onboarding');
         fs.remove(tstDir);
         // echo value for prompt input for password.
-        var child = child_process.exec('echo 326 | baker bake2 --repo https://github.ncsu.edu/engr-csc326-staff/Onboarding', 
+        var child = child_process.exec('echo 326 | baker bake --repo https://github.ncsu.edu/engr-csc326-staff/Onboarding', 
                                        {cwd: os.tmpdir()  }, function(error, stdout, stderr) {
             setTimeout( function()
             {
