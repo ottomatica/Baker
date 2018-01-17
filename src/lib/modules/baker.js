@@ -373,6 +373,17 @@ module.exports = function(dep) {
         return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} --become`, sshConfig, verbose);
     }
 
+    result.runAnsiblePipInstall = async function(doc, requirements, sshConfig, verbose) {
+        const { path, vagrant, baker, ssh, boxes } = dep;
+
+        let dir = path.join(boxes, doc.name);
+        let vm = vagrant.create({ cwd: dir });
+        let vmSSHConfigUser = await baker.getSSHConfig(vm);
+
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m pip -a "requirements=${requirements}" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} --become`, sshConfig, verbose);
+    }
+
+
     result.mkTemplatesDir = async function(doc, sshConfig) {
         const { path, vagrant, baker, ssh, boxes } = dep;
 
