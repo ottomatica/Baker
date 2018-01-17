@@ -19,11 +19,6 @@
       path: /usr/bin/neo4j
     register: neo4j_check
 
-  - name: Check for NodeJS
-    stat:
-      path: /usr/bin/node
-    register: node_check
-
   - name: Add Neo4J Key
     become: yes
     apt_key:
@@ -37,24 +32,10 @@
       state: present
       filename: neo4j
 
-  - name: Download NodeJS Setup Script
-    become: yes
-    get_url:
-      url: https://deb.nodesource.com/setup_9.x
-      dest: /tmp/nodejs
-      mode: 0700
-    when: not node_check.stat.exists
-
-  - name: Run Setup Script
-    become: yes
-    command: /tmp/nodejs
-    when: not node_check.stat.exists
-
   - name: Install Packages
     become: yes
     apt: name="{{ item.key }}={{ item.value }}" state=present update_cache=yes
     with_dict:
-      nodejs: 9.4.0-1nodesource1
       neo4j:  3.3.0
 
   - name: Ensure Neo4J Listens on All Devices
@@ -87,6 +68,3 @@
   - name: Start Neo4J
     become: yes
     service: name=neo4j state=started enabled=yes
-
-  - name: Install Node Modules
-    npm: path=/vagrant
