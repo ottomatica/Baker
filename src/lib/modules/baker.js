@@ -359,7 +359,7 @@ module.exports = function(dep) {
         }
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables);
-
+        if( verbose ) console.log( extravars );
         return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}; rm -f playbook.args.json`, sshConfig, verbose);
     }
 

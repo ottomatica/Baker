@@ -16,7 +16,7 @@ describe('baker should create neo4j vm', function() {
         fs.mkdirpSync(tstDir);
         fs.copySync('test/resources/baker2/neo4j.yml', path.join(tstDir,'baker.yml'));
         // echo value for prompt input for password.
-        var child = child_process.exec(`baker bake --local ${tstDir}`, 
+        var child = child_process.exec(`echo neo | baker bake -v --local ${tstDir}`, 
                                        {cwd: os.tmpdir()  }, function(error, stdout, stderr) 
         {
             console.log(stderr || stdout);

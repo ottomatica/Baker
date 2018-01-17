@@ -115,16 +115,25 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extr
     }
     else
     {
-        let regex = /([a-zA-Z-]+)([0-9]*\.?[0-9]*)/;
+        // This will correctly match neo4j3.3, java8, python etc.
+        let regex = /([a-zA-Z-0-9]*)([0-9]+\.?[0-9]*$)|([a-zA-Z-0-9]*)/;
         mod =  dir + "/" + bakerlet;
         let match = bakerlet.match(regex);
-        version = null;
-        if( match.length == 3)
+        if( match.length == 4)
         {
-            mod =  dir + "/" + match[1];
-            version = match[2];
+            if( match[1] === undefined && match[2] === undefined )
+            {
+                // We did not capture anything in the first part of regex. So, we have no version, just the mod.
+                // This is captured in third group.
+                mod =  dir + "/" + match[3];
+            }
+            else
+            {
+                mod =  dir + "/" + match[1];
+                version = match[2];
+            }
         }
-        if( verbose ) console.log("Found", mod, version);
+        if( verbose ) console.log("Found", mod, version, extra_vars);
     }
 
     let classFoo = require(mod)

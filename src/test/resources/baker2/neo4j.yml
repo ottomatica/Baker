@@ -1,10 +1,11 @@
 ---
 name: neo4j-test
 vm:
+  ip: 192.168.88.4
   ports: 7687, 7474, 7473
 vars:
-  neo4j_password: 
-    prompt: Please type initial neo4j password
+  - neo4j_password: 
+      prompt: Please type initial neo4j password
 lang:
   - nodejs9
 services:
