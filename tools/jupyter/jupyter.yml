@@ -17,11 +17,11 @@
         - python-scipy 
         - python-matplotlib
         - python-pandas         
-      when: python_version.stdout_lines.startswith('Python 2')
+      when: python_version.stdout.startswith('Python 2')
 
     - name: Install Jupyter
       pip: name=jupyter
-      when: python_version.stdout_lines.startswith('Python 2')
+      when: python_version.stdout.startswith('Python 2')
 
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
@@ -30,8 +30,8 @@
         - python3-scipy 
         - python3-matplotlib
         - python3-pandas         
-      when: python_version.stdout_lines.startswith('Python 3')
+      when: python_version.stdout.startswith('Python 3')
 
     - name: Install Jupyter
       pip: name=jupyter
-      when: python_version.stdout_lines.startswith('Python 3')
+      when: python_version.stdout.startswith('Python 3')
