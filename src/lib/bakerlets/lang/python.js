@@ -10,8 +10,8 @@ class Python extends Bakerlet {
         super(ansibleSSHConfig);
 
         this.name = name;
-        this.version = version;
-
+        // Default to python2
+        this.version = version || 2;
     }
 
     async load(obj, variables)
