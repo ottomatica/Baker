@@ -1,0 +1,70 @@
+---
+- hosts: all
+
+  vars_prompt:
+
+  vars:
+    - neo4j_initial_password: "{{neo4j_password}}"
+
+  handlers:
+
+  - name: Restart Neo4J
+    become: yes
+    service: name=neo4j state=restarted enabled=yes
+
+  tasks:
+
+  - name: Check for Neo4J
+    stat:
+      path: /usr/bin/neo4j
+    register: neo4j_check
+
+  - name: Add Neo4J Key
+    become: yes
+    apt_key:
+      url: http://debian.neo4j.org/neotechnology.gpg.key
+      state: present
+
+  - name: Add Neo4J Repo
+    become: yes
+    apt_repository:
+      repo: deb http://debian.neo4j.org/repo stable/
+      state: present
+      filename: neo4j
+
+  - name: Install Packages
+    become: yes
+    apt: name="{{ item.key }}={{ item.value }}" state=present update_cache=yes
+    with_dict:
+      neo4j:  3.3.0
+
+  - name: Ensure Neo4J Listens on All Devices
+    become: yes
+    lineinfile:
+      path: /etc/neo4j/neo4j.conf
+      regexp: "{{ item.key }}"
+      line: "{{ item.key }}={{ item.value }}"
+    with_dict:
+      dbms.connector.bolt.listen_address:  0.0.0.0:7687
+      dbms.connector.http.listen_address:  0.0.0.0:7474
+      dbms.connector.https.listen_address: 0.0.0.0:7473
+    notify:
+    - Restart Neo4J
+
+  - name: Set Initial Neo4J Password
+    become: yes
+    command: "neo4j-admin set-initial-password '{{ neo4j_initial_password }}'"
+    when: not neo4j_check.stat.exists
+
+  - name: Properly Set Neo4J Directory Permissions # Executing sudo neo4j-admin overrides them
+    become: yes
+    file:
+      path: /var/lib/neo4j
+      owner: neo4j
+      group: adm
+      recurse: yes
+      state: directory
+
+  - name: Start Neo4J
+    become: yes
+    service: name=neo4j state=started enabled=yes
