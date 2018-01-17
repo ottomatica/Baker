@@ -1,0 +1,33 @@
+- hosts: all 
+  become: yes
+  tasks:
+
+    - name: Install basic utils and build envs.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - git
+        - unzip
+        - vim
+        - build-essential
+
+    - name: Install required system packages.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - python3-dev
+        - python3-pip
+        - python3-setuptools
+
+    - name: Set python3 as default python using alternatives
+      alternatives:
+        name: python
+        path: /usr/bin/python3
+
+    - name: Set pip3 as default pip using alternatives
+      alternatives:
+        name: pip
+        path: /usr/bin/pip3
+
+    - name: Upgrade pip
+      pip:
+        name: pip
+        extra_args: --upgrade
