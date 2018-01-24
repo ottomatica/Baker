@@ -4,15 +4,20 @@ module.exports = function(dep) {
     let result = {};
 
     result.validateDependencies = async function(){
-        const { hasbin, Promise, fs, path, drivelist } = dep;
+        const { hasbin, Promise, fs, path, drivelist, print } = dep;
         let platform = process.platform;
         let dependencyNotFound = 'Dependencies not found. Make sure you have installed VirtualBox and Vagrant.';
 
         if (platform == 'darwin' || platform === 'linux') {
             hasbin.all( ['vagrant', 'virtualbox'], hasDependencies => {
                 if(hasDependencies) return true;
-                else throw dependencyNotFound;}
-            );
+                else{
+                    // throw dependencyNotFound;
+                    print.warning(dependencyNotFound, 1)
+                    return true;
+                }
+
+            });
         }
         else {
             hasbin('vagrant', async function (hasVagrant) {
@@ -25,7 +30,9 @@ module.exports = function(dep) {
                                     if(err) {
                                         fs.access(path.resolve(path.join(process.env.PROGRAMFILES, `/Oracle/VirtualBox`)), err => {
                                             if(err){
-                                                throw dependencyNotFound;
+                                                // throw dependencyNotFound;
+                                                print.warning(dependencyNotFound, 1)
+                                                return true;
                                             }
                                         });
                                     }
@@ -35,7 +42,9 @@ module.exports = function(dep) {
                         });
                     })
                 } else {
-                    throw dependencyNotFound;
+                    // throw dependencyNotFound;
+                    print.warning(dependencyNotFound, 1)
+                    return true;
                 }
             });
         }
