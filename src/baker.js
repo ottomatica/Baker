@@ -17,6 +17,7 @@ const slash = require('slash');
 const git = require('simple-git');
 const ora = require('ora');
 const hasbin = require('hasbin');
+const drivelist = Promise.promisifyAll(require('drivelist'));
 require('console.table');
 
 const boxes = path.join(require('os').homedir(), '.baker');

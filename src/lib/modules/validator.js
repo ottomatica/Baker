@@ -4,43 +4,41 @@ module.exports = function(dep) {
     let result = {};
 
     result.validateDependencies = async function(){
-        const { hasbin, Promise, fs, path } = dep;
+        const { hasbin, Promise, fs, path, drivelist } = dep;
         let platform = process.platform;
+        let dependencyNotFound = 'Dependencies not found. Make sure you have installed VirtualBox and Vagrant.';
 
-        return new Promise((resolve, reject)=>{
-            hasbin('vagrant', (hasVagrant)=>{
-                if(!hasVagrant)
-                    reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
-
-                if(platform == 'darwin' || platform === 'linux'){
-                    hasbin('virtualbox', (hasVirtualBox)=>{
-                        if(hasVirtualBox && hasVagrant)
-                            resolve(true);
-                        else
-                            reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
+        if (platform == 'darwin' || platform === 'linux') {
+            hasbin.all( ['vagrant', 'virtualbox'], hasDependencies => {
+                if(hasDependencies) return true;
+                else throw dependencyNotFound;}
+            );
+        }
+        else {
+            hasbin('vagrant', async function (hasVagrant) {
+                if(hasVagrant){
+                    let drives = (await drivelist.listAsync()).map(d => d.mountpoints[0].path);
+                    drives.forEach(drive => {
+                        fs.access(path.resolve(path.join(drive, `/Program Files/Oracle/VirtualBox`)), err => {
+                            if (err){
+                                fs.access(path.resolve(path.join(drive, `/Program Files (x86)/Oracle/VirtualBox`)), err => {
+                                    if(err) {
+                                        fs.access(path.resolve(path.join(process.env.PROGRAMFILES, `/Oracle/VirtualBox`)), err => {
+                                            if(err){
+                                                throw dependencyNotFound;
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                            return true;
+                        });
                     })
+                } else {
+                    throw dependencyNotFound;
                 }
-                else if(platform === 'win32'){
-                    let hasVirtualBox = false;
-                    try {
-                        fs.accessSync(path.resolve(`C:/Program Files/Oracle/VirtualBox`));
-                        hasVirtualBox = true;
-                    } catch (err) {
-                        try {
-                            fs.accessSync(path.resolve(`C:/Program Files (x86)/Oracle/VirtualBox`));
-                            hasVirtualBox = true;
-                        }
-                        catch(err){
-                        }
-                    }
-
-                    if(hasVirtualBox && hasVagrant)
-                        resolve(true);
-                    else
-                        reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.');
-                }
-            })
-        })
+            });
+        }
     }
 
     result.validateBakerScript = async function(bakerScriptPath) {
