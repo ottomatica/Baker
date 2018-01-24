@@ -55,7 +55,8 @@ let dep = {
     ansible,
     configPath,
     bakerletsPath,
-    remotesPath
+    remotesPath,
+    drivelist
 };
 
 // Internal dependencies
