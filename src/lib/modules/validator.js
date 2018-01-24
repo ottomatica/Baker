@@ -12,13 +12,16 @@ module.exports = function(dep) {
                 if(!hasVagrant)
                     reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
 
-                let hasVirtualBox = false;
-                if(platform === 'darwin' || platform === 'linux'){
-                    hasbin('virtualbox', (hasVB)=>{
-                        hasVirtualBox = hasVB;
+                if(platform == 'darwin' || platform === 'linux'){
+                    hasbin('virtualbox', (hasVirtualBox)=>{
+                        if(hasVirtualBox && hasVagrant)
+                            resolve(true);
+                        else
+                            reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
                     })
                 }
                 else if(platform === 'win32'){
+                    let hasVirtualBox = false;
                     try {
                         fs.accessSync(path.resolve(`C:/Program Files/Oracle/VirtualBox`));
                         hasVirtualBox = true;
@@ -30,12 +33,12 @@ module.exports = function(dep) {
                         catch(err){
                         }
                     }
-                }
 
-                if(hasVirtualBox && hasVagrant)
-                    resolve(true);
-                else
-                    reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.')
+                    if(hasVirtualBox && hasVagrant)
+                        resolve(true);
+                    else
+                        reject('Dependencies not found. Make sure you have installed VirtualBox and Vagrant.');
+                }
             })
         })
     }
