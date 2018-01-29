@@ -32,8 +32,6 @@
     - name: ensure mongodb is running and starts on boot
       service: name=mongod state=restarted enabled=true
       become: yes
-<<<<<<< HEAD
-=======
 
     - name: Installing Python-Pip
       apt:
@@ -42,4 +40,3 @@
 
     - name: Install the latest pymongo package
       pip: name=pymongo state=latest use_mirrors=no
->>>>>>> 1c8b11a5d9a90f2a250ed2fdd54bf7e6e6ca1f42
