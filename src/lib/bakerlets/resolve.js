@@ -69,6 +69,12 @@ module.exports.resolveBakerlet = async function(bakerletsPath,remotesPath,doc,ba
             }
         }
 
+        if( doc.env )
+        {
+            doc.env = [{env: doc.env}]; // fixing the format // TODO: it works ok, but probably too hacky
+            await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"env"), doc.env[0], extra_vars, verbose);
+        }
+
         if( doc.start )
         {
             let dir = path.join(boxes, doc.name);
