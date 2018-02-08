@@ -1,0 +1,7 @@
+---
+name: plain-cluster
+cluster:
+  plain: 
+    nodes[3]:
+      lang:
+        - nodejs9

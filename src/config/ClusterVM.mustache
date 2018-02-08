@@ -1,0 +1,56 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure('2') do |config|
+
+  config.vm.box = 'ubuntu/xenial64'
+
+  config.vm.provider :virtualbox do |vb|
+    vb.customize [ 'modifyvm', :id, '--natdnshostresolver1', 'on' ]
+    vb.customize ["modifyvm", :id, "--cpus", 1]
+
+  end
+
+  config.vm.define :control do |machine|
+
+    machine.vm.network 'private_network', ip: '192.168.77.10'
+    machine.vm.synced_folder '.vagrant/machines/', '/ssh', mount_options: ["dmode=775,fmode=600"]
+
+    machine.vm.provision "ansible_local" do |ansible|
+
+      ansible.playbook = 'playbooks/configure-control-server.yml'
+      ansible.install_mode = "pip"
+      ansible.version = "2.3.2.0"
+      ansible.extra_vars = {
+          inventory_file_name: '../inventory.vagrant',
+      }
+
+    end
+
+  end
+
+  config.vm.define :nomad1 do |machine|
+    machine.vm.network 'private_network', ip: '192.168.77.11'
+    machine.vm.provider :virtualbox do |vb|
+      vb.customize ["modifyvm", :id, "--memory", 1024]
+      vb.customize ["modifyvm", :id, "--cpus", 1]
+    end
+  end
+
+  config.vm.define :nomad2 do |machine|
+    machine.vm.network 'private_network', ip: '192.168.77.12'
+    machine.vm.provider :virtualbox do |vb|
+      vb.customize ["modifyvm", :id, "--memory", 9216]
+      vb.customize ["modifyvm", :id, "--cpus", 2]
+    end
+  end
+
+  config.vm.define :nomad3 do |machine|
+    machine.vm.network 'private_network', ip: '192.168.77.13'
+    machine.vm.provider :virtualbox do |vb|
+      vb.customize ["modifyvm", :id, "--memory", 9216]
+      vb.customize ["modifyvm", :id, "--cpus", 2]
+    end
+  end
+
+end
