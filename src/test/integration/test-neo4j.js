@@ -6,17 +6,17 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 
-describe('baker should create r tidy vm', function() {
+describe('baker should create neo4j vm', function() {
     this.timeout(2000000);
 
     // https://github.ncsu.edu/engr-csc326-staff/Onboarding
 
-    it('should setup tidyverse', function(done) {
-        const tstDir = path.join(os.tmpdir(), 'r-tidy');
+    it('should setup neo4j', function(done) {
+        const tstDir = path.join(os.tmpdir(), 'neo4j');
         fs.mkdirpSync(tstDir);
-        fs.copySync('test/resources/baker2/r-tidy.yml', path.join(tstDir,'baker.yml'));
+        fs.copySync('test/resources/baker2/neo4j.yml', path.join(tstDir,'baker.yml'));
         // echo value for prompt input for password.
-        var child = child_process.exec(`baker bake --local ${tstDir}`, 
+        var child = child_process.exec(`echo neo | baker bake -v --local ${tstDir}`, 
                                        {cwd: os.tmpdir()  }, function(error, stdout, stderr) 
         {
             console.log(stderr || stdout);

@@ -4,7 +4,7 @@ const camelCase = require('camelcase');
 const requireDir = require('require-dir');
 const fs = Promise.promisifyAll(require('fs-extra'));
 const mustache = require('mustache');
-const child_process = require('child_process');
+const child_process = Promise.promisifyAll(require('child_process'));
 const vagrant = Promise.promisifyAll(require('node-vagrant'));
 const scp2 = require('scp2');
 const ssh2 = require('ssh2');
@@ -17,6 +17,7 @@ const slash = require('slash');
 const git = require('simple-git');
 const ora = require('ora');
 const hasbin = require('hasbin');
+const drivelist = Promise.promisifyAll(require('drivelist'));
 require('console.table');
 
 const boxes = path.join(require('os').homedir(), '.baker');
@@ -54,7 +55,8 @@ let dep = {
     ansible,
     configPath,
     bakerletsPath,
-    remotesPath
+    remotesPath,
+    drivelist
 };
 
 // Internal dependencies

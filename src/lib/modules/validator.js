@@ -4,39 +4,50 @@ module.exports = function(dep) {
     let result = {};
 
     result.validateDependencies = async function(){
-        const { hasbin, Promise, fs, path } = dep;
+        const { hasbin, Promise, fs, path, drivelist, print } = dep;
         let platform = process.platform;
+        let dependencyNotFound = 'Dependencies not found. Make sure you have installed VirtualBox and Vagrant.';
 
-        return new Promise((resolve, reject)=>{
-            hasbin('vagrant', (hasVagrant)=>{
-                let hasVirtualBox = false;
-                if(platform === 'darwin' || platform === 'linux'){
-                    hasbin('virtualbox', (hasVB)=>{
-                        hasVirtualBox = hasVB;
-                    })
-                }
-                else if(platform === 'win32'){
-                    try {
-                        fs.accessSync(path.resolve(`C:/Program Files/Oracle/VirtualBox`));
-                        hasVirtualBox = true;
-                    } catch (err) {
-                        try {
-                            fs.accessSync(path.resolve(`C:/Program Files (x86)/Oracle/VirtualBox`));
-                            hasVirtualBox = true;
-                        }
-                        catch(err){
-                        }
-                    }
-                }
-
-                if(hasVirtualBox && hasVagrant)
-                    resolve(true);
+        if (platform == 'darwin' || platform === 'linux') {
+            hasbin.all( ['vagrant', 'virtualbox'], hasDependencies => {
+                if(hasDependencies) return true;
                 else{
-                    console.log('=> Dependencies not found. Make sure you have installed VirtualBox and Vagrant.\n');
-                    resolve(true);
+                    // throw dependencyNotFound;
+                    print.warning(dependencyNotFound, 1)
+                    return true;
                 }
-            })
-        })
+
+            });
+        }
+        else {
+            hasbin('vagrant', async function (hasVagrant) {
+                if(hasVagrant){
+                    let drives = (await drivelist.listAsync()).map(d => d.mountpoints[0].path);
+                    drives.forEach(drive => {
+                        fs.access(path.resolve(path.join(drive, `/Program Files/Oracle/VirtualBox`)), err => {
+                            if (err){
+                                fs.access(path.resolve(path.join(drive, `/Program Files (x86)/Oracle/VirtualBox`)), err => {
+                                    if(err) {
+                                        fs.access(path.resolve(path.join(process.env.PROGRAMFILES, `/Oracle/VirtualBox`)), err => {
+                                            if(err){
+                                                // throw dependencyNotFound;
+                                                print.warning(dependencyNotFound, 1)
+                                                return true;
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                            return true;
+                        });
+                    })
+                } else {
+                    // throw dependencyNotFound;
+                    print.warning(dependencyNotFound, 1)
+                    return true;
+                }
+            });
+        }
     }
 
     result.validateBakerScript = async function(bakerScriptPath) {

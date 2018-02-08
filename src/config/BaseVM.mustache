@@ -15,6 +15,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Every Vagrant virtual environment requires a box to build off of.
   config.vm.box = "{{{vagrant.box}}}"
 
+  config.ssh.insert_key = false
+  config.ssh.private_key_path = ["~/.baker/ansible-srv/keys/baker_rsa", "~/.vagrant.d/insecure_private_key"]
+
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
@@ -88,9 +91,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell",
     inline: "test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)"
 
-  #
-  # View the documentation for the provider you are using for more
-  # information on available options.
-
+  config.vm.provision "file", source: "~/.baker/ansible-srv/keys/baker_rsa.pub", destination: "~/.ssh/authorized_keys"
 
 end

@@ -359,7 +359,7 @@ module.exports = function(dep) {
         }
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables);
-
+        if( verbose ) console.log( extravars );
         return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}; rm -f playbook.args.json`, sshConfig, verbose);
     }
 
@@ -372,6 +372,28 @@ module.exports = function(dep) {
 
         return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} --become`, sshConfig, verbose);
     }
+
+    result.runAnsiblePipInstall = async function(doc, requirements, sshConfig, verbose) {
+        const { path, vagrant, baker, ssh, boxes } = dep;
+
+        let dir = path.join(boxes, doc.name);
+        let vm = vagrant.create({ cwd: dir });
+        let vmSSHConfigUser = await baker.getSSHConfig(vm);
+
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m pip -a "requirements=${requirements}" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} --become`, sshConfig, verbose);
+    }
+
+    result.runAnsibleNpmInstall = async function(doc, packagejson, sshConfig, verbose) {
+        const { path, vagrant, baker, ssh, boxes } = dep;
+
+        let dir = path.join(boxes, doc.name);
+        let vm = vagrant.create({ cwd: dir });
+        let vmSSHConfigUser = await baker.getSSHConfig(vm);
+
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m npm -a "path=${packagejson}" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user}`, sshConfig, verbose);
+    }
+
+
 
     result.mkTemplatesDir = async function(doc, sshConfig) {
         const { path, vagrant, baker, ssh, boxes } = dep;
@@ -452,7 +474,7 @@ module.exports = function(dep) {
     }
 
     result.initVagrantFile = async function(vagrantFilePath, doc, template, scriptPath) {
-        const { mustache, fs, path, slash } = dep;
+        const { mustache, fs, path, slash, baker } = dep;
 
         if (doc.vm ) {
             doc.vagrant = doc.vm;
@@ -462,7 +484,17 @@ module.exports = function(dep) {
         await traverse(vagrant);
 
         // Defaults
-        vagrant.box = vagrant.box || "ubuntu/xenial64"
+        // vagrant.box = vagrant.box || "ubuntu/xenial64"
+        // TODO: Cleanup this mess
+        if     (vagrant.box && (await baker.boxes()).map(e=>e.name).includes(`${vagrant.box}.baker`)){
+            vagrant.box = vagrant.box + '.baker';
+        }
+        else if(vagrant.box && (await baker.boxes()).map(e=>e.name).includes(`${vagrant.box}`)){
+            vagrant.box = vagrant.box;
+        }
+        else{
+            vagrant.box = "ubuntu/xenial64";
+        }
         vagrant.memory = vagrant.memory || "1024"
 
         // Adaptor pattern: Support baker2 and baker format
@@ -484,7 +516,7 @@ module.exports = function(dep) {
             }
         }
         vagrant.network = network;
-        
+
 
 
         let syncFolders = doc.vagrant.synced_folders || [];
@@ -626,6 +658,95 @@ module.exports = function(dep) {
         } catch (err) {
             throw err;
         }
+    }
+
+    result.package = async function(VMName, verbose) {
+        var { path, boxes, child_process } = dep;
+
+        let dir = path.join(boxes, VMName);
+
+        await child_process.execAsync(`cd ${dir} && vagrant package --output ${path.join(process.cwd(), VMName + '.box')}`, {stdio: ['inherit', 'inherit', 'ignore']});
+    }
+
+    result.import = async function(box, name, verbose) {
+        var { path, boxes, child_process, vagrant } = dep;
+
+        let boxName = name ? name : path.basename(box).split('.')[0];
+
+        await vagrant.boxAddAsync(path.join(process.cwd(), box), ['--name', boxName + '.baker'])
+        // await child_process.execAsync(`vagrant box add ${boxName}.baker ${path.join(process.cwd(), box)}`, {stdio: ['inherit', 'inherit', 'ignore']});
+    }
+
+    result.boxes = async function() {
+        const { vagrant, print } = dep;
+        try {
+            let boxes = await vagrant.boxListAsync([]);
+            delete boxes.version;
+            return boxes;
+        } catch (err) {
+            throw err
+        }
+    }
+
+    result.bakerBoxes = async function(verbose=true) {
+        const { vagrant, print, baker } = dep;
+
+        try {
+            let boxes = await baker.boxes();
+            let bakerBoxes = boxes.filter(box => box.name.match(/.baker$/));
+            // Hide .baker from the end before printing
+            bakerBoxes.forEach(box => {
+                box.name = box.name.split('.')[0];
+            })
+
+            if(verbose){
+                if(bakerBoxes == [])
+                    print.info(`\nYou currently don't have any boxes.`)
+                else
+                    console.table('\nBaker boxes: ', bakerBoxes);
+            }
+            return bakerBoxes;
+        } catch (err) {
+            throw err
+        }
+    }
+
+    result.bakeBox = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
+        const { vagrant, boxes, path, fs, spinner, spinnerDot, configPath, baker, yaml} = dep;
+
+        try {
+            let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
+
+            let dir = path.join(boxes, doc.name);
+            try {
+                await fs.ensureDir(dir);
+            } catch (err) {
+                throw `Creating directory failed: ${dir}`;
+            }
+
+
+            let template = await fs.readFile(path.join(configPath, './BaseVM.mustache'), 'utf8');
+
+            // if box is specified in baker.yml and this box exists, then use it => otherwise bake it
+            if(doc.vagrant.box && (await baker.bakerBoxes(false)).map(e=>e.name).includes(`${doc.vagrant.box}`)){
+
+                await baker.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
+
+                let machine = vagrant.create({ cwd: dir });
+                machine.on('up-progress', function(data) {
+                    if( verbose ) print.info(data);
+                });
+                await spinner.spinPromise(machine.upAsync(), `Starting VM`, spinnerDot);
+            }
+            else {
+                await baker.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
+            }
+
+        } catch (err) {
+            throw err;
+        }
+
+        return;
     }
 
     return result;

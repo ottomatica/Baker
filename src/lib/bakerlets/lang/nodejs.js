@@ -3,6 +3,7 @@ const baker = modules['baker'];
 
 const Bakerlet = require('../bakerlet');
 const path = require('path');
+const fs   = require('fs');
 
 class Nodejs extends Bakerlet {
 
@@ -29,7 +30,20 @@ class Nodejs extends Bakerlet {
         await baker.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
-        //console.log(`installed java ${this.version}`);
+
+        var localPackageJsonPath = path.resolve(this.bakePath, "package.json");
+        if( fs.existsSync(localPackageJsonPath) )
+        {
+            // There could be some funkyness depending on if there is a package-lock.json, etc:
+            // and node_modules is manually deleted:
+            // https://github.com/ansible/ansible/pull/29131
+            var vmPackagePath = `/${path.basename(this.bakePath)}`;
+            if( this.verbose ) console.log(`Attempting to run npm install in vm at ${vmPackagePath}`);
+            await baker.runAnsibleNpmInstall(
+                {name: this.name}, vmPackagePath, this.ansibleSSHConfig, this.verbose
+            );
+        }
+
     }
 
 
