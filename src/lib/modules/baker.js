@@ -660,6 +660,47 @@ module.exports = function(dep) {
         }
     }
 
+    result.cluster = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
+
+        var { mustache, slash, yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
+
+        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
+
+        let dir = path.join(boxes, doc.name);
+        let template = await fs.readFile(path.join(configPath, './ClusterVM.mustache'), 'utf8');
+
+        try {
+            await fs.ensureDir(dir);
+        } catch (err) {
+            throw `Creating directory failed: ${dir}`;
+        }
+
+        let machine = vagrant.create({ cwd: dir });
+
+        let cluster = {}
+        if( doc.cluster && doc.cluster.plain )
+        {
+            cluster.cluster = {};
+            cluster.cluster.nodes = [];
+
+            let cluster = {"xnodes [3]": []};
+
+            for(var k in cluster ) {
+              let m = k.match(/$nodes\s*\[(\d+)\]/)
+              if (k.match(/nodes\s*\[\d+\]/)) {
+                console.log(m[1]);
+                break;
+              }
+            }
+            
+        }
+
+        const output = mustache.render(template, doc);
+        await fs.writeFileAsync(path.join(dir, 'Vagrantfile'), output);
+
+    }
+
+
     result.package = async function(VMName, verbose) {
         var { path, boxes, child_process } = dep;
 

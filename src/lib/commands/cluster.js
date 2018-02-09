@@ -1,0 +1,68 @@
+'use strict';
+
+module.exports = function(dep) {
+    let cmd = {};
+
+    cmd.command = 'cluster';
+    cmd.desc =
+        'Bake your Cluster given local path or repository URL containing the baker.yml';
+    cmd.builder = {
+        local: {
+            alias: 'l',
+            describe: `give a local path to where your baker.yml file is located`,
+            demand: false,
+            type: 'string'
+        },
+        repo: {
+            alias: 'r',
+            describe: `give a git repository URL which has a baker.yml in it's root directory`,
+            demand: false,
+            type: 'string'
+        },
+        verbose: {
+            alias: 'v',
+            describe: `Provide extra output from baking process`,
+            demand: false,
+            type: 'boolean'
+        }
+    };
+    cmd.handler = async function(argv) {
+        const { local, repo, verbose } = argv;
+        const { path, baker, cloneRepo, validator, print, spinner, spinnerDot } = dep;
+
+            try{
+                let ansibleVM;
+                let bakePath;
+
+                if (local) {
+                    bakePath = path.resolve(local);
+                } else if (repo) {
+                    bakePath = path.resolve(await cloneRepo.cloneRepo(repo));
+                } else {
+                    print.error(
+                        `User --local to give local path or --repo to give git repository with baker.yml`
+                    );
+                    process.exit(1);
+                }
+
+                try
+                {
+                    ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+                }
+                catch(ex)
+                {
+                    await spinner.spinPromise(baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
+                    ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+                }
+
+                let sshConfig = await baker.getSSHConfig(ansibleVM);
+
+                await baker.cluster(sshConfig, ansibleVM, bakePath, verbose);
+
+            } catch (err) {
+                print.error(err);
+            }
+    };
+
+    return cmd;
+};
