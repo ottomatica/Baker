@@ -677,25 +677,45 @@ module.exports = function(dep) {
 
         let machine = vagrant.create({ cwd: dir });
 
+
+        let getClusterLength = function (baseName,cluster)
+        {
+            // Default is 4.
+            let name = baseName;
+            let length = 4;
+            //let cluster = {"nodes [3]": []};
+            let regex = new RegExp(`^${baseName}\s*\[(\d+)\]`, "i");
+            for(var k in cluster )
+            {
+                let m = k.match(regex);
+                if (m) {
+                    name = m[0];
+                    length = m[1];
+                    break;
+                }
+            }
+            return {nameProperty: name, length: length};
+        }
+
         let cluster = {}
         if( doc.cluster && doc.cluster.plain )
         {
             cluster.cluster = {};
             cluster.cluster.nodes = [];
 
-            let cluster = {"xnodes [3]": []};
-
-            for(var k in cluster ) {
-              let m = k.match(/$nodes\s*\[(\d+)\]/)
-              if (k.match(/nodes\s*\[\d+\]/)) {
-                console.log(m[1]);
-                break;
-              }
+            let {nameProperty, length} = getClusterLength("nodes", doc.cluster.plain );
+            for( var i = 0; i < length; i++ )
+            {
+                // Create a copy from yaml
+                let instance = Object.assign({}, doc.cluster.plain[nameProperty]);
+                instance.name = `${doc.name}${parseInt(i)+1}`;
+                instance.memory = instance.memory || 1024;
+                instance.cpus   = instance.cpus || 1;
+                cluster.cluster.nodes.push( instance );
             }
-            
         }
 
-        const output = mustache.render(template, doc);
+        const output = mustache.render(template, cluster);
         await fs.writeFileAsync(path.join(dir, 'Vagrantfile'), output);
 
     }
