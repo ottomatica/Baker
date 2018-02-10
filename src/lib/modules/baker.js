@@ -675,6 +675,12 @@ module.exports = function(dep) {
             throw `Creating directory failed: ${dir}`;
         }
 
+        // prompt for passwords
+        if( doc.vars )
+        {
+            await traverse(doc.vars);
+        }
+
         let getClusterLength = function (baseName,cluster)
         {
             // Default is 4.
@@ -694,6 +700,7 @@ module.exports = function(dep) {
             }
             return {nameProperty: name, length: length};
         }
+
 
         let cluster = {}
         if( doc.cluster && doc.cluster.plain )
@@ -717,7 +724,7 @@ module.exports = function(dep) {
                 instance.ip = baseIp;
                 // Set to next ip address, skipping prefix.
                 baseIp = Addr(baseIp).increment().octets.join(".");
-                
+
                 instance.memory = instance.memory || 1024;
                 instance.cpus   = instance.cpus || 1;
 
@@ -737,6 +744,17 @@ module.exports = function(dep) {
         });
 
         await spinner.spinPromise(machine.upAsync(), `Provisioning cluster in VirtualBox`, spinnerDot);
+
+        // Baker VM stuff.
+        //await baker.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig)
+        //await baker.setKnownHosts(ip, ansibleSSHConfig);
+        //await baker.mkTemplatesDir(doc, ansibleSSHConfig);
+
+        // // Installing stuff.
+        // let resolveB = require('../bakerlets/resolve');
+        // await resolveB.resolveBakerlet(bakerletsPath, remotesPath,
+        //     doc, scriptPath, verbose)
+
 
     }
 
