@@ -18,6 +18,9 @@ const git = require('simple-git');
 const ora = require('ora');
 const hasbin = require('hasbin');
 const drivelist = Promise.promisifyAll(require('drivelist'));
+const netaddr = require('netaddr');
+
+
 require('console.table');
 
 const boxes = path.join(require('os').homedir(), '.baker');
@@ -56,7 +59,8 @@ let dep = {
     configPath,
     bakerletsPath,
     remotesPath,
-    drivelist
+    drivelist,
+    netaddr
 };
 
 // Internal dependencies
