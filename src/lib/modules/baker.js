@@ -675,9 +675,6 @@ module.exports = function(dep) {
             throw `Creating directory failed: ${dir}`;
         }
 
-        let machine = vagrant.create({ cwd: dir });
-
-
         let getClusterLength = function (baseName,cluster)
         {
             // Default is 4.
@@ -688,7 +685,7 @@ module.exports = function(dep) {
             for(var k in cluster )
             {
                 let m = k.match(regex);
-                console.log( m );
+                // console.log( m );
                 if (m) {
                     name = m[0];
                     length = m[1];
@@ -705,7 +702,7 @@ module.exports = function(dep) {
             cluster.cluster.nodes = [];
 
             let {nameProperty, length} = getClusterLength("nodes", doc.cluster.plain );
-            console.log( nameProperty, length);
+            //console.log( nameProperty, length);
 
             // Get base ip or assign default cluster ip
             let baseIp = doc.cluster.plain[nameProperty].ip || '192.168.20.2';
@@ -715,7 +712,7 @@ module.exports = function(dep) {
             {
                 // Create a copy from yaml
                 let instance = Object.assign({}, doc.cluster.plain[nameProperty]);
-                instance.name = `${doc.name.replace(/-/g)}${parseInt(i)+1}`;
+                instance.name = `${doc.name.replace(/-/g,'')}${parseInt(i)+1}`;
 
                 instance.ip = baseIp;
                 // Set to next ip address, skipping prefix.
@@ -731,6 +728,15 @@ module.exports = function(dep) {
 
         const output = mustache.render(template, cluster);
         await fs.writeFileAsync(path.join(dir, 'Vagrantfile'), output);
+
+        let machine = vagrant.create({ cwd: dir });
+
+        machine.on('up-progress', function(data) {
+            //console.log(machine, progress, rate, remaining);
+            if( verbose ) print.info(data);
+        });
+
+        await spinner.spinPromise(machine.upAsync(), `Provisioning cluster in VirtualBox`, spinnerDot);
 
     }
 
