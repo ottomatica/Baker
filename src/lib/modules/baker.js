@@ -662,7 +662,7 @@ module.exports = function(dep) {
 
     result.cluster = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
 
-        var { mustache, slash, yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
+        var { netaddr, mustache, slash, yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
@@ -684,10 +684,11 @@ module.exports = function(dep) {
             let name = baseName;
             let length = 4;
             //let cluster = {"nodes [3]": []};
-            let regex = new RegExp(`^${baseName}\s*\[(\d+)\]`, "i");
+            let regex = new RegExp(`^${baseName}\\s*\\[(\\d+)\\]`, "i");
             for(var k in cluster )
             {
                 let m = k.match(regex);
+                console.log( m );
                 if (m) {
                     name = m[0];
                     length = m[1];
@@ -704,13 +705,26 @@ module.exports = function(dep) {
             cluster.cluster.nodes = [];
 
             let {nameProperty, length} = getClusterLength("nodes", doc.cluster.plain );
+            console.log( nameProperty, length);
+
+            // Get base ip or assign default cluster ip
+            let baseIp = doc.cluster.plain[nameProperty].ip || '192.168.20.2';
+            let Addr = netaddr.Addr;
+
             for( var i = 0; i < length; i++ )
             {
                 // Create a copy from yaml
                 let instance = Object.assign({}, doc.cluster.plain[nameProperty]);
                 instance.name = `${doc.name}${parseInt(i)+1}`;
+
+                instance.ip = baseIp;
+                // Set to next ip address, skipping prefix.
+                baseIp = Addr(baseIp).increment().octets.join(".");
+                
                 instance.memory = instance.memory || 1024;
                 instance.cpus   = instance.cpus || 1;
+
+
                 cluster.cluster.nodes.push( instance );
             }
         }

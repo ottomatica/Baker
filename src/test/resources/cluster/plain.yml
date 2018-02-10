@@ -3,5 +3,6 @@ name: plain-cluster
 cluster:
   plain: 
     nodes[3]:
+      ip: 192.168.55.254
       lang:
         - nodejs9
