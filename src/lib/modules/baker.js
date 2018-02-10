@@ -708,7 +708,7 @@ module.exports = function(dep) {
             {
                 // Create a copy from yaml
                 let instance = Object.assign({}, doc.cluster.plain[nameProperty]);
-                instance.name = `${doc.name}${parseInt(i)+1}`;
+                instance.name = `${doc.name.replace(/-/g)}${parseInt(i)+1}`;
                 instance.memory = instance.memory || 1024;
                 instance.cpus   = instance.cpus || 1;
                 cluster.cluster.nodes.push( instance );
