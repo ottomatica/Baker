@@ -28,7 +28,7 @@ class Nodejs extends Bakerlet {
     {
         var cmd = `nodejs${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose, this.variables
         );
 
         var localPackageJsonPath = path.resolve(this.bakePath, "package.json");
@@ -40,7 +40,7 @@ class Nodejs extends Bakerlet {
             var vmPackagePath = `/${path.basename(this.bakePath)}`;
             if( this.verbose ) console.log(`Attempting to run npm install in vm at ${vmPackagePath}`);
             await baker.runAnsibleNpmInstall(
-                {name: this.name}, vmPackagePath, this.ansibleSSHConfig, this.verbose
+                {name: this.name}, vmPackagePath, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose
             );
         }
 

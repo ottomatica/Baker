@@ -342,12 +342,8 @@ module.exports = function(dep) {
 
     // TODO: Need to be cleaning cmd so they don't do things like
     // ; sudo rm -rf / on our server...
-    result.runAnsiblePlaybook = async function(doc, cmd, sshConfig, verbose, variables) {
+    result.runAnsiblePlaybook = async function(doc, cmd, ansibleSSHConfig, vmSSHConfig, verbose, variables) {
         const { path, vagrant, baker, ssh, boxes } = dep;
-
-        let dir = path.join(boxes, doc.name);
-        let vm = vagrant.create({ cwd: dir });
-        let vmSSHConfigUser = await baker.getSSHConfig(vm);
 
         let flatVars = {};
         for( var i =0; i < variables.length; i++ )
@@ -360,53 +356,37 @@ module.exports = function(dep) {
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables);
         if( verbose ) console.log( extravars );
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfigUser.user}; rm -f playbook.args.json`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd} --private-key id_rsa -u ${vmSSHConfig.user}; rm -f playbook.args.json`, ansibleSSHConfig, verbose);
     }
 
-    result.runAnsibleAptInstall = async function(doc, cmd, sshConfig, verbose) {
+    result.runAnsibleAptInstall = async function(doc, cmd, ansibleSSHConfig, vmSSHConfig,verbose) {
         const { path, vagrant, baker, ssh, boxes } = dep;
 
-        let dir = path.join(boxes, doc.name);
-        let vm = vagrant.create({ cwd: dir });
-        let vmSSHConfigUser = await baker.getSSHConfig(vm);
-
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} --become`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --private-key id_rsa -u ${vmSSHConfig.user} --become`, ansibleSSHConfig, verbose);
     }
 
-    result.runAnsiblePipInstall = async function(doc, requirements, sshConfig, verbose) {
+    result.runAnsiblePipInstall = async function(doc, requirements, ansibleSSHConfig, vmSSHConfig, verbose) {
         const { path, vagrant, baker, ssh, boxes } = dep;
 
-        let dir = path.join(boxes, doc.name);
-        let vm = vagrant.create({ cwd: dir });
-        let vmSSHConfigUser = await baker.getSSHConfig(vm);
-
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m pip -a "requirements=${requirements}" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} --become`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m pip -a "requirements=${requirements}" -i baker_inventory --private-key id_rsa -u ${vmSSHConfig.user} --become`, ansibleSSHConfig, verbose);
     }
 
-    result.runAnsibleNpmInstall = async function(doc, packagejson, sshConfig, verbose) {
+    result.runAnsibleNpmInstall = async function(doc, packagejson, ansibleSSHConfig, vmSSHConfig, verbose) {
         const { path, vagrant, baker, ssh, boxes } = dep;
 
-        let dir = path.join(boxes, doc.name);
-        let vm = vagrant.create({ cwd: dir });
-        let vmSSHConfigUser = await baker.getSSHConfig(vm);
-
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m npm -a "path=${packagejson}" -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user}`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m npm -a "path=${packagejson}" -i baker_inventory --private-key id_rsa -u ${vmSSHConfig.user}`, ansibleSSHConfig, verbose);
     }
 
 
 
-    result.mkTemplatesDir = async function(doc, sshConfig) {
+    result.mkTemplatesDir = async function(doc, ansibleSSHConfig) {
         const { path, vagrant, baker, ssh, boxes } = dep;
 
-        return ssh.sshExec(`mkdir -p /home/vagrant/baker/${doc.name}/templates`, sshConfig);
+        return ssh.sshExec(`mkdir -p /home/vagrant/baker/${doc.name}/templates`, ansibleSSHConfig);
     }
 
-    result.runAnsibleTemplateCmd = async function(doc, src, dest, variables, sshConfig, verbose) {
+    result.runAnsibleTemplateCmd = async function(doc, src, dest, variables, ansibleSSHConfig, vmSSHConfig, verbose) {
         const { path, vagrant, baker, yaml, ssh, boxes } = dep;
-
-        let dir = path.join(boxes, doc.name);
-        let vm = vagrant.create({ cwd: dir });
-        let vmSSHConfigUser = await baker.getSSHConfig(vm);
 
         let flatVars = {};
         for( var i =0; i < variables.length; i++ )
@@ -418,11 +398,11 @@ module.exports = function(dep) {
         }
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables);
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user}; rm -f template.args.json`, sshConfig, verbose);
+        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory --private-key id_rsa -u ${vmSSHConfig.user}; rm -f template.args.json`, ansibleSSHConfig, verbose);
     }
 
 
-    result.promptValue = async function(propertyName, description,hidden=false) {
+    result.promptValue = async function(propertyName, description, hidden=false) {
         const { prompt, Promise, print } = dep;
 
         return new Promise((resolve, reject) => {
@@ -577,10 +557,13 @@ module.exports = function(dep) {
 
             if(doc.bake && doc.bake.ansible && doc.bake.ansible.playbooks){
                 print.info('Running your Ansible playbooks.', 1);
+
+                let vmSSHConfig = await baker.getSSHConfig(machine);
+
                 for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ ) {
                     var cmd = doc.bake.ansible.playbooks[i];
                     await baker.runAnsiblePlaybook(
-                        doc, cmd, ansibleSSHConfig, false, {}
+                        doc, cmd, ansibleSSHConfig, vmSSHConfig, false, {}
                     )
                 }
             }
@@ -650,10 +633,47 @@ module.exports = function(dep) {
                 await traverse(doc.vars);
             }
 
+            let vmSSHConfig = await baker.getSSHConfig(machine);
+
             // Installing stuff.
             let resolveB = require('../bakerlets/resolve');
-            await resolveB.resolveBakerlet(bakerletsPath, remotesPath,
-                doc, scriptPath, verbose)
+            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, vmSSHConfig, doc, scriptPath, verbose)
+
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    result.bakeRemote = async function(ansibleSSHConfig, remoteIP, remoteKey, remoteUser, scriptPath, verbose) {
+        var { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
+
+        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
+        let vmSSHConfig = {
+            user: remoteUser,
+            private_key: remoteKey,
+            ip: remoteIP,
+            port: 22
+        }
+
+        try {
+            // TODO: copy the ssh key to ${ip}_rsa instead of id_rsa
+            await ssh.copyFromHostToVM(
+                vmSSHConfig.private_key,
+                `/home/vagrant/baker/${doc.name}/id_rsa`,
+                ansibleSSHConfig
+            );
+            await baker.addToAnsibleHosts(vmSSHConfig.ip, doc.name, ansibleSSHConfig)
+            await baker.setKnownHosts(vmSSHConfig.ip, ansibleSSHConfig);
+            await baker.mkTemplatesDir(doc, ansibleSSHConfig);
+
+            // prompt for passwords
+            if( doc.vars ) {
+                await traverse(doc.vars);
+            }
+
+            // Installing stuff.
+            let resolveB = require('../bakerlets/resolve');
+            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, vmSSHConfig, doc, scriptPath, verbose)
 
         } catch (err) {
             throw err;

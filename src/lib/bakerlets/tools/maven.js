@@ -5,7 +5,7 @@ const Bakerlet = require('../bakerlet');
 const path = require('path');
 
 class Maven extends Bakerlet {
-    
+
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
 
@@ -21,7 +21,7 @@ class Maven extends Bakerlet {
     async install()
     {
         await baker.runAnsibleAptInstall(
-            {name: this.name}, "maven", this.ansibleSSHConfig, this.verbose
+            {name: this.name}, "maven", this.ansibleSSHConfig, this.vmSSHConfig, this.verbose
         );
     }
 

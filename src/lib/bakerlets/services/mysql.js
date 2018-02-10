@@ -7,7 +7,7 @@ const Bakerlet = require('../bakerlet');
 const path = require('path');
 
 class MySql extends Bakerlet {
-    
+
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
 
@@ -34,7 +34,7 @@ class MySql extends Bakerlet {
                     `/home/vagrant/baker/${this.name}/templates/`,
                     this.ansibleSSHConfig,
                     false
-                );        
+                );
             }
 
             if( obj.mysql.client_conf )
@@ -44,12 +44,12 @@ class MySql extends Bakerlet {
                     `/home/vagrant/baker/${this.name}/templates/`,
                     this.ansibleSSHConfig,
                     false
-                );        
+                );
             }
 
             /// templates/mysql.cfg
 
-        }   
+        }
 
         let playbook = path.resolve(this.remotesPath, `bakerlets-source/services/mysql/mysql${this.version}.yml`);
         await this.copy(playbook,`/home/vagrant/baker/${this.name}/mysql${this.version}.yml`);
@@ -59,7 +59,7 @@ class MySql extends Bakerlet {
     {
         var cmd = `mysql${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose, this.variables
         );
     }
 }

@@ -25,6 +25,21 @@ module.exports = function(dep) {
             demand: false,
             type: 'string'
         },
+        remote: {
+            describe: `give ip address of the remote server`,
+            demand: false,
+            type: 'string'
+        },
+        remote_key: {
+            describe: `give path to the ssh key of the remote server`,
+            demand: false,
+            type: 'string'
+        },
+        remote_user: {
+            describe: `give the ssh username of the remote server`,
+            demand: false,
+            type: 'string'
+        },
         verbose: {
             alias: 'v',
             describe: `Provide extra output from baking process`,
@@ -33,7 +48,7 @@ module.exports = function(dep) {
         }
     };
     cmd.handler = async function(argv) {
-        const { local, repo, box, verbose } = argv;
+        const { local, repo, box, remote, remote_key, remote_user, verbose } = argv;
         const { path, baker, cloneRepo, validator, print, spinner, spinnerDot } = dep;
 
             try{
@@ -47,6 +62,8 @@ module.exports = function(dep) {
                     bakePath = path.resolve(local);
                 } else if (repo) {
                     bakePath = path.resolve(await cloneRepo.cloneRepo(repo));
+                } else if (remote) {
+                    bakePath = path.resolve(process.cwd());
                 } else {
                     print.error(
                         `User --local to give local path or --repo to give git repository with baker.yml`
@@ -70,6 +87,8 @@ module.exports = function(dep) {
 
                 if(box)
                     await baker.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
+                else if(remote)
+                    await baker.bakeRemote(sshConfig, remote, remote_key, remote_user, bakePath, verbose);
                 else
                     await baker.bake2(sshConfig, ansibleVM, bakePath, verbose);
 

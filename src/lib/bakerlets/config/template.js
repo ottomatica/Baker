@@ -7,7 +7,7 @@ const Bakerlet = require('../bakerlet');
 const path = require('path');
 
 class Template extends Bakerlet {
-    
+
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
 
@@ -33,7 +33,7 @@ class Template extends Bakerlet {
     async install()
     {
         await baker.runAnsibleTemplateCmd(
-            {name: this.name}, this.src, this.dest, this.variables, this.ansibleSSHConfig, this.verbose
+            {name: this.name}, this.src, this.dest, this.variables, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose
         );
     }
 

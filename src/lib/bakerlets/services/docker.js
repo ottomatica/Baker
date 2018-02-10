@@ -7,7 +7,7 @@ const Bakerlet = require('../bakerlet');
 const path = require('path');
 
 class Docker extends Bakerlet {
-    
+
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
 
@@ -28,7 +28,7 @@ class Docker extends Bakerlet {
     {
         var cmd = `docker${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose, this.variables
         );
     }
 }

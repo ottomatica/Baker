@@ -5,7 +5,7 @@ const Bakerlet = require('../bakerlet');
 const path = require('path');
 
 class Ansible extends Bakerlet {
-    
+
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
 
@@ -25,7 +25,7 @@ class Ansible extends Bakerlet {
     {
         var cmd = `ansible${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose, this.variables
         );
     }
 

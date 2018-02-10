@@ -7,7 +7,7 @@ const Bakerlet = require('../bakerlet');
 const path = require('path');
 
 class Keys extends Bakerlet {
-    
+
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
 
@@ -19,7 +19,7 @@ class Keys extends Bakerlet {
     {
         if( Array.isArray(obj.keys) )
         {
-            for (let clientName of obj.keys) 
+            for (let clientName of obj.keys)
             {
                 let sshConfig = await baker.retrieveSSHConfigByName(clientName);
                 if( sshConfig.private_key == undefined )
@@ -45,7 +45,7 @@ class Keys extends Bakerlet {
     {
         var cmd = `keys${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose, this.variables
         );
     }
 
