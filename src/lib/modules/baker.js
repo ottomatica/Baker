@@ -715,7 +715,7 @@ module.exports = function(dep) {
             {
                 // Create a copy from yaml
                 let instance = Object.assign({}, doc.cluster.plain[nameProperty]);
-                instance.name = `${doc.name}${parseInt(i)+1}`;
+                instance.name = `${doc.name.replace(/-/g)}${parseInt(i)+1}`;
 
                 instance.ip = baseIp;
                 // Set to next ip address, skipping prefix.
