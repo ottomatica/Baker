@@ -19,6 +19,7 @@ const ora = require('ora');
 const hasbin = require('hasbin');
 const drivelist = Promise.promisifyAll(require('drivelist'));
 const netaddr = require('netaddr');
+const _ = require('underscore');
 
 
 require('console.table');
@@ -60,7 +61,8 @@ let dep = {
     bakerletsPath,
     remotesPath,
     drivelist,
-    netaddr
+    netaddr,
+    _
 };
 
 // Internal dependencies

@@ -280,13 +280,23 @@ module.exports = function(dep) {
     /**
      * Get ssh configurations
      * @param {Obj} machine
+     * @param {Obj} nodeName Optionally give name of machine when multiple machines declared in single Vagrantfile.
      */
-    result.getSSHConfig = async function(machine) {
+    result.getSSHConfig = async function(machine, nodeName) {
         const { print, Promise } = dep;
 
         try {
             let sshConfig = await machine.sshConfigAsync();
             if(sshConfig && sshConfig.length > 0){
+
+                if( nodeName )
+                {
+                    for( var i = 0; i < sshConfig.length; i++ )
+                    {
+                        if( sshConfig[i].host === nodeName )
+                           return sshConfig[i];
+                    }
+                }
                 return sshConfig[0];
             } else{
                 throw '';
@@ -305,9 +315,38 @@ module.exports = function(dep) {
      */
     result.addToAnsibleHosts = async function(ip, name, sshConfig){
         const { ssh } = dep;
-
+        // TODO: Callers of this can be refactored to into two methods, below:
         return ssh.sshExec(`echo "[${name}]\n${ip}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
     }
+
+    /**
+     * Adds the host url to /etc/hosts
+     *
+     * @param {List} ipList, list of ip address to add to host
+     * @param {String} name
+     * @param {Object} sshConfig
+     */
+    result.addClusterToBakerInventory = async function(ipList, name, sshConfig){
+        const { ssh } = dep;
+
+        let hosts = ipList.join('\n');
+        await ssh.sshExec(`echo "[${name}]\n${hosts}" > /home/vagrant/baker/${name}/baker_inventory`, sshConfig);
+    }
+
+    /**
+     * Adds the host url to /etc/hosts (without adding anything to inventory)
+     *
+     * @param {String} ip
+     * @param {String} name
+     * @param {Object} sshConfig
+     */
+    result.addIpToAnsibleHosts = async function(ip, name, sshConfig){
+        const { ssh } = dep;
+
+        return ssh.sshExec(`ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
+    }
+
+
 
     result.retrieveSSHConfigByName = async function(name) {
         const { ssh,baker,boxes, path, vagrant } = dep;
@@ -682,7 +721,7 @@ module.exports = function(dep) {
 
     result.cluster = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
 
-        var { netaddr, mustache, slash, yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
+        var { _, netaddr, mustache, slash, yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
@@ -723,13 +762,16 @@ module.exports = function(dep) {
 
 
         let cluster = {}
+        let nodeDoc = {};
+
         if( doc.cluster && doc.cluster.plain )
         {
             cluster.cluster = {};
             cluster.cluster.nodes = [];
 
             let {nameProperty, length} = getClusterLength("nodes", doc.cluster.plain );
-            //console.log( nameProperty, length);
+            nodeDoc = doc.cluster.plain[nameProperty];
+            nodeDoc.name = doc.name;
 
             // Get base ip or assign default cluster ip
             let baseIp = doc.cluster.plain[nameProperty].ip || '192.168.20.2';
@@ -765,16 +807,23 @@ module.exports = function(dep) {
 
         await spinner.spinPromise(machine.upAsync(), `Provisioning cluster in VirtualBox`, spinnerDot);
 
-        // Baker VM stuff.
-        //await baker.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig)
-        //await baker.setKnownHosts(ip, ansibleSSHConfig);
-        //await baker.mkTemplatesDir(doc, ansibleSSHConfig);
+        await baker.mkTemplatesDir(doc, ansibleSSHConfig);
 
-        // // Installing stuff.
-        // let resolveB = require('../bakerlets/resolve');
-        // await resolveB.resolveBakerlet(bakerletsPath, remotesPath,
-        //     doc, scriptPath, verbose)
+        let ipList = _.pluck(cluster.cluster.nodes, "ip");
+        await baker.addClusterToBakerInventory(ipList, doc.name, ansibleSSHConfig);
 
+        for( var i = 0; i < cluster.cluster.nodes.length; i++ )
+        {
+            let node = cluster.cluster.nodes[i];
+            let vmSSHConfig = await baker.getSSHConfig(machine, node.name);
+            console.log( vmSSHConfig );
+            await baker.setKnownHosts(node.ip, ansibleSSHConfig);
+            await baker.addIpToAnsibleHosts(node.ip, node.name, ansibleSSHConfig);
+
+
+            let resolveB = require('../bakerlets/resolve');
+            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, vmSSHConfig, nodeDoc, scriptPath, verbose);
+        }
 
     }
 
