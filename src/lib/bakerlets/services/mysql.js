@@ -59,7 +59,7 @@ class MySql extends Bakerlet {
     {
         var cmd = `mysql${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
     }
 }

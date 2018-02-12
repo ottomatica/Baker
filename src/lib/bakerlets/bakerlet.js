@@ -19,16 +19,10 @@ class Bakerlet
         this.bakePath = bakePath;
     }
 
-    setVMSSHConfig(vmSSHConfig)
-    {
-        this.vmSSHConfig = vmSSHConfig;
-    }
-
     setVerbose(verbose)
     {
         this.verbose = verbose;
     }
-
 
     async copy(src,dest)
     {

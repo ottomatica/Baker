@@ -39,7 +39,6 @@ class Env extends Bakerlet {
             { name: this.name },
             cmd,
             this.ansibleSSHConfig,
-            this.vmSSHConfig,
             this.verbose,
             this.variables
         );

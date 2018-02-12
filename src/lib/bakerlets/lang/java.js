@@ -27,7 +27,7 @@ class Java extends Bakerlet {
     {
         var cmd = `java${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
         //console.log(`installed java ${this.version}`);
     }

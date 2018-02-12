@@ -26,7 +26,7 @@ class Python extends Bakerlet {
     {
         var cmd = `python${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
 
         // Check for a requirements.txt and then run pip install -r requirements.txt

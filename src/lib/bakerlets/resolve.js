@@ -109,7 +109,7 @@ async function getSSHConfig(machine) {
     }
 }
 
-async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extra_vars, verbose, vmSSHConfig)
+async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extra_vars, verbose)
 {
     let mod = "";
     let version = "";
@@ -152,7 +152,6 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extr
     j.setRemotesPath(remotesPath);
     j.setBakePath(bakerScriptPath);
     j.setVerbose(verbose);
-    j.setVMSSHConfig(vmSSHConfig);
 
     await spinner.spinPromise(j.load(bakerlet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
     await spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);

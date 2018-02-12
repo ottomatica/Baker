@@ -36,7 +36,7 @@ class MongoDB extends Bakerlet {
     {
         var cmd = `mongodb${this.version}.yml`;
         await baker.runAnsiblePlaybook(
-            {name: this.name}, cmd, this.ansibleSSHConfig, this.vmSSHConfig, true, this.variables
+            {name: this.name}, cmd, this.ansibleSSHConfig, true, this.variables
         );
     }
 }

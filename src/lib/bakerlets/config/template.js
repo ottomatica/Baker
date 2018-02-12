@@ -33,7 +33,7 @@ class Template extends Bakerlet {
     async install()
     {
         await baker.runAnsibleTemplateCmd(
-            {name: this.name}, this.src, this.dest, this.variables, this.ansibleSSHConfig, this.vmSSHConfig, this.verbose
+            {name: this.name}, this.src, this.dest, this.variables, this.ansibleSSHConfig, this.verbose
         );
     }
 
