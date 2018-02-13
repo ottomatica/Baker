@@ -12,7 +12,7 @@ const spinner = modules['spinner'];
 const boxes = modules['boxes'];
 const baker = modules['baker'];
 
-module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, vmSSHConfig, doc, bakerScriptPath, verbose)
+module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, doc, bakerScriptPath, verbose)
 {
 
     //let doc;
@@ -81,7 +81,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, vmSS
             let vm = vagrant.create({ cwd: dir });
 
             console.log("Starting command", doc.start);
-            start(doc.start, vmSSHConfig, verbose);
+            // start(doc.start, vmSSHConfig, verbose);
         }
 
 
