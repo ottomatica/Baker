@@ -949,13 +949,20 @@ module.exports = function(dep) {
                 user: vmSSHConfig.user
             });
 
+            await ssh.copyFromHostToVM(
+                vmSSHConfig.private_key,
+                `/home/vagrant/baker/${doc.name}/${node.ip}_rsa`,
+                ansibleSSHConfig
+            );
             await baker.setKnownHosts(node.ip, ansibleSSHConfig);
             await baker.addIpToAnsibleHosts(node.ip, node.name, ansibleSSHConfig);
+
+            console.log( `${nodeList[i].ip} ${nodeList[i].user} ${vmSSHConfig.private_key}`);
         }
         await baker.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig);
 
         let resolveB = require('../bakerlets/resolve');
-        await resolveB.resolveBakerlet(bakerletsPath, remotesPath, doc, scriptPath, verbose);
+        await resolveB.resolveBakerlet(bakerletsPath, remotesPath, nodeDoc, scriptPath, verbose);
 
     }
 
