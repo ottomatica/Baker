@@ -321,17 +321,23 @@ module.exports = function(dep) {
     }
 
     /**
-     * Adds the host url to /etc/hosts
+     * Adds cluster to baker_inventory
      *
-     * @param {List} ipList, list of ip address to add to host
+     * @param {List} nodeList, list of nodes (ip address, user) to add to baker_inventory
      * @param {String} name
      * @param {Object} sshConfig
      */
-    result.addClusterToBakerInventory = async function(ipList, name, sshConfig){
+    result.addClusterToBakerInventory = async function(nodeList, name, sshConfig){
         const { ssh } = dep;
 
-        let hosts = ipList.join('\n');
-        await ssh.sshExec(`echo "[${name}]\n${hosts}" > /home/vagrant/baker/${name}/baker_inventory`, sshConfig);
+        let hosts = [];
+        for( var i=0; i < nodeList.length; i++ )
+        {
+            var {ip, user} = nodeList[i];
+            hosts.push( `${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${user}` );
+        }
+
+        await ssh.sshExec(`echo "[${name}]\n${hosts.join('\n')}" > /home/vagrant/baker/${name}/baker_inventory`, sshConfig);
     }
 
     /**
@@ -805,21 +811,24 @@ module.exports = function(dep) {
 
         await baker.mkTemplatesDir(doc, ansibleSSHConfig);
 
-        let ipList = _.pluck(cluster.cluster.nodes, "ip");
-        await baker.addClusterToBakerInventory(ipList, doc.name, ansibleSSHConfig);
-
+        let nodeList = [];
+        //_.pluck(cluster.cluster.nodes, "ip");
         for( var i = 0; i < cluster.cluster.nodes.length; i++ )
         {
             let node = cluster.cluster.nodes[i];
             let vmSSHConfig = await baker.getSSHConfig(machine, node.name);
-            console.log( vmSSHConfig );
+            nodeList.push({
+                ip: cluster.cluster.nodes[i].ip,
+                user: vmSSHConfig.user
+            });
+
             await baker.setKnownHosts(node.ip, ansibleSSHConfig);
             await baker.addIpToAnsibleHosts(node.ip, node.name, ansibleSSHConfig);
-
-
-            let resolveB = require('../bakerlets/resolve');
-            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, vmSSHConfig, nodeDoc, scriptPath, verbose);
         }
+        await baker.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig);
+
+        let resolveB = require('../bakerlets/resolve');
+        await resolveB.resolveBakerlet(bakerletsPath, remotesPath, vmSSHConfig, doc, scriptPath, verbose);
 
     }
 
