@@ -673,11 +673,11 @@ module.exports = function(dep) {
                 await traverse(doc.vars);
             }
 
-            let vmSSHConfig = await baker.getSSHConfig(machine);
+            // let vmSSHConfig = await baker.getSSHConfig(machine);
 
             // Installing stuff.
             let resolveB = require('../bakerlets/resolve');
-            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, vmSSHConfig, doc, scriptPath, verbose)
+            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, doc, scriptPath, verbose)
 
         } catch (err) {
             throw err;
@@ -714,7 +714,7 @@ module.exports = function(dep) {
 
             // Installing stuff.
             let resolveB = require('../bakerlets/resolve');
-            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, vmSSHConfig, doc, scriptPath, verbose);
+            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, doc, scriptPath, verbose);
 
         } catch (err) {
             throw err;
@@ -835,7 +835,7 @@ module.exports = function(dep) {
         await baker.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig);
 
         let resolveB = require('../bakerlets/resolve');
-        await resolveB.resolveBakerlet(bakerletsPath, remotesPath, null, nodeDoc, scriptPath, verbose);
+        await resolveB.resolveBakerlet(bakerletsPath, remotesPath, nodeDoc, scriptPath, verbose);
 
     }
 
