@@ -3,12 +3,139 @@
 module.exports = function(dep) {
     let result = {};
 
+    /**
+     * Returns true if host is accessible, otherwise false
+     */
+    async function checkHostAccessible(host) {
+        const { ping } = dep;
+
+        return (await ping.promise.probe(host, {
+            extra: ['-i 2']
+        })).alive;
+    }
+
     result.init = async function(){
         const { fs, path, configPath } = dep;
 
         let bakerYML = await fs.readFileAsync(path.join(configPath, './bakerTemplate.yml'), 'utf8');
         let dir = path.resolve(process.cwd());
         await fs.writeFileAsync('baker.yml', bakerYML, {encoding:'utf8'});
+    }
+
+    result.initBaker2 = async function(){
+        const { fs, path, configPath, inquirer, validator, mustache } = dep;
+
+        let vmResponse = await inquirer
+            .prompt([
+                {
+                    type: 'input',
+                    name: 'name',
+                    message: 'Baker environment name:',
+                    default: path.basename(process.cwd())
+                },
+                {
+                    type: 'list',
+                    name: 'memory',
+                    message: 'Amount of memory to share with this environment (in MB):',
+                    choices: ['512', '1024', '2048', '3072', '4096'],
+                    default: '512'
+                },
+                {
+                    type: 'input',
+                    name: 'ip',
+                    message: 'IP to use for this VM: ',
+                    validate: async function(ip) {
+                        let pass = validator.isIP(ip);
+
+                        var exists = await checkHostAccessible(ip);
+
+                        if (pass && !exists) {
+                            return true;
+                        } else if (exists) {
+                            return 'Another VM is using this IP, please enter a different IP address';
+                        } else {
+                            return 'This IP is not available, please enter a valid IP address';
+                        }
+                    }
+                },
+                {
+                    type: 'input',
+                    name: 'ports',
+                    message: 'Forward ports comma separated, (GUEST:HOST) or (GUEST):',
+                    validate: async function(value) {
+                        let ports = value.split(',').map(port => port.split(':'));
+                        let invalidPorts = [];
+
+                        ports.forEach(pp => {
+                            pp.forEach(p => {
+                                if(!validator.isPort(p.trim()))
+                                    invalidPorts.push(p);
+                            });
+                        });
+
+                        if (invalidPorts.length != 0) {
+                            return `These ports are invalid, please enter valid ports: ${invalidPorts.join(' ')}`;
+                        } else {
+                            return true;
+                        }
+                    }
+                },
+                {
+                    type: 'checkbox',
+                    message: 'Select languages:',
+                    name: 'langs',
+                    choices: [
+                        {
+                            name: 'java8'
+                        },
+                        {
+                            name: 'nodejs9'
+                        },
+                        {
+                            name: 'R'
+                        }
+                    ]
+                },
+                {
+                    type: 'checkbox',
+                    message: 'Select services:',
+                    name: 'services',
+                    choices: [
+                        {
+                            name: 'docker'
+                        },
+                        {
+                            name: 'mysql'
+                        }
+                    ]
+                },
+                {
+                    type: 'checkbox',
+                    message: 'Select tools:',
+                    name: 'tools',
+                    choices: [
+                        {
+                            name: 'ansible'
+                        },
+                        {
+                            name: 'jupyter'
+                        },
+                        {
+                            name: 'maven'
+                        }
+                    ]
+                }
+            ]);
+        vmResponse.langs = {lang: vmResponse.langs}
+        vmResponse.services = {service: vmResponse.services}
+        vmResponse.tools = {tool: vmResponse.tools}
+
+        // console.log(vmResponse)
+        let baker2Template = await fs.readFileAsync(path.join(configPath, './baker2Template.yml.mustache'), 'utf8');
+        let bakerYML = mustache.render(baker2Template, vmResponse);
+        let cwd = path.resolve(process.cwd());
+        await fs.writeFileAsync(path.resolve(cwd, 'baker.yml'), bakerYML, {encoding:'utf8'});
+        return;
     }
 
     /**

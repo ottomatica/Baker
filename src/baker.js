@@ -20,6 +20,8 @@ const hasbin = require('hasbin');
 const drivelist = Promise.promisifyAll(require('drivelist'));
 const netaddr = require('netaddr');
 const _ = require('underscore');
+const inquirer = require('inquirer');
+const ping = require('ping');
 
 
 require('console.table');
@@ -62,7 +64,9 @@ let dep = {
     remotesPath,
     drivelist,
     netaddr,
-    _
+    _,
+    inquirer,
+    ping
 };
 
 // Internal dependencies
