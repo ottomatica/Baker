@@ -86,6 +86,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Setting VM name in vagrant
   config.vm.define "{{name}}" do |t|
   end
+  config.vm.hostname = "{{name}}"
 
   # Install python 2 if not installed.
   config.vm.provision "shell",
