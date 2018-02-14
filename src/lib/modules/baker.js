@@ -666,7 +666,7 @@ module.exports = function(dep) {
         if( vagrant.ports )
         {
             // ports: '8000, 9000,  1000:3000'
-            let ports = vagrant.ports.trim().split(/\s*,\s*/g);
+            let ports = vagrant.ports.toString().trim().split(/\s*,\s*/g);
             for( var port of ports  )
             {
                 let a = port.trim().split(/\s*:\s*/g);

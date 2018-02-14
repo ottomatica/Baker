@@ -49,7 +49,7 @@ module.exports = function(dep) {
     };
     cmd.handler = async function(argv) {
         const { local, repo, box, remote, remote_key, remote_user, verbose } = argv;
-        const { path, baker, cloneRepo, validator, print, spinner, spinnerDot } = dep;
+        const { path, baker, cloneRepo, validator, print, spinner, spinnerDot, fs } = dep;
 
             try{
                 let ansibleVM;
@@ -65,10 +65,14 @@ module.exports = function(dep) {
                 } else if (remote) {
                     bakePath = path.resolve(process.cwd());
                 } else {
-                    print.error(
-                        `User --local to give local path or --repo to give git repository with baker.yml`
-                    );
-                    process.exit(1);
+                    if(await fs.pathExists(path.resolve(process.cwd(), 'baker.yml'))){
+                        bakePath = path.resolve(process.cwd());
+                    } else {
+                        print.error(
+                            `Can't find baker.yml in cwd. Use --local to give local path or --repo to give git repository with baker.yml`
+                        );
+                        process.exit(1);
+                    }
                 }
 
                 //let validation = await spinner.spinPromise(validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
