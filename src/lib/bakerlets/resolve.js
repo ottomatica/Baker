@@ -77,11 +77,16 @@ module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, doc,
 
         if( doc.start )
         {
-            let dir = path.join(boxes, doc.name);
-            let vm = vagrant.create({ cwd: dir });
+            // let dir = path.join(boxes, doc.name);
+            // let vm = vagrant.create({ cwd: dir });
+
+            const boxes = path.join(require('os').homedir(), '.baker');
+            const ansible = path.join(boxes, 'ansible-srv');
+            let machine = vagrant.create({ cwd: ansible });
+            let ansibleSSHConfig = await getSSHConfig(machine);
 
             console.log("Starting command", doc.start);
-            // start(doc.start, vmSSHConfig, verbose);
+            start(doc.start, doc.name, ansibleSSHConfig, verbose);
         }
 
 
