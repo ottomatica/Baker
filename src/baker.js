@@ -29,7 +29,7 @@ require('console.table');
 const boxes = path.join(require('os').homedir(), '.baker');
 const ansible = path.join(boxes, 'ansible-srv');
 const configPath = path.join(__dirname, './config');
-const bakerletsPath = path.join(__dirname, './lib/bakerlets');
+const bakeletsPath = path.join(__dirname, './lib/bakelets');
 const remotesPath = path.join(__dirname, './remotes');
 
 
@@ -60,7 +60,7 @@ let dep = {
     boxes,
     ansible,
     configPath,
-    bakerletsPath,
+    bakeletsPath,
     remotesPath,
     drivelist,
     netaddr,

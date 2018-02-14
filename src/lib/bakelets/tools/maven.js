@@ -1,10 +1,10 @@
 const { commands, modules } = require('../../../baker');
 const baker = modules['baker'];
 
-const Bakerlet = require('../bakerlet');
+const Bakelet = require('../bakelet');
 const path = require('path');
 
-class Maven extends Bakerlet {
+class Maven extends Bakelet {
 
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);

@@ -1,10 +1,12 @@
 const { commands, modules } = require('../../../baker');
 const baker = modules['baker'];
+const ssh = modules['ssh'];
 
-const Bakerlet = require('../bakerlet');
+
+const Bakelet = require('../bakelet');
 const path = require('path');
 
-class Ansible extends Bakerlet {
+class Neo4j extends Bakelet {
 
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
@@ -16,20 +18,19 @@ class Ansible extends Bakerlet {
 
     async load(obj, variables)
     {
-        let playbook = path.resolve(this.remotesPath, `bakerlets-source/tools/ansible/ansible${this.version}.yml`);
-        await this.copy(playbook, `/home/vagrant/baker/${this.name}/ansible${this.version}.yml`);
         this.variables = variables;
+
+        let playbook = path.resolve(this.remotesPath, `bakelets-source/services/neo4j/neo4j${this.version}.yml`);
+        await this.copy(playbook,`/home/vagrant/baker/${this.name}/neo4j${this.version}.yml`);
     }
 
     async install()
     {
-        var cmd = `ansible${this.version}.yml`;
+        var cmd = `neo4j${this.version}.yml`;
         await baker.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
     }
-
-
 }
 
-module.exports = Ansible;
+module.exports = Neo4j;

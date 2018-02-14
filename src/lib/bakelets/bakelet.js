@@ -2,7 +2,7 @@ const { commands, modules } = require('../../baker');
 const ssh = modules['ssh'];
 const path = require('path');
 
-class Bakerlet
+class Bakelet
 {
     constructor(ansibleSSHConfig)
     {
@@ -41,4 +41,4 @@ class Bakerlet
     }
 }
 
-module.exports = Bakerlet;
+module.exports = Bakelet;

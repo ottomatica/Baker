@@ -765,7 +765,7 @@ module.exports = function(dep) {
     }
 
     result.bake2 = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
-        const { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
+        const { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakeletsPath, remotesPath } = dep;
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
@@ -813,8 +813,8 @@ module.exports = function(dep) {
             // let vmSSHConfig = await baker.getSSHConfig(machine);
 
             // Installing stuff.
-            let resolveB = require('../bakerlets/resolve');
-            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, doc, scriptPath, verbose)
+            let resolveB = require('../bakelets/resolve');
+            await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose)
 
         } catch (err) {
             throw err;
@@ -822,7 +822,7 @@ module.exports = function(dep) {
     }
 
     result.bakeRemote = async function(ansibleSSHConfig, remoteIP, remoteKey, remoteUser, scriptPath, verbose) {
-        const { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
+        const { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakeletsPath, remotesPath } = dep;
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
         let vmSSHConfig = {
@@ -850,8 +850,8 @@ module.exports = function(dep) {
             }
 
             // Installing stuff.
-            let resolveB = require('../bakerlets/resolve');
-            await resolveB.resolveBakerlet(bakerletsPath, remotesPath, doc, scriptPath, verbose);
+            let resolveB = require('../bakelets/resolve');
+            await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose);
 
         } catch (err) {
             throw err;
@@ -860,7 +860,7 @@ module.exports = function(dep) {
 
     result.cluster = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
 
-        const { _, netaddr, mustache, slash, yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakerletsPath, remotesPath } = dep;
+        const { _, netaddr, mustache, slash, yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakeletsPath, remotesPath } = dep;
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
@@ -971,8 +971,8 @@ module.exports = function(dep) {
         }
         await baker.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig);
 
-        let resolveB = require('../bakerlets/resolve');
-        await resolveB.resolveBakerlet(bakerletsPath, remotesPath, nodeDoc, scriptPath, verbose);
+        let resolveB = require('../bakelets/resolve');
+        await resolveB.resolveBakelet(bakeletsPath, remotesPath, nodeDoc, scriptPath, verbose);
 
     }
 

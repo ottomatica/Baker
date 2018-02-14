@@ -1,10 +1,10 @@
 const { commands, modules } = require('../../../baker');
 const baker = modules['baker'];
 
-const Bakerlet = require('../bakerlet');
+const Bakelet = require('../bakelet');
 const path = require('path');
 
-class Jupyter extends Bakerlet {
+class Jupyter extends Bakelet {
 
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
@@ -16,7 +16,7 @@ class Jupyter extends Bakerlet {
 
     async load(obj, variables)
     {
-        let playbook = path.resolve(this.remotesPath, `bakerlets-source/tools/jupyter/jupyter${this.version}.yml`);
+        let playbook = path.resolve(this.remotesPath, `bakelets-source/tools/jupyter/jupyter${this.version}.yml`);
         await this.copy(playbook, `/home/vagrant/baker/${this.name}/jupyter${this.version}.yml`);
         this.variables = variables;
     }

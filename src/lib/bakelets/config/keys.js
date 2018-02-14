@@ -3,10 +3,10 @@ const { commands, modules } = require('../../../baker');
 const baker = modules['baker'];
 const ssh = modules['ssh'];
 
-const Bakerlet = require('../bakerlet');
+const Bakelet = require('../bakelet');
 const path = require('path');
 
-class Keys extends Bakerlet {
+class Keys extends Bakelet {
 
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
@@ -36,7 +36,7 @@ class Keys extends Bakerlet {
 
             variables.push({baker_client_keys : obj.keys.map( k => `${k}_id_rsa`) });
             this.variables = variables;
-            let playbook = path.resolve(this.remotesPath, `bakerlets-source/config/keys${this.version}.yml`);
+            let playbook = path.resolve(this.remotesPath, `bakelets-source/config/keys${this.version}.yml`);
             await this.copy(playbook,`/home/vagrant/baker/${this.name}/keys${this.version}.yml`);
         }
     }

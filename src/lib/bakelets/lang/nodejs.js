@@ -1,11 +1,11 @@
 const { commands, modules } = require('../../../baker');
 const baker = modules['baker'];
 
-const Bakerlet = require('../bakerlet');
+const Bakelet = require('../bakelet');
 const path = require('path');
 const fs   = require('fs');
 
-class Nodejs extends Bakerlet {
+class Nodejs extends Bakelet {
 
     constructor(name, ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
@@ -19,7 +19,7 @@ class Nodejs extends Bakerlet {
     {
         //console.log("load", "java", this.version);
         //console.log("Copying files to baker VM");
-        let playbook = path.resolve(this.remotesPath, `bakerlets-source/lang/nodejs/nodejs${this.version}.yml`);
+        let playbook = path.resolve(this.remotesPath, `bakelets-source/lang/nodejs/nodejs${this.version}.yml`);
         await this.copy(playbook, `/home/vagrant/baker/${this.name}/nodejs${this.version}.yml`);
         this.variables = variables;
     }

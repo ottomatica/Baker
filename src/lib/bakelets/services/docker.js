@@ -3,10 +3,10 @@ const baker = modules['baker'];
 const ssh = modules['ssh'];
 
 
-const Bakerlet = require('../bakerlet');
+const Bakelet = require('../bakelet');
 const path = require('path');
 
-class Docker extends Bakerlet {
+class Docker extends Bakelet {
 
     constructor(name,ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
@@ -20,7 +20,7 @@ class Docker extends Bakerlet {
     {
         this.variables = variables;
 
-        let playbook = path.resolve(this.remotesPath, `bakerlets-source/services/docker/docker${this.version}.yml`);
+        let playbook = path.resolve(this.remotesPath, `bakelets-source/services/docker/docker${this.version}.yml`);
         await this.copy(playbook,`/home/vagrant/baker/${this.name}/docker${this.version}.yml`);
     }
 

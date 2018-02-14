@@ -12,7 +12,7 @@ const spinner = modules['spinner'];
 const boxes = modules['boxes'];
 const baker = modules['baker'];
 
-module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, doc, bakerScriptPath, verbose)
+module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, bakerScriptPath, verbose)
 {
 
     //let doc;
@@ -33,7 +33,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, doc,
         {
             for (var i = 0; i < doc.lang.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"lang"), doc.lang[i], extra_vars, verbose);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakeletsPath,"lang"), doc.lang[i], extra_vars, verbose);
             }
         }
 
@@ -41,7 +41,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, doc,
         {
             for (var i = 0; i < doc.config.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"config"), doc.config[i], extra_vars, verbose);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakeletsPath,"config"), doc.config[i], extra_vars, verbose);
             }
         }
 
@@ -49,7 +49,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, doc,
         {
             for (var i = 0; i < doc.services.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"services"), doc.services[i], extra_vars, verbose);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakeletsPath,"services"), doc.services[i], extra_vars, verbose);
             }
         }
 
@@ -57,7 +57,7 @@ module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, doc,
         {
             for (var i = 0; i < doc.tools.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"tools"), doc.tools[i], extra_vars, verbose);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakeletsPath,"tools"), doc.tools[i], extra_vars, verbose);
             }
         }
 
@@ -65,14 +65,14 @@ module.exports.resolveBakerlet = async function(bakerletsPath, remotesPath, doc,
         {
             for (var i = 0; i < doc.packages.length; i++)
             {
-                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"packages"), doc.packages[i], extra_vars, verbose);
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakeletsPath,"packages"), doc.packages[i], extra_vars, verbose);
             }
         }
 
         if( doc.env )
         {
             doc.env = [{env: doc.env}]; // fixing the format // TODO: it works ok, but probably too hacky
-            await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakerletsPath,"env"), doc.env[0], extra_vars, verbose);
+            await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakeletsPath,"env"), doc.env[0], extra_vars, verbose);
         }
 
         if( doc.start )
@@ -114,21 +114,21 @@ async function getSSHConfig(machine) {
     }
 }
 
-async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extra_vars, verbose)
+async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra_vars, verbose)
 {
     let mod = "";
     let version = "";
-    if( isObject(bakerlet) )
+    if( isObject(bakelet) )
     {
         // complex objects, like templates.
-        mod = dir + "/" + Object.keys(bakerlet)[0];
+        mod = dir + "/" + Object.keys(bakelet)[0];
     }
     else
     {
         // This will correctly match neo4j3.3, java8, python etc.
         let regex = /([a-zA-Z-0-9]*)([0-9]+\.?[0-9]*$)|([a-zA-Z-0-9]*)/;
-        mod =  dir + "/" + bakerlet;
-        let match = bakerlet.match(regex);
+        mod =  dir + "/" + bakelet;
+        let match = bakelet.match(regex);
         if( match.length == 4)
         {
             if( match[1] === undefined && match[2] === undefined )
@@ -158,6 +158,6 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakerlet, extr
     j.setBakePath(bakerScriptPath);
     j.setVerbose(verbose);
 
-    await spinner.spinPromise(j.load(bakerlet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
+    await spinner.spinPromise(j.load(bakelet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
     await spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);
 }

@@ -2,12 +2,12 @@ const { commands, modules } = require('../../../baker');
 const baker = modules['baker'];
 const ssh = modules['ssh'];
 
-const Bakerlet = require('../bakerlet');
+const Bakelet = require('../bakelet');
 const path = require('path');
 const mustache = require('mustache');
 const fs = require('fs-extra');
 
-class Env extends Bakerlet {
+class Env extends Bakelet {
     constructor(name, ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
 
@@ -25,7 +25,7 @@ class Env extends Bakerlet {
 
         let playbookTemplate = path.resolve(
             this.remotesPath,
-            `bakerlets-source/env/env.yml.mustache`
+            `bakelets-source/env/env.yml.mustache`
         );
         let playbookRendered = mustache.render(await fs.readFileAsync(playbookTemplate, 'utf8'), this.envVars);
 

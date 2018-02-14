@@ -1,11 +1,11 @@
 const { commands, modules } = require('../../../baker');
 const baker = modules['baker'];
 
-const Bakerlet = require('../bakerlet');
+const Bakelet = require('../bakelet');
 const path = require('path');
 const fs   = require('fs');
 
-class Python extends Bakerlet {
+class Python extends Bakelet {
 
     constructor(name, ansibleSSHConfig, version) {
         super(ansibleSSHConfig);
@@ -17,7 +17,7 @@ class Python extends Bakerlet {
 
     async load(obj, variables)
     {
-        let playbook = path.resolve(this.remotesPath, `bakerlets-source/lang/python/python${this.version}.yml`);
+        let playbook = path.resolve(this.remotesPath, `bakelets-source/lang/python/python${this.version}.yml`);
         await this.copy(playbook, `/home/vagrant/baker/${this.name}/python${this.version}.yml`);
         this.variables = variables;
     }

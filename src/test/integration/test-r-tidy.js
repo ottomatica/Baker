@@ -16,8 +16,8 @@ describe('baker should create r tidy vm', function() {
         fs.mkdirpSync(tstDir);
         fs.copySync('test/resources/baker2/r-tidy.yml', path.join(tstDir,'baker.yml'));
         // echo value for prompt input for password.
-        var child = child_process.exec(`baker bake --local ${tstDir}`, 
-                                       {cwd: os.tmpdir()  }, function(error, stdout, stderr) 
+        var child = child_process.exec(`baker bake --local ${tstDir}`,
+                                       {cwd: os.tmpdir()  }, function(error, stdout, stderr)
         {
             console.log(stderr || stdout);
             done();
