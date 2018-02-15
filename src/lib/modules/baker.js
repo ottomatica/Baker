@@ -792,7 +792,8 @@ module.exports = function(dep) {
             await spinner.spinPromise(machine.upAsync(), `Provisioning VM in VirtualBox`, spinnerDot);
 
             let sshConfig = await baker.getSSHConfig(machine);
-            //let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
+            console.log(sshConfig);
+            
             let ip = doc.vagrant.ip;
             await ssh.copyFromHostToVM(
                 sshConfig.private_key,
@@ -817,6 +818,7 @@ module.exports = function(dep) {
             await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose)
 
         } catch (err) {
+            console.log(err.stack);
             throw err;
         }
     }
