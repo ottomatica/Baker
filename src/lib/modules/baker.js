@@ -792,8 +792,7 @@ module.exports = function(dep) {
             await spinner.spinPromise(machine.upAsync(), `Provisioning VM in VirtualBox`, spinnerDot);
 
             let sshConfig = await baker.getSSHConfig(machine);
-            console.log(sshConfig);
-            
+
             let ip = doc.vagrant.ip;
             await ssh.copyFromHostToVM(
                 sshConfig.private_key,
