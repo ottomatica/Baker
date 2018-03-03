@@ -1,10 +1,20 @@
-const path = require('path');
-const requireDir = require('require-dir');
+#!/usr/bin/env node
+const yargs = require('yargs');
 require('console.table');
+const { homepage, version } = require('./package.json');
 
-// Load commands from folder and pass dependencies
-const commandsFn = requireDir(path.join(__dirname, 'lib', 'commands'));
-const commands = Object.keys(commandsFn).map(i => commandsFn[i]());
-
-// Export commands and modules separatelly
-module.exports = { commands };
+yargs
+  .commandDir('./lib/commands')
+  .version()
+  .epilog(
+      (homepage ? `| Homepage: ${homepage}\n` : '') +
+      (`| Documentation: https://docs.getbaker.io/\n`) +
+      (version ? `| Version: ${version}` : '')
+    )
+  .demandCommand(1, 'Did you forget to specify a command?')
+  .recommendCommands()
+  .showHelpOnFail(false, 'Specify --help for available options')
+  .strict(true)
+  .help()
+  .wrap(yargs.terminalWidth())
+  .argv

@@ -6,13 +6,15 @@ const Spinner   = require('../modules/spinner');
 
 const { spinnerDot } = require('../../global-vars');
 
-module.exports = function(dep) {
-    let cmd = {};
+exports.command = 'cluster';
+exports.desc    = 'Bake your Cluster given local path or repository URL containing the baker.yml';
 
-    cmd.command = 'cluster';
-    cmd.desc =
-        'Bake your Cluster given local path or repository URL containing the baker.yml';
-    cmd.builder = {
+exports.builder = (yargs) => {
+    // TODO:
+    // yargs
+    //     .example(`$0 cluster --local`, `This is an example of how to use this command`);
+
+    yargs.options({
         local: {
             alias: 'l',
             describe: `give a local path to where your baker.yml file is located`,
@@ -31,43 +33,42 @@ module.exports = function(dep) {
             demand: false,
             type: 'boolean'
         }
-    };
-    cmd.handler = async function(argv) {
-        const { local, repo, verbose } = argv;
-
-            try{
-                let ansibleVM;
-                let bakePath;
-
-                if (local) {
-                    bakePath = path.resolve(local);
-                } else if (repo) {
-                    bakePath = path.resolve(await Git.clone(repo));
-                } else {
-                    Print.error(
-                        `User --local to give local path or --repo to give git repository with baker.yml`
-                    );
-                    process.exit(1);
-                }
-
-                try
-                {
-                    ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
-                }
-                catch(ex)
-                {
-                    await Spinner.spinPromise(Baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
-                    ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
-                }
-
-                let sshConfig = await Baker.getSSHConfig(ansibleVM);
-
-                await Baker.cluster(sshConfig, ansibleVM, bakePath, verbose);
-
-            } catch (err) {
-                Print.error(err);
-            }
-    };
-
-    return cmd;
+    });
 };
+
+exports.handler = async function(argv) {
+    const { local, repo, verbose } = argv;
+
+    try{
+        let ansibleVM;
+        let bakePath;
+
+        if (local) {
+            bakePath = path.resolve(local);
+        } else if (repo) {
+            bakePath = path.resolve(await Git.clone(repo));
+        } else {
+            Print.error(
+                `User --local to give local path or --repo to give git repository with baker.yml`
+            );
+            process.exit(1);
+        }
+
+        try
+        {
+            ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+        }
+        catch(ex)
+        {
+            await Spinner.spinPromise(Baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
+            ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+        }
+
+        let sshConfig = await Baker.getSSHConfig(ansibleVM);
+
+        await Baker.cluster(sshConfig, ansibleVM, bakePath, verbose);
+
+    } catch (err) {
+        Print.error(err);
+    }
+}

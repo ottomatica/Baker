@@ -7,20 +7,21 @@ const Validator = require('../modules/validator');
 
 const { spinnerDot, configPath, ansible } = require('../../global-vars');
 
-module.exports = function (dep) {
-  let cmd = {}
+exports.command = 'setup'
+exports.desc = 'create a Baker server which will be used for provisioning yor VMs'
 
-  cmd.command = 'setup'
-  cmd.desc = 'create a Baker server which will be used for provisioning yor VMs'
-  cmd.builder = {
-      force:{
-          alias: 'f',
-          describe: `if Baker server exists, first destroy it and then create a new one. Don't use this unless you know what you want to do.`,
-          demand: false,
-          type: 'boolean'
-      }
-  }
-  cmd.handler = async function (argv) {
+exports.builder = (yargs) => {
+    yargs.options({
+        force:{
+            alias: 'f',
+            describe: `if Baker server exists, first destroy it and then create a new one. Don't use this unless you know what you want to do.`,
+            demand: false,
+            type: 'boolean'
+        }
+    });
+}
+
+exports.handler = async function (argv) {
     const { force } = argv
 
     try {
@@ -58,8 +59,4 @@ module.exports = function (dep) {
     } catch (err) {
         Print.error(err);
     }
-
   }
-
-  return cmd
-}

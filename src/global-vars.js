@@ -1,5 +1,4 @@
 const path = require('path');
-
 const boxes = path.join(require('os').homedir(), '.baker');
 
 module.exports = {
