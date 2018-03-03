@@ -55,7 +55,7 @@
     "tmp": "0.0.31",
     "underscore": "^1.8.3",
     "validator": "^9.4.0",
-    "yargs": "^8.0.2"
+    "yargs": "^11.0.0"
   },
   "pkg": {
     "assets": [
