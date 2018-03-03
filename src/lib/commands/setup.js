@@ -1,4 +1,11 @@
-'use strict'
+const Baker     = require('../modules/baker');
+const fs        = require('fs-extra');
+const path      = require('path');
+const Print     = require('../modules/print');
+const Spinner   = require('../modules/spinner');
+const Validator = require('../modules/validator');
+
+const { spinnerDot, configPath, ansible } = require('../../global-vars');
 
 module.exports = function (dep) {
   let cmd = {}
@@ -15,22 +22,21 @@ module.exports = function (dep) {
   }
   cmd.handler = async function (argv) {
     const { force } = argv
-    const { baker, print, spinner, spinnerDot, validator, fs, path, configPath, ansible } = dep
 
     try {
-        await spinner.spinPromise(validator.validateDependencies(), 'Checking dependencies', spinnerDot);
+        await Spinner.spinPromise(Validator.validateDependencies(), 'Checking dependencies', spinnerDot);
     } catch (err){
-        print.error(err);
+        Print.error(err);
         process.exit(1);
     }
 
     try {
         if(force)
-            await spinner.spinPromise(baker.reinstallAnsibleServer(), 'Re-installing Baker control machine', spinnerDot);
+            await Spinner.spinPromise(Baker.reinstallAnsibleServer(), 'Re-installing Baker control machine', spinnerDot);
         else
-            await spinner.spinPromise(baker.installAnsibleServer(), 'Installing Baker control machine', spinnerDot);
+            await Spinner.spinPromise(Baker.installAnsibleServer(), 'Installing Baker control machine', spinnerDot);
 
-        await spinner.spinPromise(
+        await Spinner.spinPromise(
             fs.copy(
                 path.resolve(configPath, './baker_rsa.pub'),
                 path.resolve(ansible, 'keys','baker_rsa.pub')
@@ -39,7 +45,7 @@ module.exports = function (dep) {
             spinnerDot
         );
 
-        await spinner.spinPromise(
+        await Spinner.spinPromise(
             fs.copy(
                 path.resolve(configPath, './baker_rsa'),
                 path.resolve(ansible, 'keys','baker_rsa')
@@ -50,7 +56,7 @@ module.exports = function (dep) {
         );
 
     } catch (err) {
-        print.error(err);
+        Print.error(err);
     }
 
   }

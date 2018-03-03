@@ -1,4 +1,7 @@
-'use strict';
+const Baker          = require('../modules/baker');
+const Print          = require('../modules/print');
+const Spinner        = require('../modules/spinner');
+const { spinnerDot } = require('../../global-vars');
 
 module.exports = function(dep) {
     let cmd = {};
@@ -8,22 +11,21 @@ module.exports = function(dep) {
     cmd.builder = {};
     cmd.handler = async function(argv) {
         let { VMName } = argv;
-        const { baker, print, spinner, spinnerDot } = dep;
 
         try {
             if(!VMName){
-                let cwdVM = (await baker.getCWDBakerYML());
+                let cwdVM = (await Baker.getCWDBakerYML());
                 if(cwdVM)
-                    VMName = (await baker.getCWDBakerYML()).name;
+                    VMName = (await Baker.getCWDBakerYML()).name;
                 else {
-                    print.error(`Couldn't find baker.yml in cwd. Run the command in a directory with baker.yml or specify a VMName.`);
+                    Print.error(`Couldn't find baker.yml in cwd. Run the command in a directory with baker.yml or specify a VMName.`);
                     process.exit(1);
                 }
             }
 
-            await spinner.spinPromise(baker.bakerSSH(VMName), `SSHing to ${VMName}`, spinnerDot);
+            await Spinner.spinPromise(Baker.bakerSSH(VMName), `SSHing to ${VMName}`, spinnerDot);
         } catch (err) {
-            print.error(err);
+            Print.error(err);
         }
     };
 

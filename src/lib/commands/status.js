@@ -1,4 +1,7 @@
-'use strict';
+const Baker          = require('../modules/baker');
+const Print          = require('../modules/print');
+const Spinner        = require('../modules/spinner');
+const { spinnerDot } = require('../../global-vars');
 
 module.exports = function(dep) {
     let cmd = {};
@@ -7,12 +10,10 @@ module.exports = function(dep) {
     cmd.desc = `show status for all Baker VMs`;
     cmd.builder = {};
     cmd.handler = async function(argv) {
-        const { baker, print, spinner, spinnerDot } = dep;
-
         try {
-            await spinner.spinPromise(baker.status(), `Getting status of Baker VMs`, spinnerDot);
+            await Spinner.spinPromise(Baker.status(), `Getting status of Baker VMs`, spinnerDot);
         } catch (err) {
-            print.error(err);
+            Print.error(err);
         }
     };
 

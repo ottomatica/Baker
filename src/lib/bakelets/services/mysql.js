@@ -1,10 +1,7 @@
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-const ssh = modules['ssh'];
-
-
 const Bakelet = require('../bakelet');
-const path = require('path');
+const Baker   = require('../../modules/baker');
+const path    = require('path');
+const Ssh     = require('../../modules/ssh');
 
 class MySql extends Bakelet {
 
@@ -29,7 +26,7 @@ class MySql extends Bakelet {
 
             if( obj.mysql.service_conf )
             {
-                await ssh.copyFromHostToVM(
+                await Ssh.copyFromHostToVM(
                     path.resolve(this.bakePath, obj.mysql.service_conf),
                     `/home/vagrant/baker/${this.name}/templates/`,
                     this.ansibleSSHConfig,
@@ -39,7 +36,7 @@ class MySql extends Bakelet {
 
             if( obj.mysql.client_conf )
             {
-                await ssh.copyFromHostToVM(
+                await Ssh.copyFromHostToVM(
                     path.resolve(this.bakePath, obj.mysql.client_conf),
                     `/home/vagrant/baker/${this.name}/templates/`,
                     this.ansibleSSHConfig,
@@ -58,7 +55,7 @@ class MySql extends Bakelet {
     async install()
     {
         var cmd = `mysql${this.version}.yml`;
-        await baker.runAnsiblePlaybook(
+        await Baker.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
     }

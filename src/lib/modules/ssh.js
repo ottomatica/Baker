@@ -1,20 +1,23 @@
-'use strict';
+const { configPath } = require('../../global-vars');
+const Client         = require('ssh2').Client;
+const fs             = require('fs')
+const path           = require('path');
+const print          = require('./print')
+const scp2           = require('scp2');
 
-module.exports = function(dep) {
-    let result = {};
+class Ssh {
+    constructor() { }
 
-    result.copyFilesForAnsibleServer = async function(
+    static async copyFilesForAnsibleServer (
         bakerScriptPath,
         doc,
         ansibleSSHConfig
     ) {
-        const { path, ssh, configPath } = dep;
-
         return new Promise(async (resolve, reject) => {
             if (doc.bake && doc.bake.ansible && doc.bake.ansible.source) {
                 // Copying ansible script to ansible vm
                 if (bakerScriptPath != undefined) {
-                    await ssh.copyFromHostToVM(
+                    await this.copyFromHostToVM(
                         path.resolve(bakerScriptPath, doc.bake.ansible.source),
                         `/home/vagrant/baker/${doc.name}`,
                         ansibleSSHConfig,
@@ -24,14 +27,14 @@ module.exports = function(dep) {
             }
 
             // Copy common ansible scripts files
-            await ssh.copyFromHostToVM(
+            await this.copyFromHostToVM(
                 path.resolve(configPath, './common/registerhost.yml'),
                 `/home/vagrant/baker/registerhost.yml`,
                 ansibleSSHConfig,
                 false
             );
 
-            await ssh.copyFromHostToVM(
+            await this.copyFromHostToVM(
                 path.resolve(
                     configPath,
                     './common/CheckoutFromVault.yml'
@@ -45,9 +48,8 @@ module.exports = function(dep) {
         });
     };
 
-    result.copyFromHostToVM = async function(src, dest, destSSHConfig, chmod_=true) {
-        const { scp2, fs, print, ssh } = dep;
-
+    static async copyFromHostToVM (src, dest, destSSHConfig, chmod_=true) {
+        let Ssh = this;
         return new Promise((resolve, reject) => {
             scp2.scp(
                 src,
@@ -65,7 +67,7 @@ module.exports = function(dep) {
                     }
                     else {
                         if(chmod_) {
-                            await ssh.chmod(dest, destSSHConfig)
+                            await Ssh.chmod(dest, destSSHConfig)
                         }
                         resolve();
                     }
@@ -74,9 +76,7 @@ module.exports = function(dep) {
         });
     }
 
-    result.sshExec = async function(cmd, sshConfig, verbose) {
-        const { Client, fs, print } = dep;
-
+    static async sshExec (cmd, sshConfig, verbose) {
         return new Promise((resolve, reject) => {
             var c = new Client();
             c
@@ -119,12 +119,10 @@ module.exports = function(dep) {
      * @param {String} key path to the key on server
      * @param {Object} sshConfig
      */
-    result.chmod = async function(key, sshConfig) {
-        const { ssh } = dep;
-
+    static async chmod (key, sshConfig) {
         // && eval "$(ssh-agent -s)" && ssh-add ${key}
-        return ssh.sshExec(`chmod 600 ${key}`, sshConfig);
+        return this.sshExec(`chmod 600 ${key}`, sshConfig);
     }
+}
 
-    return result;
-};
+module.exports = Ssh;

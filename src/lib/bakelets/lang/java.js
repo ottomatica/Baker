@@ -1,8 +1,6 @@
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-
 const Bakelet = require('../bakelet');
-const path = require('path');
+const Baker   = require('../../modules/baker');
+const path    = require('path');
 
 class Java extends Bakelet {
 
@@ -26,7 +24,7 @@ class Java extends Bakelet {
     async install()
     {
         var cmd = `java${this.version}.yml`;
-        await baker.runAnsiblePlaybook(
+        await Baker.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
         //console.log(`installed java ${this.version}`);

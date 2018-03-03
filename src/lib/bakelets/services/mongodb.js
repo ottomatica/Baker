@@ -1,10 +1,6 @@
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-const ssh = modules['ssh'];
-
-
 const Bakelet = require('../bakelet');
-const path = require('path');
+const Baker   = require('../../modules/baker');
+const path    = require('path');
 
 class MongoDB extends Bakelet {
 
@@ -35,7 +31,7 @@ class MongoDB extends Bakelet {
     async install()
     {
         var cmd = `mongodb${this.version}.yml`;
-        await baker.runAnsiblePlaybook(
+        await Baker.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, true, this.variables
         );
     }

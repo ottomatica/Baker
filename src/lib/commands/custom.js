@@ -1,4 +1,11 @@
-'use strict';
+const Baker     = require('../modules/baker');
+const Git       = require('../modules/cloneRepo');
+const path      = require('path');
+const Print     = require('../modules/print');
+const Spinner   = require('../modules/spinner');
+const Validator = require('../modules/validator');
+
+const { spinnerDot } = require('../../global-vars');
 
 module.exports = function(dep) {
     let cmd = {};
@@ -22,7 +29,6 @@ module.exports = function(dep) {
     };
     cmd.handler = async function(argv) {
         const { local, repo } = argv;
-        const { path, baker, cloneRepo, validator, print, spinner, spinnerDot } = dep;
 
         try{
             let ansibleVM;
@@ -31,34 +37,34 @@ module.exports = function(dep) {
             if (local) {
                 bakePath = path.resolve(local);
             } else if (repo) {
-                bakePath = path.resolve(await cloneRepo.cloneRepo(repo));
+                bakePath = path.resolve(await Git.clone(repo));
             } else {
-                print.error(
+                Print.error(
                     `User --local to give local path or --repo to give git repository with baker.yml`
                 );
                 process.exit(1);
             }
 
-            let validation = await spinner.spinPromise(validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
+            let validation = await Spinner.spinPromise(Validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
 
             try
             {
-                ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+                ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
             }
             catch(ex)
             {
-                await spinner.spinPromise(baker.upVM('baker'), `Restarting Baker control machine: `, spinnerDot);
-                ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+                await Spinner.spinPromise(Baker.upVM('baker'), `Restarting Baker control machine: `, spinnerDot);
+                ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
             }
 
-            let sshConfig = await baker.getSSHConfig(ansibleVM);
+            let sshConfig = await Baker.getSSHConfig(ansibleVM);
 
-            let baking = baker.bake(sshConfig, ansibleVM, bakePath);
-            await spinner.spinPromise(baking, 'Baking VM', spinnerDot);
+            let baking = Baker.bake(sshConfig, ansibleVM, bakePath);
+            await Spinner.spinPromise(baking, 'Baking VM', spinnerDot);
 
-            // print.info('Baking VM finished.');
+            // Print.info('Baking VM finished.');
         } catch (err) {
-            print.error(err);
+            Print.error(err);
         }
     };
 

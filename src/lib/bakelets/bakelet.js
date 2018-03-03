@@ -1,6 +1,5 @@
-const { commands, modules } = require('../../baker');
-const ssh = modules['ssh'];
-const path = require('path');
+const path    = require('path');
+const Ssh = require('../modules/ssh');
 
 class Bakelet
 {
@@ -27,7 +26,7 @@ class Bakelet
     async copy(src,dest)
     {
         // Copy common ansible scripts files
-        await ssh.copyFromHostToVM(
+        await Ssh.copyFromHostToVM(
             src,
             dest,
             this.ansibleSSHConfig,
@@ -37,7 +36,7 @@ class Bakelet
 
     async exec(cmd) {
         // Run cmd on remote server
-        await ssh.sshExec(cmd, this.ansibleSSHConfig, this.verbose);
+        await Ssh.sshExec(cmd, this.ansibleSSHConfig, this.verbose);
     }
 }
 

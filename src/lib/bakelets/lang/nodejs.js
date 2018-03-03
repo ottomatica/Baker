@@ -1,9 +1,7 @@
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-
 const Bakelet = require('../bakelet');
-const path = require('path');
-const fs   = require('fs');
+const Baker   = require('../../modules/baker');
+const fs      = require('fs-extra');
+const path    = require('path');
 
 class Nodejs extends Bakelet {
 
@@ -27,7 +25,7 @@ class Nodejs extends Bakelet {
     async install()
     {
         var cmd = `nodejs${this.version}.yml`;
-        await baker.runAnsiblePlaybook(
+        await Baker.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
 
@@ -39,7 +37,7 @@ class Nodejs extends Bakelet {
             // https://github.com/ansible/ansible/pull/29131
             var vmPackagePath = `/${path.basename(this.bakePath)}`;
             if( this.verbose ) console.log(`Attempting to run npm install in vm at ${vmPackagePath}`);
-            await baker.runAnsibleNpmInstall(
+            await Baker.runAnsibleNpmInstall(
                 {name: this.name}, vmPackagePath, this.ansibleSSHConfig, this.verbose
             );
         }

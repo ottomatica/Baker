@@ -1,4 +1,10 @@
-'use strict';
+const Baker     = require('../modules/baker');
+const Git       = require('../modules/cloneRepo');
+const path      = require('path');
+const Print     = require('../modules/print');
+const Spinner   = require('../modules/spinner');
+
+const { spinnerDot } = require('../../global-vars');
 
 module.exports = function(dep) {
     let cmd = {};
@@ -28,7 +34,6 @@ module.exports = function(dep) {
     };
     cmd.handler = async function(argv) {
         const { local, repo, verbose } = argv;
-        const { path, baker, cloneRepo, validator, print, spinner, spinnerDot } = dep;
 
             try{
                 let ansibleVM;
@@ -37,9 +42,9 @@ module.exports = function(dep) {
                 if (local) {
                     bakePath = path.resolve(local);
                 } else if (repo) {
-                    bakePath = path.resolve(await cloneRepo.cloneRepo(repo));
+                    bakePath = path.resolve(await Git.clone(repo));
                 } else {
-                    print.error(
+                    Print.error(
                         `User --local to give local path or --repo to give git repository with baker.yml`
                     );
                     process.exit(1);
@@ -47,20 +52,20 @@ module.exports = function(dep) {
 
                 try
                 {
-                    ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+                    ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
                 }
                 catch(ex)
                 {
-                    await spinner.spinPromise(baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
-                    ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+                    await Spinner.spinPromise(Baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
+                    ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
                 }
 
-                let sshConfig = await baker.getSSHConfig(ansibleVM);
+                let sshConfig = await Baker.getSSHConfig(ansibleVM);
 
-                await baker.cluster(sshConfig, ansibleVM, bakePath, verbose);
+                await Baker.cluster(sshConfig, ansibleVM, bakePath, verbose);
 
             } catch (err) {
-                print.error(err);
+                Print.error(err);
             }
     };
 

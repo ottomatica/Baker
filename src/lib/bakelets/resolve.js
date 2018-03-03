@@ -1,16 +1,12 @@
-const yaml = require('js-yaml');
-const fs   = require('fs');
-const path = require('path');
+const fs      = require('fs');
+const path    = require('path');
 const Promise = require('bluebird');
+const Spinner = require('../modules/spinner');
+const start   = require('./start');
 const vagrant = Promise.promisifyAll(require('node-vagrant'));
+const yaml    = require('js-yaml');
 
-const start = require('./start');
-
-const { commands, modules } = require('../../baker');
-const spinnerDot = modules['spinnerDot'];
-const spinner = modules['spinner'];
-const boxes = modules['boxes'];
-const baker = modules['baker'];
+const { boxes, spinnerDot } = require('../../global-vars');
 
 module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, bakerScriptPath, verbose)
 {
@@ -158,6 +154,6 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra
     j.setBakePath(bakerScriptPath);
     j.setVerbose(verbose);
 
-    await spinner.spinPromise(j.load(bakelet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
-    await spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);
+    await Spinner.spinPromise(j.load(bakelet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
+    await Spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);
 }

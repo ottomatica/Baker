@@ -1,11 +1,8 @@
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-const ssh = modules['ssh'];
-
-const Bakelet = require('../bakelet');
-const path = require('path');
+const Bakelet  = require('../bakelet');
+const Baker    = require('../../modules/baker');
+const fs       = require('fs-extra');
 const mustache = require('mustache');
-const fs = require('fs-extra');
+const path     = require('path');
 
 class Env extends Bakelet {
     constructor(name, ansibleSSHConfig, version) {
@@ -35,7 +32,7 @@ class Env extends Bakelet {
 
     async install() {
         var cmd = `env.yml`;
-        await baker.runAnsiblePlaybook(
+        await Baker.runAnsiblePlaybook(
             { name: this.name },
             cmd,
             this.ansibleSSHConfig,

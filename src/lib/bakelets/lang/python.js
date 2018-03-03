@@ -1,9 +1,8 @@
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-
 const Bakelet = require('../bakelet');
-const path = require('path');
-const fs   = require('fs');
+const Baker   = require('../../modules/baker');
+const fs      = require('fs-extra');
+const path    = require('path');
+const Ssh     = require('../../modules/ssh');
 
 class Python extends Bakelet {
 
@@ -25,7 +24,7 @@ class Python extends Bakelet {
     async install()
     {
         var cmd = `python${this.version}.yml`;
-        await baker.runAnsiblePlaybook(
+        await Baker.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
 
@@ -36,7 +35,7 @@ class Python extends Bakelet {
         if( fs.existsSync(localRequirementsPath) )
         {
             var vmRequirementsPath = `/${path.basename(this.bakePath)}/requirements.txt`;
-            await baker.runAnsiblePipInstall(
+            await Baker.runAnsiblePipInstall(
                 {name: this.name}, vmRequirementsPath, this.ansibleSSHConfig, this.verbose
             );
         }

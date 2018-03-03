@@ -1,10 +1,7 @@
-
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-const ssh = modules['ssh'];
-
 const Bakelet = require('../bakelet');
-const path = require('path');
+const Baker   = require('../../modules/baker');
+const path    = require('path');
+const Ssh     = require('../../modules/ssh');
 
 class Keys extends Bakelet {
 
@@ -21,13 +18,13 @@ class Keys extends Bakelet {
         {
             for (let clientName of obj.keys)
             {
-                let sshConfig = await baker.retrieveSSHConfigByName(clientName);
+                let sshConfig = await Baker.retrieveSSHConfigByName(clientName);
                 if( sshConfig.private_key == undefined )
                 {
                     throw `Could not retrieve ${clientName}'s ssh key`
                 }
 
-                await ssh.copyFromHostToVM(
+                await Ssh.copyFromHostToVM(
                     sshConfig.private_key,
                     `/home/vagrant/baker/${this.name}/${clientName}_id_rsa`,
                     this.ansibleSSHConfig
@@ -44,7 +41,7 @@ class Keys extends Bakelet {
     async install()
     {
         var cmd = `keys${this.version}.yml`;
-        await baker.runAnsiblePlaybook(
+        await Baker.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
     }

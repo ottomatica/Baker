@@ -1,30 +1,37 @@
-'use strict';
+const Promise       = require('bluebird');
+const _             = require('underscore');
+const child_process = Promise.promisifyAll(require('child_process'));
+const fs            = Promise.promisifyAll(require('fs-extra'));
+const inquirer      = require('inquirer');
+const mustache      = require('mustache');
+const netaddr       = require('netaddr');
+const path          = require('path');
+const print         = require('./print');
+const prompt        = require('prompt');
+const slash         = require('slash');
+const spinner       = require('./Spinner');
+const Ssh           = require('./ssh');
+const vagrant       = Promise.promisifyAll(require('node-vagrant'));
+const validate      = require('validator');
+const yaml          = require('js-yaml');
 
-module.exports = function(dep) {
-    let result = {};
+const { spinnerDot, configPath, ansible, boxes, bakeletsPath, remotesPath } = require('../../global-vars');
 
-    /**
-     * Returns true if host is accessible, otherwise false
-     */
-    async function checkHostAccessible(host) {
-        const { ping } = dep;
-
-        return (await ping.promise.probe(host, {
-            extra: ['-i 2']
-        })).alive;
+class Baker {
+    constructor() {
     }
 
-    result.init = async function(){
-        const { fs, path, configPath } = dep;
+    static async hostIsAccessible(host) {
+        return (await ping.promise.probe(host, {extra: ['-i 2']})).alive;
+    }
 
+    static async init() {
         let bakerYML = await fs.readFileAsync(path.join(configPath, './bakerTemplate.yml'), 'utf8');
         let dir = path.resolve(process.cwd());
         await fs.writeFileAsync('baker.yml', bakerYML, {encoding:'utf8'});
     }
 
-    result.initBaker2 = async function(){
-        const { fs, path, configPath, inquirer, validator, mustache, spinner, spinnerDot } = dep;
-
+    static async initBaker2() {
         // TODO: Find a better approach to do this
         try{
             if(await fs.pathExists(await path.resolve(path.resolve(process.cwd(), 'baker.yml'))))
@@ -53,7 +60,7 @@ module.exports = function(dep) {
                     validate: async function(ip) {
                         let pass = validator.isIP(ip);
 
-                        var exists = await checkHostAccessible(ip);
+                        var exists = await this.hostIsAccessible(ip);
 
                         if (pass && !exists) {
                             return true;
@@ -152,9 +159,7 @@ module.exports = function(dep) {
      * get State of a vagrant vm by id.
      * @param {String} id
      */
-    result.getState = async function(id) {
-        const { vagrant } = dep;
-
+    static async getState(id) {
         try {
             let VMs = await vagrant.globalStatusAsync();
             let VM = VMs.filter(VM => VM.id == id)[0];
@@ -164,14 +169,12 @@ module.exports = function(dep) {
         } catch (err) {
             throw err;
         }
-    };
+    }
 
     /**
      * get vagrant id of VMs by name
      */
-    result.getVagrantIDByName = async function(VMName) {
-        const { vagrant } = dep;
-
+    static async getVagrantIDByName(VMName) {
         let VMs = await vagrant.globalStatusAsync();
         let VM = VMs.filter(VM => VM.name == VMName)[0];
 
@@ -184,11 +187,9 @@ module.exports = function(dep) {
      * It will ssh to the vagrant box
      * @param {String} name
      */
-    result.bakerSSH = async function(name) {
-        const { baker, child_process } = dep;
-
+    static async bakerSSH (name) {
         try {
-            let id = await baker.getVagrantIDByName(name);
+            let id = await this.getVagrantIDByName(name);
             try {
                 child_process.execSync(`vagrant ssh ${id}`, {stdio: ['inherit', 'inherit', 'ignore']});
             } catch (err) {
@@ -197,31 +198,23 @@ module.exports = function(dep) {
         } catch(err) {
             throw err;
         }
-    };
+    }
 
 
     /**
      * Checks if ansible server is up, if not it starts the server
      * It will also copy new vm's ansible script to ~/baker/{name}/ in ansible server
-     * Returns a promise, use cleaner es7 syntax:
-     * Resolves the ansible machine
-     * ------
-     * await prepareAnsibleServer()
-     * ...do something after finished preparing server
-     * ------
      */
-    result.prepareAnsibleServer = async function(bakerScriptPath) {
-        const { vagrant, fs, yaml, baker, print, ssh, ansible, path } = dep;
-
+    static async prepareAnsibleServer (bakerScriptPath) {
         let machine = vagrant.create({ cwd: ansible });
         let doc = yaml.safeLoad(await fs.readFileAsync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
 
         try {
-            let bakerVMID = await baker.getVagrantIDByName('baker');
-            let state = await baker.getState(bakerVMID);
+            let bakerVMID = await this.getVagrantIDByName('baker');
+            let state = await this.getState(bakerVMID);
             if (state === 'running') {
-                let ansibleSSHConfig = await baker.getSSHConfig(machine);
-                await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
+                let ansibleSSHConfig = await this.getSSHConfig(machine);
+                await Ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
                 return machine;
             } else {
                 try {
@@ -232,9 +225,9 @@ module.exports = function(dep) {
                 } catch (err) {
                     throw err;
                 }
-                let ansibleSSHConfig = await baker.getSSHConfig(machine);
+                let ansibleSSHConfig = await this.getSSHConfig(machine);
 
-                await ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
+                await Ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
 
                 return machine;
             }
@@ -252,9 +245,7 @@ module.exports = function(dep) {
      * Returns the path of the VM, undefined if VM doesn't exist
      * @param {String} VMName
      */
-    async function getVMPath(VMName){
-        const { vagrant } = dep;
-
+    static async getVMPath(VMName){
         let VMs = await vagrant.globalStatusAsync();
         let VM = VMs.find(VM => VM.name === VMName);
 
@@ -264,9 +255,7 @@ module.exports = function(dep) {
             throw `Cannot find machine: ${VMName}`;
     }
 
-    result.getCWDBakerYML = async function(){
-        const { path, fs, yaml } = dep;
-
+    static async getCWDBakerYML(){
         let cwd = path.resolve(process.cwd());
         let bakePath = path.resolve(cwd, 'baker.yml')
         if(await fs.pathExists(bakePath)){
@@ -282,11 +271,9 @@ module.exports = function(dep) {
      * Destroy VM
      * @param {String} VMName
      */
-    result.destroyVM = async function(VMName) {
-        const { vagrant } = dep;
-
+    static async destroyVM (VMName) {
         try {
-            let VMPath = await getVMPath(VMName);
+            let VMPath = await this.getVMPath(VMName);
             let machine = vagrant.create({ cwd: VMPath });
 
             try {
@@ -304,12 +291,10 @@ module.exports = function(dep) {
     /**
      * Prune
      */
-    result.prune = async function() {
-        const { baker, vagrant } = dep;
-
+    static async prune() {
         try {
             await vagrant.globalStatusAsync('--prune');
-            await baker.status();
+            await this.status();
             return;
         } catch (err) {
             throw err;
@@ -320,11 +305,9 @@ module.exports = function(dep) {
      * Shut down VM
      * @param {String} id
      */
-    result.haltVM = async function(VMName, force=false) {
-        const { vagrant } = dep;
-
+    static async haltVM (VMName, force=false) {
         try {
-            let VMPath = await getVMPath(VMName);
+            let VMPath = await this.getVMPath(VMName);
             let machine = vagrant.create({ cwd: VMPath });
 
             try {
@@ -343,11 +326,9 @@ module.exports = function(dep) {
      * Start VM
      * @param {String} name
      */
-    result.upVM = async function(VMName) {
-        const { vagrant } = dep;
-
+    static async upVM (VMName) {
         try {
-            let VMPath = await getVMPath(VMName);
+            let VMPath = await this.getVMPath(VMName);
             let machine = vagrant.create({ cwd: VMPath });
             try {
                 await machine.upAsync();
@@ -359,14 +340,12 @@ module.exports = function(dep) {
         }
 
         return;
-    };
+    }
 
     /**
      * Creates ansible server, if already doesn't exist
      */
-    result.installAnsibleServer = async function() {
-        const { baker, fs, mustache, path, configPath, vagrant, ansible, boxes } = dep;
-
+    static async installAnsibleServer () {
         try {
             await fs.ensureDir(boxes);
             await fs.ensureDir(ansible);
@@ -379,8 +358,8 @@ module.exports = function(dep) {
         let bakerVMState;
 
         try {
-            bakerVMID = await baker.getVagrantIDByName('baker');
-            bakerVMState = await baker.getState(bakerVMID);
+            bakerVMID = await this.getVagrantIDByName('baker');
+            bakerVMState = await this.getState(bakerVMID);
             if(bakerVMState == 'running') return;
         } catch (err) {
             if (err === `Cannot find machine: baker`) {
@@ -414,17 +393,15 @@ module.exports = function(dep) {
      * Re-installs ansible server.
      * @returns Promise
      */
-    result.reinstallAnsibleServer = async function() {
-        const { baker } = dep;
-
+    static async reinstallAnsibleServer () {
         try {
-            await baker.destroyVM('baker');
+            await this.destroyVM('baker');
         } catch (err) {
             if (err != `Cannot find machine: baker`) {
                 throw err;
             }
         }
-        await baker.installAnsibleServer();
+        await this.installAnsibleServer();
         return;
     }
 
@@ -433,9 +410,7 @@ module.exports = function(dep) {
      * @param {Obj} machine
      * @param {Obj} nodeName Optionally give name of machine when multiple machines declared in single Vagrantfile.
      */
-    result.getSSHConfig = async function(machine, nodeName) {
-        const { print, Promise } = dep;
-
+    static async getSSHConfig (machine, nodeName) {
         try {
             let sshConfig = await machine.sshConfigAsync();
             if(sshConfig && sshConfig.length > 0){
@@ -464,11 +439,10 @@ module.exports = function(dep) {
      * @param {String} name
      * @param {Object} sshConfig
      */
-    result.addToAnsibleHosts = async function(ip, name, ansibleSSHConfig, vmSSHConfig){
-        const { ssh } = dep;
+    static async addToAnsibleHosts (ip, name, ansibleSSHConfig, vmSSHConfig){
         // TODO: Consider also specifying ansible_connection=${} to support containers etc.
         // TODO: Callers of this can be refactored to into two methods, below:
-        return ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
+        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
     }
 
     /**
@@ -478,9 +452,7 @@ module.exports = function(dep) {
      * @param {String} name
      * @param {Object} sshConfig
      */
-    result.addClusterToBakerInventory = async function(nodeList, name, sshConfig){
-        const { ssh } = dep;
-
+    static async addClusterToBakerInventory (nodeList, name, sshConfig){
         let hosts = [];
         for( var i=0; i < nodeList.length; i++ )
         {
@@ -488,7 +460,7 @@ module.exports = function(dep) {
             hosts.push( `${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${user}` );
         }
 
-        await ssh.sshExec(`echo "[${name}]\n${hosts.join('\n')}" > /home/vagrant/baker/${name}/baker_inventory`, sshConfig);
+        await Ssh.sshExec(`echo "[${name}]\n${hosts.join('\n')}" > /home/vagrant/baker/${name}/baker_inventory`, sshConfig);
     }
 
     /**
@@ -498,48 +470,38 @@ module.exports = function(dep) {
      * @param {String} name
      * @param {Object} sshConfig
      */
-    result.addIpToAnsibleHosts = async function(ip, name, sshConfig){
-        const { ssh } = dep;
-
+    static async addIpToAnsibleHosts (ip, name, sshConfig){
         // TODO: check addToAnsibleHosts(), looks like that is doing the same thing too
-        return ssh.sshExec(`ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
+        return Ssh.sshExec(`ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
     }
 
-    result.retrieveSSHConfigByName = async function(name) {
-        const { ssh, baker, boxes, path, vagrant } = dep;
-
+    static async retrieveSSHConfigByName (name) {
         let dir = path.join(boxes, name);
         let vm = vagrant.create({ cwd: dir });
-        let vmSSHConfigUser = await baker.getSSHConfig(vm);
+        let vmSSHConfigUser = await this.getSSHConfig(vm);
 
         return vmSSHConfigUser;
     }
 
-    result.setKnownHosts = async function(ip, sshConfig) {
-        const { ssh } = dep;
-
-        return ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," registerhost.yml -e "ip=${ip}" -c local`, sshConfig);
+    static async setKnownHosts (ip, sshConfig) {
+        return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," registerhost.yml -e "ip=${ip}" -c local`, sshConfig);
     }
 
-    result.runAnsibleVault = async function(doc, pass, dest, ansibleSSHConfig) {
-        const { ssh, Promise } = dep;
-
+    static async runAnsibleVault (doc, pass, dest, ansibleSSHConfig) {
         return new Promise( async (resolve, reject) => {
             let key = doc.bake.vault.checkout.key;
-            await ssh.sshExec(`cd /home/vagrant/baker/${doc.name} && echo "${pass}" > vault-pwd`, ansibleSSHConfig);
-            await ssh.sshExec(`cd /home/vagrant/baker/${doc.name} && ansible-playbook -e "vault=${doc.name}/baker-vault.yml key=${key} dest=${dest}" -i baker_inventory --vault-password-file=vault-pwd ../CheckoutFromVault.yml`, ansibleSSHConfig)
+            await Ssh.sshExec(`cd /home/vagrant/baker/${doc.name} && echo "${pass}" > vault-pwd`, ansibleSSHConfig);
+            await Ssh.sshExec(`cd /home/vagrant/baker/${doc.name} && ansible-playbook -e "vault=${doc.name}/baker-vault.yml key=${key} dest=${dest}" -i baker_inventory --vault-password-file=vault-pwd ../CheckoutFromVault.yml`, ansibleSSHConfig)
             //await sshExec(`cd /home/vagrant/baker/${doc.name} && echo "${pass}" > vault-pwd &&  ansible-vault view baker-vault.yml --vault-password-file=vault-pwd > checkout.key`, sshConfig);
             //await sshExec(`cd /home/vagrant/baker/${doc.name} && ansible all -i baker_inventory --private-key id_rsa -u ${vmSSHConfigUser.user} -m copy -a "src=checkout.key dest=${dest} mode=0600"`, sshConfig)
-            await ssh.sshExec(`cd /home/vagrant/baker/${doc.name} && rm vault-pwd`, ansibleSSHConfig)
+            await Ssh.sshExec(`cd /home/vagrant/baker/${doc.name} && rm vault-pwd`, ansibleSSHConfig)
             resolve();
         });
     }
 
     // TODO: Need to be cleaning cmd so they don't do things like
     // ; sudo rm -rf / on our server...
-    result.runAnsiblePlaybook = async function(doc, cmd, ansibleSSHConfig, verbose, variables) {
-        const { ssh } = dep;
-
+    static async runAnsiblePlaybook (doc, cmd, ansibleSSHConfig, verbose, variables) {
         let flatVars = {};
         for( var i =0; i < variables.length; i++ )
         {
@@ -551,37 +513,27 @@ module.exports = function(dep) {
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables);
         if( verbose ) console.log( extravars );
-        // return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m ping -i baker_inventory`, ansibleSSHConfig, verbose);
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd}; rm -f playbook.args.json`, ansibleSSHConfig, verbose);
+        // return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m ping -i baker_inventory`, ansibleSSHConfig, verbose);
+        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd}; rm -f playbook.args.json`, ansibleSSHConfig, verbose);
     }
 
-    result.runAnsibleAptInstall = async function(doc, cmd, ansibleSSHConfig,verbose) {
-        const { ssh } = dep;
-
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --become`, ansibleSSHConfig, verbose);
+    static async runAnsibleAptInstall (doc, cmd, ansibleSSHConfig,verbose) {
+        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --become`, ansibleSSHConfig, verbose);
     }
 
-    result.runAnsiblePipInstall = async function(doc, requirements, ansibleSSHConfig, verbose) {
-        const { ssh } = dep;
-
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m pip -a "requirements=${requirements}" -i baker_inventory --become`, ansibleSSHConfig, verbose);
+    static async runAnsiblePipInstall (doc, requirements, ansibleSSHConfig, verbose) {
+        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m pip -a "requirements=${requirements}" -i baker_inventory --become`, ansibleSSHConfig, verbose);
     }
 
-    result.runAnsibleNpmInstall = async function(doc, packagejson, ansibleSSHConfig, verbose) {
-        const { ssh } = dep;
-
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m npm -a "path=${packagejson}" -i baker_inventory`, ansibleSSHConfig, verbose);
+    static async runAnsibleNpmInstall (doc, packagejson, ansibleSSHConfig, verbose) {
+        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m npm -a "path=${packagejson}" -i baker_inventory`, ansibleSSHConfig, verbose);
     }
 
-    result.mkTemplatesDir = async function(doc, ansibleSSHConfig) {
-        const { ssh } = dep;
-
-        return ssh.sshExec(`mkdir -p /home/vagrant/baker/${doc.name}/templates`, ansibleSSHConfig);
+    static async mkTemplatesDir (doc, ansibleSSHConfig) {
+        return Ssh.sshExec(`mkdir -p /home/vagrant/baker/${doc.name}/templates`, ansibleSSHConfig);
     }
 
-    result.runAnsibleTemplateCmd = async function(doc, src, dest, variables, ansibleSSHConfig, verbose) {
-        const { ssh } = dep;
-
+    static async runAnsibleTemplateCmd (doc, src, dest, variables, ansibleSSHConfig, verbose) {
         let flatVars = {};
         for( var i =0; i < variables.length; i++ )
         {
@@ -592,13 +544,10 @@ module.exports = function(dep) {
         }
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables);
-        return ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory; rm -f template.args.json`, ansibleSSHConfig, verbose);
+        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory; rm -f template.args.json`, ansibleSSHConfig, verbose);
     }
 
-
-    result.promptValue = async function(propertyName, description, hidden=false) {
-        const { prompt, Promise, print } = dep;
-
+    static async promptValue (propertyName, description, hidden=false) {
         return new Promise((resolve, reject) => {
             prompt.start();
             prompt.get([{ name: propertyName, description: description, hidden:hidden }], function(
@@ -618,8 +567,7 @@ module.exports = function(dep) {
      * Private function:
      * Traverse yaml and do prompts
      */
-    async function traverse(o) {
-        const { baker } = dep;
+    static async traverse(o) {
         const stack = [{ obj: o, parent: null, parentKey: '' }];
 
         while (stack.length) {
@@ -638,7 +586,7 @@ module.exports = function(dep) {
                 }
 
                 if (key == 'prompt') {
-                    const input = await baker.promptValue(parentKey, obj[key]);
+                    const input = await this.promptValue(parentKey, obj[key]);
                     // Replace "prompt" with an value provided by user.
                     parent[parentKey] = input;
                 }
@@ -647,23 +595,20 @@ module.exports = function(dep) {
         return o;
     }
 
-    result.initVagrantFile = async function(vagrantFilePath, doc, template, scriptPath) {
-        const { mustache, fs, path, slash, baker } = dep;
-
+    static async initVagrantFile (vagrantFilePath, doc, template, scriptPath) {
         if (doc.vm ) {
             doc.vagrant = doc.vm;
             delete doc.vm;
         }
         const vagrant = doc.vagrant;
-        await traverse(vagrant);
-
+        await this.traverse(vagrant);
         // Defaults
         // vagrant.box = vagrant.box || "ubuntu/xenial64"
         // TODO: Cleanup this mess
-        if     (vagrant.box && (await baker.boxes()).map(e=>e.name).includes(`${vagrant.box}.baker`)){
+        if (vagrant.box && (await this.boxes()).map(e=>e.name).includes(`${vagrant.box}.baker`)){
             vagrant.box = vagrant.box + '.baker';
         }
-        else if(vagrant.box && (await baker.boxes()).map(e=>e.name).includes(`${vagrant.box}`)){
+        else if(vagrant.box && (await this.boxes()).map(e=>e.name).includes(`${vagrant.box}`)){
             vagrant.box = vagrant.box;
         }
         else{
@@ -697,9 +642,7 @@ module.exports = function(dep) {
         await fs.writeFileAsync(vagrantFilePath, output);
     }
 
-    result.status = async function() {
-        const { vagrant } = dep;
-
+    static async status () {
         try {
             let VMs = await vagrant.globalStatusAsync();
             // Only showing baker VMs
@@ -712,9 +655,7 @@ module.exports = function(dep) {
         return;
     }
 
-    result.bake = async function(ansibleSSHConfig, ansibleVM, scriptPath) {
-        const { yaml, path, fs, vagrant, baker, print, ssh, boxes, configPath } = dep;
-
+    static async bake (ansibleSSHConfig, ansibleVM, scriptPath) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         let dir = path.join(boxes, doc.name);
@@ -729,31 +670,31 @@ module.exports = function(dep) {
         let machine = vagrant.create({ cwd: dir });
 
 
-        await baker.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
+        await this.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
 
         try {
 
             await machine.upAsync();
 
-            let sshConfig = await baker.getSSHConfig(machine);
+            let sshConfig = await this.getSSHConfig(machine);
             let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
-            await ssh.copyFromHostToVM(
+            await Ssh.copyFromHostToVM(
                 sshConfig.private_key,
                 `/home/vagrant/baker/${doc.name}/${ip}_rsa`,
                 ansibleSSHConfig
             );
 
-            await baker.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig)
-            await baker.setKnownHosts(ip, ansibleSSHConfig);
+            await this.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig)
+            await this.setKnownHosts(ip, ansibleSSHConfig);
 
             if(doc.bake && doc.bake.ansible && doc.bake.ansible.playbooks){
                 print.info('Running your Ansible playbooks.', 1);
 
-                let vmSSHConfig = await baker.getSSHConfig(machine);
+                let vmSSHConfig = await this.getSSHConfig(machine);
 
                 for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ ) {
                     var cmd = doc.bake.ansible.playbooks[i];
-                    await baker.runAnsiblePlaybook(
+                    await this.runAnsiblePlaybook(
                         doc, cmd, ansibleSSHConfig, false, {}
                     )
                 }
@@ -762,15 +703,15 @@ module.exports = function(dep) {
             if( doc.bake && doc.bake.vault && doc.bake.vault.checkout && doc.bake.vault.checkout.key) {
                 print.info('Checking out keys from vault.', 1);
                 let vaultFile = `/home/vagrant/baker/${doc.name}/baker-vault.yml`;
-                await ssh.copyFromHostToVM(
+                await Ssh.copyFromHostToVM(
                     path.resolve( scriptPath, doc.bake.vault.source ),
                     vaultFile,
                     ansibleSSHConfig
                 );
                 // prompt vault pass
-                let pass = await baker.promptValue('pass', `vault pass for ${doc.bake.vault.source}`, hidden=true);
+                let pass = await this.promptValue('pass', `vault pass for ${doc.bake.vault.source}`, hidden=true);
                 // ansible-vault to checkout key and copy to dest.
-                await baker.runAnsibleVault(doc, pass, doc.bake.vault.checkout.dest, ansibleSSHConfig)
+                await this.runAnsibleVault(doc, pass, doc.bake.vault.checkout.dest, ansibleSSHConfig)
             }
 
         } catch (err) {
@@ -778,9 +719,7 @@ module.exports = function(dep) {
         }
     }
 
-    result.bake2 = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
-        const { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakeletsPath, remotesPath } = dep;
-
+    static async bake2 (ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         let dir = path.join(boxes, doc.name);
@@ -794,7 +733,7 @@ module.exports = function(dep) {
 
         let machine = vagrant.create({ cwd: dir });
 
-        await baker.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
+        await this.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
 
         try {
 
@@ -805,26 +744,26 @@ module.exports = function(dep) {
 
             await spinner.spinPromise(machine.upAsync(), `Provisioning VM in VirtualBox`, spinnerDot);
 
-            let sshConfig = await baker.getSSHConfig(machine);
+            let sshConfig = await this.getSSHConfig(machine);
 
             let ip = doc.vagrant.ip;
-            await ssh.copyFromHostToVM(
+            await Ssh.copyFromHostToVM(
                 sshConfig.private_key,
                 `/home/vagrant/baker/${doc.name}/${ip}_rsa`,
                 ansibleSSHConfig
             );
 
-            await baker.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig)
-            await baker.setKnownHosts(ip, ansibleSSHConfig);
-            await baker.mkTemplatesDir(doc, ansibleSSHConfig);
+            await this.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig)
+            await this.setKnownHosts(ip, ansibleSSHConfig);
+            await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
             // prompt for passwords
             if( doc.vars )
             {
-                await traverse(doc.vars);
+                await this.traverse(doc.vars);
             }
 
-            // let vmSSHConfig = await baker.getSSHConfig(machine);
+            // let vmSSHConfig = await this.getSSHConfig(machine);
 
             // Installing stuff.
             let resolveB = require('../bakelets/resolve');
@@ -836,9 +775,7 @@ module.exports = function(dep) {
         }
     }
 
-    result.bakeRemote = async function(ansibleSSHConfig, remoteIP, remoteKey, remoteUser, scriptPath, verbose) {
-        const { yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakeletsPath, remotesPath } = dep;
-
+    static async bakeRemote (ansibleSSHConfig, remoteIP, remoteKey, remoteUser, scriptPath, verbose) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
         let vmSSHConfig = {
             user: remoteUser,
@@ -850,18 +787,18 @@ module.exports = function(dep) {
 
         try {
             // TODO: copy the ssh key to ${ip}_rsa instead of id_rsa
-            await ssh.copyFromHostToVM(
+            await Ssh.copyFromHostToVM(
                 vmSSHConfig.private_key,
                 `/home/vagrant/baker/${doc.name}/${vmSSHConfig.ip}_rsa`,
                 ansibleSSHConfig
             );
-            await baker.addToAnsibleHosts(vmSSHConfig.ip, doc.name + '-cloud', ansibleSSHConfig, vmSSHConfig);
-            await baker.setKnownHosts(vmSSHConfig.ip, ansibleSSHConfig);
-            await baker.mkTemplatesDir(doc, ansibleSSHConfig);
+            await this.addToAnsibleHosts(vmSSHConfig.ip, doc.name + '-cloud', ansibleSSHConfig, vmSSHConfig);
+            await this.setKnownHosts(vmSSHConfig.ip, ansibleSSHConfig);
+            await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
             // prompt for passwords
             if( doc.vars ) {
-                await traverse(doc.vars);
+                await this.traverse(doc.vars);
             }
 
             // Installing stuff.
@@ -873,10 +810,7 @@ module.exports = function(dep) {
         }
     }
 
-    result.cluster = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
-
-        const { _, netaddr, mustache, slash, yaml, path, fs, vagrant, spinner, spinnerDot, baker, print, ssh, boxes, configPath, bakeletsPath, remotesPath } = dep;
-
+    static async cluster (ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         let dir = path.join(boxes, doc.name);
@@ -891,7 +825,7 @@ module.exports = function(dep) {
         // prompt for passwords
         if( doc.vars )
         {
-            await traverse(doc.vars);
+            await this.traverse(doc.vars);
         }
 
         let getClusterLength = function (baseName,cluster)
@@ -961,55 +895,50 @@ module.exports = function(dep) {
 
         await spinner.spinPromise(machine.upAsync(), `Provisioning cluster in VirtualBox`, spinnerDot);
 
-        await baker.mkTemplatesDir(doc, ansibleSSHConfig);
+        await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
         let nodeList = [];
         //_.pluck(cluster.cluster.nodes, "ip");
         for( var i = 0; i < cluster.cluster.nodes.length; i++ )
         {
             let node = cluster.cluster.nodes[i];
-            let vmSSHConfig = await baker.getSSHConfig(machine, node.name);
+            let vmSSHConfig = await this.getSSHConfig(machine, node.name);
             nodeList.push({
                 ip: cluster.cluster.nodes[i].ip,
                 user: vmSSHConfig.user
             });
 
-            await ssh.copyFromHostToVM(
+            await Ssh.copyFromHostToVM(
                 vmSSHConfig.private_key,
                 `/home/vagrant/baker/${doc.name}/${node.ip}_rsa`,
                 ansibleSSHConfig
             );
-            await baker.setKnownHosts(node.ip, ansibleSSHConfig);
-            await baker.addIpToAnsibleHosts(node.ip, node.name, ansibleSSHConfig);
+            await this.setKnownHosts(node.ip, ansibleSSHConfig);
+            await this.addIpToAnsibleHosts(node.ip, node.name, ansibleSSHConfig);
 
             console.log( `${nodeList[i].ip} ${nodeList[i].user} ${vmSSHConfig.private_key}`);
         }
-        await baker.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig);
+        await this.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig);
 
         let resolveB = require('../bakelets/resolve');
         await resolveB.resolveBakelet(bakeletsPath, remotesPath, nodeDoc, scriptPath, verbose);
 
     }
 
-    result.package = async function(VMName, verbose) {
-        const { path, boxes, child_process } = dep;
-
+    static async package (VMName, verbose) {
         let dir = path.join(boxes, VMName);
-
         await child_process.execAsync(`cd ${dir} && vagrant package --output ${path.join(process.cwd(), VMName + '.box')}`, {stdio: ['inherit', 'inherit', 'ignore']});
     }
 
-    result.import = async function(box, name, verbose) {
-        const { path, boxes, child_process, vagrant } = dep;
 
+
+    static async import (box, name, verbose) {
         let boxName = name ? name : path.basename(box).split('.')[0];
-
         await vagrant.boxAddAsync(path.join(process.cwd(), box), ['--name', boxName + '.baker'])
         // await child_process.execAsync(`vagrant box add ${boxName}.baker ${path.join(process.cwd(), box)}`, {stdio: ['inherit', 'inherit', 'ignore']});
     }
 
-    result.boxes = async function() {
-        const { vagrant } = dep;
+    static async boxes () {
         try {
             let boxes = await vagrant.boxListAsync([]);
             delete boxes.version;
@@ -1019,11 +948,9 @@ module.exports = function(dep) {
         }
     }
 
-    result.bakerBoxes = async function(verbose=true) {
-        const { print, baker } = dep;
-
+    static async bakerBoxes (verbose=true) {
         try {
-            let boxes = await baker.boxes();
+            let boxes = await this.boxes();
             let bakerBoxes = boxes.filter(box => box.name.match(/.baker$/));
             // Hide .baker from the end before printing
             bakerBoxes.forEach(box => {
@@ -1042,9 +969,7 @@ module.exports = function(dep) {
         }
     }
 
-    result.bakeBox = async function(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
-        const { vagrant, boxes, path, fs, spinner, spinnerDot, configPath, baker, yaml} = dep;
-
+    static async bakeBox (ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
         try {
             let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
@@ -1055,13 +980,12 @@ module.exports = function(dep) {
                 throw `Creating directory failed: ${dir}`;
             }
 
-
             let template = await fs.readFile(path.join(configPath, './BaseVM.mustache'), 'utf8');
 
             // if box is specified in baker.yml and this box exists, then use it => otherwise bake it
-            if(doc.vagrant.box && (await baker.bakerBoxes(false)).map(e=>e.name).includes(`${doc.vagrant.box}`)){
+            if(doc.vagrant.box && (await this.bakerBoxes(false)).map(e=>e.name).includes(`${doc.vagrant.box}`)){
 
-                await baker.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
+                await this.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
 
                 let machine = vagrant.create({ cwd: dir });
                 machine.on('up-progress', function(data) {
@@ -1070,7 +994,7 @@ module.exports = function(dep) {
                 await spinner.spinPromise(machine.upAsync(), `Starting VM`, spinnerDot);
             }
             else {
-                await baker.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
+                await this.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
             }
 
         } catch (err) {
@@ -1079,6 +1003,6 @@ module.exports = function(dep) {
 
         return;
     }
+}
 
-    return result;
-};
+module.exports = Baker;

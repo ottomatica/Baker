@@ -1,4 +1,12 @@
-'use strict';
+const Baker          = require('../modules/baker');
+const fs             = require('fs-extra')
+const Git            = require('../modules/cloneRepo');
+const path           = require('path');
+const Print          = require('../modules/print');
+const Spinner        = require('../modules/spinner');
+const Validator      = require('../modules/validator');
+
+const { spinnerDot } = require('../../global-vars');
 
 module.exports = function(dep) {
     let cmd = {};
@@ -49,7 +57,6 @@ module.exports = function(dep) {
     };
     cmd.handler = async function(argv) {
         const { local, repo, box, remote, remote_key, remote_user, verbose } = argv;
-        const { path, baker, cloneRepo, validator, print, spinner, spinnerDot, fs } = dep;
 
             try{
                 let ansibleVM;
@@ -61,44 +68,44 @@ module.exports = function(dep) {
                 else if (local) {
                     bakePath = path.resolve(local);
                 } else if (repo) {
-                    bakePath = path.resolve(await cloneRepo.cloneRepo(repo));
+                    bakePath = path.resolve(await Git.clone(repo));
                 } else if (remote) {
                     bakePath = path.resolve(process.cwd());
                 } else {
-                    let cwdVM = await baker.getCWDBakerYML();
+                    let cwdVM = await Baker.getCWDBakerYML();
                     if(cwdVM){
                         bakePath = cwdVM.cwd;
                     } else {
-                        print.error(
+                        Print.error(
                             `Can't find baker.yml in cwd. Use --local to give local path or --repo to give git repository with baker.yml`
                         );
                         process.exit(1);
                     }
                 }
 
-                //let validation = await spinner.spinPromise(validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
+                //let validation = await Spinner.spinPromise(Validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
 
                 try
                 {
-                    ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+                    ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
                 }
                 catch(ex)
                 {
-                    await spinner.spinPromise(baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
-                    ansibleVM = await spinner.spinPromise(baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+                    await Spinner.spinPromise(Baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
+                    ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
                 }
 
-                let sshConfig = await baker.getSSHConfig(ansibleVM);
+                let sshConfig = await Baker.getSSHConfig(ansibleVM);
 
                 if(box)
-                    await baker.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
+                    await Baker.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
                 else if(remote)
-                    await baker.bakeRemote(sshConfig, remote, remote_key, remote_user, bakePath, verbose);
+                    await Baker.bakeRemote(sshConfig, remote, remote_key, remote_user, bakePath, verbose);
                 else
-                    await baker.bake2(sshConfig, ansibleVM, bakePath, verbose);
+                    await Baker.bake2(sshConfig, ansibleVM, bakePath, verbose);
 
             } catch (err) {
-                print.error(err);
+                Print.error(err);
             }
     };
 

@@ -1,10 +1,6 @@
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-const ssh = modules['ssh'];
-
-
 const Bakelet = require('../bakelet');
-const path = require('path');
+const Baker   = require('../../modules/baker');
+const path    = require('path');
 
 class Docker extends Bakelet {
 
@@ -27,7 +23,7 @@ class Docker extends Bakelet {
     async install()
     {
         var cmd = `docker${this.version}.yml`;
-        await baker.runAnsiblePlaybook(
+        await Baker.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
     }

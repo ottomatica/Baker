@@ -1,10 +1,7 @@
-
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-const ssh = modules['ssh'];
-
 const Bakelet = require('../bakelet');
-const path = require('path');
+const Baker   = require('../../modules/baker');
+const path    = require('path');
+const Ssh     = require('../../modules/ssh');
 
 class Template extends Bakelet {
 
@@ -17,7 +14,7 @@ class Template extends Bakelet {
 
     async load(obj, variables)
     {
-        await ssh.copyFromHostToVM(
+        await Ssh.copyFromHostToVM(
             path.resolve(this.bakePath, obj.template.src),
             `/home/vagrant/baker/${this.name}/templates/`,
             this.ansibleSSHConfig,
@@ -32,7 +29,7 @@ class Template extends Bakelet {
 
     async install()
     {
-        await baker.runAnsibleTemplateCmd(
+        await Baker.runAnsibleTemplateCmd(
             {name: this.name}, this.src, this.dest, this.variables, this.ansibleSSHConfig, this.verbose
         );
     }

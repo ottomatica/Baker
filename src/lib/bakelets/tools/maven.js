@@ -1,8 +1,6 @@
-const { commands, modules } = require('../../../baker');
-const baker = modules['baker'];
-
 const Bakelet = require('../bakelet');
-const path = require('path');
+const Baker   = require('../../modules/baker');
+const path    = require('path');
 
 class Maven extends Bakelet {
 
@@ -20,7 +18,7 @@ class Maven extends Bakelet {
 
     async install()
     {
-        await baker.runAnsibleAptInstall(
+        await Baker.runAnsibleAptInstall(
             {name: this.name}, "maven", this.ansibleSSHConfig, this.verbose
         );
     }

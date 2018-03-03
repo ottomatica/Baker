@@ -1,4 +1,7 @@
-'use strict';
+const Baker          = require('../modules/baker');
+const Print          = require('../modules/print');
+const Spinner        = require('../modules/spinner');
+const { spinnerDot } = require('../../global-vars');
 
 module.exports = function(dep) {
     let cmd = {};
@@ -13,13 +16,12 @@ module.exports = function(dep) {
     cmd.command = 'package <VMName>';
     cmd.desc = `package a Baker environment`;
     cmd.handler = async function(argv) {
-        const { baker, print, spinner, spinnerDot } = dep;
         const { VMName, verbose } = argv;
 
         try {
-            await spinner.spinPromise(baker.package(VMName, verbose), `Packaging box: ${VMName}`, spinnerDot);
+            await Spinner.spinPromise(Baker.package(VMName, verbose), `Packaging box: ${VMName}`, spinnerDot);
         } catch (err) {
-            print.error(err);
+            Print.error(err);
         }
     };
 

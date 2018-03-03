@@ -1,4 +1,4 @@
-'use strict';
+const Baker          = require('../modules/baker');
 
 module.exports = function(dep) {
     let cmd = {};
@@ -8,7 +8,6 @@ module.exports = function(dep) {
         'initializes a new Baker environment by creating a baker.yml file';
     cmd.builder = {};
     cmd.handler = async function(argv) {
-        const { baker } = dep;
 
         // try {
         //     await spinner.spinPromise(baker.init(), 'Creating baker.yml in current directory', spinnerDot);
@@ -16,7 +15,7 @@ module.exports = function(dep) {
         //     print.error(err);
         // }
 
-        await baker.initBaker2();
+        await Baker.initBaker2();
 
     };
 
