@@ -29,7 +29,7 @@
   "bugs": {
     "url": "https://github.com/ottomatica/Baker/issues"
   },
-  "homepage": "https://github.com/ottomatica/Baker#readme",
+  "homepage": "https://getbaker.io/",
   "dependencies": {
     "bluebird": "^3.5.0",
     "camelcase": "^4.1.0",

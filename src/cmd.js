@@ -18,5 +18,12 @@ yargs
   .demand(1)
   .strict()
   .version()
-  .epilog((homepage ? `| Documentation: ${homepage}\n` : '') + (version ? `| Version: ${version}` : ''))
+  .epilog(
+      (homepage ? `| Homepage: ${homepage}\n` : '') +
+      (`| Documentation: https://docs.getbaker.io/\n`) +
+      (version ? `| Version: ${version}` : '')
+    )
+  .demandCommand(1, 'Did you forget to specify a command?')
+  .wrap(yargs.terminalWidth())
+  .recommendCommands()
   .argv
