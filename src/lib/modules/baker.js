@@ -264,6 +264,20 @@ module.exports = function(dep) {
             throw `Cannot find machine: ${VMName}`;
     }
 
+    result.getCWDBakerYML = async function(){
+        const { path, fs, yaml } = dep;
+
+        let cwd = path.resolve(process.cwd());
+        let bakePath = path.resolve(cwd, 'baker.yml')
+        if(await fs.pathExists(bakePath)){
+            let bakerYML = yaml.safeLoad(await fs.readFile(bakePath, 'utf8'));
+            bakerYML.cwd = cwd;
+            return bakerYML;
+        } else{
+            return undefined;
+        }
+    }
+
     /**
      * Destroy VM
      * @param {String} VMName

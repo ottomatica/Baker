@@ -65,8 +65,9 @@ module.exports = function(dep) {
                 } else if (remote) {
                     bakePath = path.resolve(process.cwd());
                 } else {
-                    if(await fs.pathExists(path.resolve(process.cwd(), 'baker.yml'))){
-                        bakePath = path.resolve(process.cwd());
+                    let cwdVM = await baker.getCWDBakerYML();
+                    if(cwdVM){
+                        bakePath = cwdVM.cwd;
                     } else {
                         print.error(
                             `Can't find baker.yml in cwd. Use --local to give local path or --repo to give git repository with baker.yml`
