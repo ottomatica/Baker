@@ -7,12 +7,13 @@ const mustache      = require('mustache');
 const netaddr       = require('netaddr');
 const path          = require('path');
 const print         = require('./print');
+const ping          = require('ping')
 const prompt        = require('prompt');
 const slash         = require('slash');
 const spinner       = require('./Spinner');
 const Ssh           = require('./ssh');
 const vagrant       = Promise.promisifyAll(require('node-vagrant'));
-const validate      = require('validator');
+const validator     = require('validator');
 const yaml          = require('js-yaml');
 
 const { spinnerDot, configPath, ansible, boxes, bakeletsPath, remotesPath } = require('../../global-vars');
@@ -32,6 +33,7 @@ class Baker {
     }
 
     static async initBaker2() {
+        let Baker = this;
         // TODO: Find a better approach to do this
         try{
             if(await fs.pathExists(await path.resolve(path.resolve(process.cwd(), 'baker.yml'))))
@@ -60,7 +62,7 @@ class Baker {
                     validate: async function(ip) {
                         let pass = validator.isIP(ip);
 
-                        var exists = await this.hostIsAccessible(ip);
+                        var exists = await Baker.hostIsAccessible(ip);
 
                         if (pass && !exists) {
                             return true;
