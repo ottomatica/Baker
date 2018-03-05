@@ -28,6 +28,11 @@ class DO_Provider {
         return await this.createDroplet(attributes);
     }
 
+    async getSSHConfig()
+    {
+        throw new Error("working on it");
+    }
+
     async createDroplet(attributes)
     {
         var self = this;
@@ -58,7 +63,7 @@ class DO_Provider {
                     });
                 } 
                 else {
-                    console.log("error requesting a droplet");
+                    console.log(err);
                     reject();
                 }
             });
@@ -68,11 +73,12 @@ class DO_Provider {
 
 }
 
-let foo = async function ()
-{
-    let token = process.env.DOTOKEN;
-    let doProvider = new DO_Provider(token);
-    let droplet = await doProvider.init('crumb-test');
-    console.log(droplet);
-};
-foo();
+// let foo = async function ()
+// {
+//     let token = process.env.DOTOKEN;
+//     let doProvider = new DO_Provider(token);
+//     let droplet = await doProvider.init('crumb-test');
+//     console.log(droplet);
+// };
+// foo();
+module.exports = DO_Provider;

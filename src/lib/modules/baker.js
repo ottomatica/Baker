@@ -16,6 +16,9 @@ const vagrant       = Promise.promisifyAll(require('node-vagrant'));
 const validator     = require('validator');
 const yaml          = require('js-yaml');
 
+const VagrantProvider = require('./providers/vagrant');
+const DO_Provider     = require('./providers/digitalocean');
+
 const { spinnerDot, configPath, ansible, boxes, bakeletsPath, remotesPath } = require('../../global-vars');
 
 class Baker {
@@ -815,15 +818,6 @@ class Baker {
     static async cluster (ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
-        let dir = path.join(boxes, doc.name);
-        let template = await fs.readFile(path.join(configPath, './ClusterVM.mustache'), 'utf8');
-
-        try {
-            await fs.ensureDir(dir);
-        } catch (err) {
-            throw `Creating directory failed: ${dir}`;
-        }
-
         // prompt for passwords
         if( doc.vars )
         {
@@ -885,17 +879,44 @@ class Baker {
             }
         }
 
-        const output = mustache.render(template, cluster);
-        await fs.writeFileAsync(path.join(dir, 'Vagrantfile'), output);
+        let provider = null;
+        if( doc.provider && doc.provider === "digitalocean")
+        {
+            provider = new DO_Provider(process.env.DOTOKEN);
 
-        let machine = vagrant.create({ cwd: dir });
+            for( let node of cluster.cluster.nodes )
+            {
+                console.log(`Provisioning ${node.name} in digitalocean`);
+                let droplet = await provider.init(node.name);
+            }
+        }
+        else
+        {
+            let dir = path.join(boxes, doc.name);
+            let template = await fs.readFile(path.join(configPath, './ClusterVM.mustache'), 'utf8');
+    
+            try {
+                await fs.ensureDir(dir);
+            } catch (err) {
+                throw `Creating directory failed: ${dir}`;
+            }
 
-        machine.on('up-progress', function(data) {
-            //console.log(machine, progress, rate, remaining);
-            if( verbose ) print.info(data);
-        });
+            provider = new VagrantProvider(dir);
 
-        await spinner.spinPromise(machine.upAsync(), `Provisioning cluster in VirtualBox`, spinnerDot);
+            const output = mustache.render(template, cluster);
+            await fs.writeFileAsync(path.join(dir, 'Vagrantfile'), output);
+    
+            let machine = vagrant.create({ cwd: dir });
+    
+            machine.on('up-progress', function(data) {
+                //console.log(machine, progress, rate, remaining);
+                if( verbose ) print.info(data);
+            });
+    
+            await spinner.spinPromise(machine.upAsync(), `Provisioning cluster in VirtualBox`, spinnerDot);
+    
+        }
+
 
         await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
@@ -904,7 +925,7 @@ class Baker {
         for( var i = 0; i < cluster.cluster.nodes.length; i++ )
         {
             let node = cluster.cluster.nodes[i];
-            let vmSSHConfig = await this.getSSHConfig(machine, node.name);
+            let vmSSHConfig = await provider.getSSHConfig(node.name);
             nodeList.push({
                 ip: cluster.cluster.nodes[i].ip,
                 user: vmSSHConfig.user
