@@ -880,27 +880,28 @@ class Baker {
         }
 
         let provider = null;
+        let dir = path.join(boxes, doc.name);
+        try {
+            await fs.ensureDir(dir);
+        } catch (err) {
+            throw `Creating directory failed: ${dir}`;
+        }
+
         if( doc.provider && doc.provider === "digitalocean")
         {
             provider = new DO_Provider(process.env.DOTOKEN);
 
-            for( let node of cluster.cluster.nodes )
-            {
-                console.log(`Provisioning ${node.name} in digitalocean`);
-                let droplet = await provider.init(node.name);
-            }
+            provider.prepareSSHKeyPair();
+
+            // for( let node of cluster.cluster.nodes )
+            // {
+            //     console.log(`Provisioning ${node.name} in digitalocean`);
+            //     let droplet = await provider.init(node.name);
+            // }
         }
         else
         {
-            let dir = path.join(boxes, doc.name);
             let template = await fs.readFile(path.join(configPath, './ClusterVM.mustache'), 'utf8');
-    
-            try {
-                await fs.ensureDir(dir);
-            } catch (err) {
-                throw `Creating directory failed: ${dir}`;
-            }
-
             provider = new VagrantProvider(dir);
 
             const output = mustache.render(template, cluster);
