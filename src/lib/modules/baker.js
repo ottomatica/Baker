@@ -667,12 +667,13 @@ class Baker {
 
         if( provider === 'digitalocean')
         {
-            console.log(envName, provider, verbose);
+            //console.log(envName, provider, verbose);
             let token = process.env.DOTOKEN;
             let dir = path.join(require('os').homedir(), '.baker', envName);
 
             let do_provider = new DO_Provider(token, dir);
-            console.log( await do_provider.info() );
+            let nodes = await do_provider.info();
+            console.log( JSON.stringify(nodes) );
         }
         else
         {
