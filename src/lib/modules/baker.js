@@ -457,12 +457,15 @@ class Baker {
      * @param {String} name
      * @param {Object} sshConfig
      */
-    static async addClusterToBakerInventory (nodeList, name, sshConfig){
+    static async addClusterToBakerInventory (nodeList, name, sshConfig, usePython3){
         let hosts = [];
+        let pythonPath = usePython3 ? '/usr/bin/python3' : '/usr/bin/python';
+        if( usePython3 )
+
         for( var i=0; i < nodeList.length; i++ )
         {
             var {ip, user} = nodeList[i];
-            hosts.push( `${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${user}` );
+            hosts.push( `${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${user}\tansible_python_interpreter=${pythonPath}` );
         }
 
         await Ssh.sshExec(`echo "[${name}]\n${hosts.join('\n')}" > /home/vagrant/baker/${name}/baker_inventory`, sshConfig);
@@ -879,6 +882,8 @@ class Baker {
             }
         }
 
+        await this.mkTemplatesDir(doc, ansibleSSHConfig);
+
         let provider = null;
         let dir = path.join(boxes, doc.name);
         try {
@@ -889,15 +894,12 @@ class Baker {
 
         if( doc.provider && doc.provider === "digitalocean")
         {
-            provider = new DO_Provider(process.env.DOTOKEN);
-
-            provider.prepareSSHKeyPair();
-
-            // for( let node of cluster.cluster.nodes )
-            // {
-            //     console.log(`Provisioning ${node.name} in digitalocean`);
-            //     let droplet = await provider.init(node.name);
-            // }
+            provider = new DO_Provider(process.env.DOTOKEN, dir);
+            for( let node of cluster.cluster.nodes )
+            {
+                console.log(`Provisioning ${node.name} in digitalocean`);
+                let droplet = await provider.create(node.name);
+            }
         }
         else
         {
@@ -919,7 +921,6 @@ class Baker {
         }
 
 
-        await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
         let nodeList = [];
         //_.pluck(cluster.cluster.nodes, "ip");
@@ -927,22 +928,35 @@ class Baker {
         {
             let node = cluster.cluster.nodes[i];
             let vmSSHConfig = await provider.getSSHConfig(node.name);
+
+            let ip = node.ip;
+            if( doc.provider && doc.provider === "digitalocean" )
+            {
+                ip = vmSSHConfig.hostname;
+            }
+
             nodeList.push({
-                ip: cluster.cluster.nodes[i].ip,
+                ip: ip,
                 user: vmSSHConfig.user
             });
 
             await Ssh.copyFromHostToVM(
                 vmSSHConfig.private_key,
-                `/home/vagrant/baker/${doc.name}/${node.ip}_rsa`,
+                `/home/vagrant/baker/${doc.name}/${ip}_rsa`,
                 ansibleSSHConfig
             );
-            await this.setKnownHosts(node.ip, ansibleSSHConfig);
-            await this.addIpToAnsibleHosts(node.ip, node.name, ansibleSSHConfig);
+            await this.setKnownHosts(ip, ansibleSSHConfig);
+            await this.addIpToAnsibleHosts(ip, node.name, ansibleSSHConfig);
 
             console.log( `${nodeList[i].ip} ${nodeList[i].user} ${vmSSHConfig.private_key}`);
         }
-        await this.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig);
+        if( doc.provider && doc.provider === "digitalocean" )
+        {
+            await this.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig, true);
+        }
+        else{
+            await this.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig, false);
+        }
 
         let resolveB = require('../bakelets/resolve');
         await resolveB.resolveBakelet(bakeletsPath, remotesPath, nodeDoc, scriptPath, verbose);

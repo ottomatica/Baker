@@ -36,6 +36,14 @@ class DO_Provider {
         let key = await this.getOrCreateSSHKeyId();
         attributes.ssh_keys = [key.id];
 
+        let droplet = await this.getDropletFromName(name);
+        if( droplet == null )
+            return await this.createDroplet(attributes);
+        return droplet;
+    }
+
+    async getDropletFromName(name)
+    {
         let droplets = await this.client.droplets.list();
         for( let droplet of droplets )
         {
@@ -44,8 +52,7 @@ class DO_Provider {
                 return droplet;
             }
         }
-          
-        return await this.createDroplet(attributes);
+        return null;
     }
 
     async getOrCreateSSHKeyId()
@@ -78,9 +85,18 @@ class DO_Provider {
         return storedKey;
     }
 
-    async getSSHConfig()
+    async getSSHConfig(nodeName)
     {
-        throw new Error("working on it");
+        let privatePath = path.resolve(this.clusterDir,'id_rsa');
+        let droplet = await this.getDropletFromName(nodeName);
+        let ip = droplet.networks.v4[0].ip_address;
+        return { 
+            host: this.nodeName,
+            port: '22',
+            hostname: ip,
+            user: 'root',
+            private_key: privatePath
+        };
     }
 
     async createDroplet(attributes)
