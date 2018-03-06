@@ -663,6 +663,28 @@ class Baker {
         return;
     }
 
+    static async info (envName, provider, verbose) {
+
+        if( provider === 'digitalocean')
+        {
+            console.log(envName, provider, verbose);
+            let token = process.env.DOTOKEN;
+            let dir = path.join(require('os').homedir(), '.baker', envName);
+
+            let do_provider = new DO_Provider(token, dir);
+            console.log( await do_provider.info() );
+        }
+        else
+        {
+            console.log( await Baker.retrieveSSHConfigByName(envName) );
+        }
+
+        return;
+    }
+
+ 
+    
+
     static async bake (ansibleSSHConfig, ansibleVM, scriptPath) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 

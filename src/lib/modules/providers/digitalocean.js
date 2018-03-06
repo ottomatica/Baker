@@ -2,6 +2,7 @@ const digitalocean = require('digitalocean');
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
+const _ = require('lodash');
 
 class DO_Provider {
     constructor(token,clusterDir) {
@@ -24,13 +25,34 @@ class DO_Provider {
         child_process.execSync(`ssh-keygen -q -t rsa -f ${privatePath} -N ''`);
     }
 
+    // Used to get facts about cluster.
+    async info()
+    {
+        let nodes = await this.getDropletsByTag(this.clusterName);
+        let privatePath = path.resolve(this.clusterDir,'id_rsa');
+        let facts = [];
+        for( var node of nodes )
+        {
+            facts.push(
+            { 
+                host: node.name,
+                port: '22',
+                hostname: node.networks.v4[0].ip_address,
+                user: 'root',
+                private_key: privatePath
+            });
+        }
+        return facts;
+    }
+
     async create(name)
     {
         var attributes = {
             name: name,
             region: 'nyc1',
             size: '1gb',
-            image: 'ubuntu-16-04-x64'
+            image: 'ubuntu-16-04-x64',
+            tags: [this.clusterName]
         };
 
         let key = await this.getOrCreateSSHKeyId();
@@ -54,6 +76,21 @@ class DO_Provider {
         }
         return null;
     }
+
+    async getDropletsByTag(tag)
+    {
+        let droplets = await this.client.droplets.list();
+        let list = [];
+        for( let droplet of droplets )
+        {
+            if( droplet.tags.includes(tag))
+            {
+                list.push(droplet);
+            }
+        }
+        return list;
+    }
+
 
     async getOrCreateSSHKeyId()
     {
@@ -91,7 +128,7 @@ class DO_Provider {
         let droplet = await this.getDropletFromName(nodeName);
         let ip = droplet.networks.v4[0].ip_address;
         return { 
-            host: this.nodeName,
+            host: nodeName,
             port: '22',
             hostname: ip,
             user: 'root',
@@ -145,10 +182,11 @@ class DO_Provider {
 //     let dir = path.join(require('os').homedir(), '.baker', 'crumbcluster');
 
 //     let doProvider = new DO_Provider(token,dir);
-//     let droplet = await doProvider.create('crumb-test4');
-//     let key = await doProvider.getOrCreateSSHKeyId();
+//     //let droplet = await doProvider.create('crumb-test4');
+//     //let key = await doProvider.getOrCreateSSHKeyId();
+//     //console.log( key.id );
 
-//     console.log( key.id );
+//     console.log( await doProvider.info() );
 
 // };
 // foo();
