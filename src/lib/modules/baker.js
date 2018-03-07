@@ -681,7 +681,7 @@ class Baker {
         }
         else
         {
-            console.log( await Baker.retrieveSSHConfigByName(envName) );
+            console.log( JSON.stringify((await Baker.retrieveSSHConfigByName(envName) )));
         }
 
         return;
