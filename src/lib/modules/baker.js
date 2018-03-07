@@ -525,6 +525,10 @@ class Baker {
         return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd}; rm -f playbook.args.json`, ansibleSSHConfig, verbose);
     }
 
+    static async runGitClone (doc, repo, dest, ansibleSSHConfig,verbose) {
+        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m git -a "repo=${repo} dest=${dest} version=HEAD" -i baker_inventory --become`, ansibleSSHConfig, verbose);
+    }
+
     static async runAnsibleAptInstall (doc, cmd, ansibleSSHConfig,verbose) {
         return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m apt -a "pkg=${cmd} update_cache=yes cache_valid_time=86400" -i baker_inventory --become`, ansibleSSHConfig, verbose);
     }
@@ -683,8 +687,8 @@ class Baker {
         return;
     }
 
- 
-    
+
+
 
     static async bake (ansibleSSHConfig, ansibleVM, scriptPath) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
@@ -931,16 +935,16 @@ class Baker {
 
             const output = mustache.render(template, cluster);
             await fs.writeFileAsync(path.join(dir, 'Vagrantfile'), output);
-    
+
             let machine = vagrant.create({ cwd: dir });
-    
+
             machine.on('up-progress', function(data) {
                 //console.log(machine, progress, rate, remaining);
                 if( verbose ) print.info(data);
             });
-    
+
             await spinner.spinPromise(machine.upAsync(), `Provisioning cluster in VirtualBox`, spinnerDot);
-    
+
         }
 
 

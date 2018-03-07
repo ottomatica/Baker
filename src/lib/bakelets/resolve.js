@@ -65,6 +65,14 @@ module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, b
             }
         }
 
+        if( doc.resources )
+        {
+            for (var i = 0; i < doc.resources.length; i++)
+            {
+                await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakeletsPath,"resources"), doc.resources[i], extra_vars, verbose);
+            }
+        }
+
         if( doc.env )
         {
             doc.env = [{env: doc.env}]; // fixing the format // TODO: it works ok, but probably too hacky
