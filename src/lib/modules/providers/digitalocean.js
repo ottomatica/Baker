@@ -108,9 +108,12 @@ class DO_Provider {
 
         console.log(`Looking for fingerprint ${fingerprint}`);
 
-        let storedKey = await this.client.account.getSshKey(fingerprint);
-
-        if( storedKey == null )
+        let storedKey = null;
+        try
+        {
+            storedKey = await this.client.account.getSshKey(fingerprint);
+        }
+        catch(err)
         {
             let attributes = 
             {

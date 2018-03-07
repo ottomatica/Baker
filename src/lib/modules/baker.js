@@ -986,6 +986,7 @@ class Baker {
         }
 
         let resolveB = require('../bakelets/resolve');
+        nodeDoc.vars = doc.vars;
         await resolveB.resolveBakelet(bakeletsPath, remotesPath, nodeDoc, scriptPath, verbose);
 
     }

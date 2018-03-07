@@ -103,7 +103,7 @@ class Ssh {
                     });
                 })
                 .connect({
-                    host: '127.0.0.1',
+                    host: sshConfig.hostname,
                     port: sshConfig.port,
                     username: sshConfig.user,
                     privateKey: fs.readFileSync(sshConfig.private_key)
