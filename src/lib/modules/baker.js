@@ -526,7 +526,7 @@ class Baker {
     }
 
     static async runGitClone (doc, repo, dest, ansibleSSHConfig,verbose) {
-        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m git -a "repo=${repo} dest=${dest} version=HEAD" -i baker_inventory --become`, ansibleSSHConfig, verbose);
+        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m git -a "repo=${repo} dest=${dest} version=HEAD" -i baker_inventory`, ansibleSSHConfig, verbose);
     }
 
     static async runAnsibleAptInstall (doc, cmd, ansibleSSHConfig,verbose) {
