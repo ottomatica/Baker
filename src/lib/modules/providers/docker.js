@@ -49,7 +49,7 @@ class Docker_Provider {
                     resolve(output);
                 }, (event) => console.log(event));
             });
-    })
+        })
     }
 
     async getContainerIp(name) {
@@ -73,6 +73,111 @@ class Docker_Provider {
         }).then(function(container) {
             return container.start();
         });
+    }
+
+    /**
+     * initialize container
+     *
+     * @param {image} image image name and tag
+     * @param {cmds} cmds list of commands [optional]
+     * @param {name} name name of the container [optional]
+     * @returns container
+     */
+    async init (image, cmds, name) {
+        // promises are supported
+        return await this.docker.createContainer({
+            Image: image,
+            AttachStdin: false,
+            AttachStdout: true,
+            AttachStderr: true,
+            Tty: true,
+            Cmd: cmds || undefined,
+            name: name || undefined,
+            OpenStdin: false,
+            StdinOnce: false
+        });
+    }
+
+    /**
+     * starts a container
+     * @param {Container} container container to be started
+     */
+    async start (container) {
+        return await container.start();
+    }
+
+    /**
+     * stops a container
+     * @param {Container} container container to be stopped
+     */
+    async stop (container) {
+        return await container.stop();
+    }
+
+    /**
+     * removes a container
+     * @param {Container} container container to be removed
+     */
+    async remove (container) {
+        return await container.remove();
+    }
+
+    /**
+     * stops all the containers on the host
+     */
+    async stopall(){
+        let containers = await this.docker.listContainers();
+        containers.forEach((containerInfo) => {
+            this.docker.getContainer(containerInfo.Id).stop();
+        });
+    }
+
+    /**
+     * Helper function to get info for all containers
+     * Note: This should not be called directly, instead call this.info()
+     */
+    async _overalInfo () {
+        let self = this;
+        let containers = await this.docker.listContainers();
+        let info = [];
+        containers.forEach(async function (containerInfo) {
+            info.push(await self._containerInfo(await self.getContainer(containerInfo.Id)));
+            // console.log(await this._containerInfo(await this.getContainer(containerInfo.Id)))
+        })
+        return info;
+    }
+
+    /**
+     * Helper function to get info for a specific container.
+     * Note: This should not be called directly, instead call this.info()
+     * @param {Docker.Container} container
+     */
+    async _containerInfo (container) {
+        let inspect = await container.inspect();
+        return {
+            host: inspect.Config.Hostname,
+            hostname: inspect.NetworkSettings.IPAddress,
+            user: inspect.Config.User
+        }
+    }
+
+    /**
+     *
+     * @param {Docker.Container} container
+     */
+    async info(container=undefined) {
+        if(container)
+            return this._containerInfo(container);
+        else
+            return this._overalInfo();
+    }
+
+    /**
+     * Gets the container object by name or id
+     * @param {String} nameOrId
+     */
+    async getContainer(nameOrId) {
+        return this.docker.getContainer(nameOrId);
     }
 
     async exec(name, cmd)
@@ -123,6 +228,25 @@ module.exports = Docker_Provider;
 let foo = async function ()
 {
     let dockerProvider = new Docker_Provider({host: '192.168.0.10', port: '2375', protocol: 'http'});
-    await dockerProvider.pull('python');
-}();
+    // await dockerProvider.pull('python:2-alpine');
+    // await dockerProvider.removeContainers();
 
+    // let container = await dockerProvider.init('python:2-alpine', []);
+    // console.log(container);
+    // await dockerProvider.start(container);
+    // console.log(await container.inspect())
+    // console.log(await dockerProvider.info(container))
+
+    // console.log(await dockerProvider.getContainer('eager_brattain'))
+    // await dockerProvider.stop(await dockerProvider.getContainer('6f77e16b2551'));
+
+    // await dockerProvider.stopall()
+
+    // console.log(await dockerProvider.info(await dockerProvider.getContainer('97f5f03c47b7')));
+    console.log(await dockerProvider.info());
+
+
+};
+
+
+foo();
