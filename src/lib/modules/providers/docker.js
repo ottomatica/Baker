@@ -83,7 +83,7 @@ class Docker_Provider {
      * @param {name} name name of the container [optional]
      * @returns container
      */
-    async init (image, cmds, name) {
+    async init (image, cmds, name, ip) {
         // promises are supported
         return await this.docker.createContainer({
             Image: image,
@@ -94,7 +94,16 @@ class Docker_Provider {
             Cmd: cmds || undefined,
             name: name || undefined,
             OpenStdin: false,
-            StdinOnce: false
+            StdinOnce: false,
+            NetworkingConfig: {
+                EndpointsConfig: {
+                    shared_nw: {
+                        IPAMConfig: {
+                            IPv4Address: ip || undefined
+                        }
+                    }
+                }
+            }
         });
     }
 
@@ -227,7 +236,7 @@ module.exports = Docker_Provider;
 
 let foo = async function ()
 {
-    let dockerProvider = new Docker_Provider({host: '192.168.0.10', port: '2375', protocol: 'http'});
+    let dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
     // await dockerProvider.pull('python:2-alpine');
     // await dockerProvider.removeContainers();
 
@@ -249,4 +258,4 @@ let foo = async function ()
 };
 
 
-foo();
+// foo();

@@ -18,6 +18,7 @@ const yaml          = require('js-yaml');
 
 const VagrantProvider = require('./providers/vagrant');
 const DO_Provider     = require('./providers/digitalocean');
+const Docker_Provider = require('./providers/docker');
 
 const { spinnerDot, configPath, ansible, boxes, bakeletsPath, remotesPath } = require('../../global-vars');
 
@@ -345,6 +346,67 @@ class Baker {
         }
 
         return;
+    }
+
+    // TODO: This shouldn't have to be static
+    static async _ensureDir(path){
+        try {
+            await fs.ensureDir(path);
+        } catch (err) {
+            throw `could not create directory: ${path} \n${err}`;
+        }
+    }
+
+    /**
+     * Make sure DockerVM exists
+     * @param {String} custom name of the VM to be used as Docker host.
+     *                          if undefined, usinig default Docker host.
+     */
+    static async prepareDockerVM(custom){
+        if(!custom) {
+            const dockerHostName = 'docker-srv';
+            const dockerHostPath = path.join(boxes, dockerHostName);
+
+
+            console.log('dockerHostName', dockerHostName);
+            console.log('dockerHostPath', dockerHostPath)
+
+            let status;
+            try{
+                await this.getVMPath('docker-srv')
+                status = await this.getState(await this.getVagrantIDByName('docker-srv'));
+            } catch(err){
+                if (err == 'Cannot find machine: docker-srv') {
+                    // Install baker-srv
+                    await this._ensureDir(boxes);
+                    await this._ensureDir(dockerHostPath);
+
+                    let template = await fs.readFileAsync(path.join(configPath, './dockerHost/DockerVM.mustache'), 'utf8');
+                    let vagrantfile = mustache.render(template, {dockerHostName});
+                    await fs.writeFileAsync(path.join(dockerHostPath, 'Vagrantfile'), vagrantfile);
+                    await fs.copyFileAsync(path.join(configPath, './dockerHost/dockerConfig.yml'), path.join(dockerHostPath, 'dockerConfig.yml'));
+
+                } else {
+                    throw err;
+                }
+            }
+
+            let machine = vagrant.create({ cwd: dockerHostPath });
+            try {
+                // TODO: Add a force reload option
+                if(status != 'running'){
+                    machine.on('up-progress', function(data) {
+                        print.info(data);
+                    });
+                    await machine.upAsync();
+                }
+            } catch (err) {
+                throw `Failed to start host VM: ${dockerHostName}\n${err}`;
+            }
+        } else {
+            // TODO:
+            console.log('Docker-srv is running!')
+        }
     }
 
     /**
@@ -688,7 +750,23 @@ class Baker {
     }
 
 
+    static async bakeDocker(scriptPath) {
+        // Make sure Docker VM is running
+        await this.prepareDockerVM();
 
+        // Installing Docker
+        // let resolveB = require('../bakelets/resolve');
+        // await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose)
+
+        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
+
+        const dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
+        let image = doc.image || 'ubuntu:latest'
+        await dockerProvider.pull(image);
+        let container = await dockerProvider.init(image, [], doc.name, doc.ip);
+        await dockerProvider.start(container);
+
+    }
 
     static async bake (ansibleSSHConfig, ansibleVM, scriptPath) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
