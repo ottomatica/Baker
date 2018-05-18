@@ -16,6 +16,7 @@
       file: 
         path: /opt/jdk
         state: directory
+      become: yes
       
     - name: Unarchive tar
       unarchive:
