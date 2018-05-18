@@ -1,5 +1,5 @@
 Package: Baker
-Version: 0.3.0
+Version: 0.4.0
 Section: base
 Priority: optional
 Architecture: amd64
