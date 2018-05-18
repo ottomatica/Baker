@@ -26,11 +26,14 @@
         - libgtk2.0-dev
       become: yes
 
-    - name: Install OpenCV 
-      apt: pkg={{ item }} state=present
-      with_items:
-        - libopencv-dev 
-        - python-opencv
+    #- name: Install OpenCV 
+    #  apt: pkg={{ item }} state=present
+    #  with_items:
+    #    - libopencv-dev 
+    #    - python-opencv
+    #  become: yes
+    - name: Install OpenCV
+      pip: name=opencv-contrib-python
       become: yes
 
     - name: Install swig and libeigen3
