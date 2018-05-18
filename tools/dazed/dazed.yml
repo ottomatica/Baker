@@ -1,11 +1,7 @@
 - hosts: all 
-
   vars:
-    aruco: aruco-3.0.10
-# aruco: aruco-2.0.19
-
+    aruco: aruco-3.0.10 # aruco: aruco-2.0.19
   tasks:
-
     - name: Install basic utils and build envs.
       apt: pkg={{ item }} state=present
       with_items:
