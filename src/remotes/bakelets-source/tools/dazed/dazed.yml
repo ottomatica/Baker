@@ -44,6 +44,7 @@
         name: swig
         link: /usr/bin/swig
         path: /usr/bin/swig3.0
+      become: yes
 
     - name: Download aruco
       get_url:
