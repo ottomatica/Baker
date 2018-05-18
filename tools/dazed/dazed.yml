@@ -49,7 +49,7 @@
 
     - name: Download aruco
       get_url:
-       url: https://sourceforge.net/projects/aruco/files/2.0.0/aruco-2.0.19.zip/download?use_mirror=svwh
+       url: https://sourceforge.net/projects/aruco/files/2.0.19/aruco-2.0.19.zip/download?use_mirror=svwh
 #      url: https://sourceforge.net/projects/aruco/files/3.0.0/aruco-3.0.10.zip/download?use_mirror=svwh
        dest: "/tmp/{{aruco}}.zip"
 
