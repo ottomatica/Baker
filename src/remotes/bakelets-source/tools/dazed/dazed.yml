@@ -32,12 +32,18 @@
         - python-opencv
       become: yes
 
-    - name: Install basic utils and build envs.
+    - name: Install swig and libeigen3
       apt: pkg={{ item }} state=present
       with_items:
         - libeigen3-dev
         - swig3.0
       become: yes
+
+    - name: Set swig3.0 as default swig using alternatives
+      alternatives:
+        name: swig
+        link: /usr/bin/swig
+        path: /usr/bin/swig3.0
 
     - name: Download aruco
       get_url:
