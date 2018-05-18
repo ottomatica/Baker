@@ -49,9 +49,9 @@
 
     - name: Download aruco
       get_url:
-       url: https://downloads.sourceforge.net/project/aruco/2.0.19/aruco-2.0.19.zip?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Faruco%2Ffiles%2F&ts=1496879042&use_mirror=pilotfiber
-#       url: https://sourceforge.net/projects/aruco/files/3.0.0/aruco-3.0.10.zip/download?use_mirror=svwh
-        dest: "/tmp/{{aruco}}.zip"
+       url: https://sourceforge.net/projects/aruco/files/2.0.0/aruco-2.0.19.zip/download?use_mirror=svwh
+#      url: https://sourceforge.net/projects/aruco/files/3.0.0/aruco-3.0.10.zip/download?use_mirror=svwh
+       dest: "/tmp/{{aruco}}.zip"
 
     - unarchive:
         src: "/tmp/{{aruco}}.zip"
