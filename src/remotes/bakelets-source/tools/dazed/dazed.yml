@@ -79,6 +79,7 @@
       git: 
         repo: https://github.com/fehlfarbe/python-aruco
         dest: /tmp/python-aruco
+        force: yes
     
     - name: run swig command
       shell: cd /tmp/python-aruco && ./swigbuild.sh
