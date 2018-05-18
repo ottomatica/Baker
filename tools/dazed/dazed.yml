@@ -32,7 +32,7 @@
         - python-opencv
       become: yes
 
-        - name: Install basic utils and build envs.
+    - name: Install basic utils and build envs.
       apt: pkg={{ item }} state=present
       with_items:
         - libeigen3-dev
