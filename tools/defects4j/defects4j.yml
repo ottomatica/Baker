@@ -7,6 +7,20 @@
 #    - name: Add JRE ppa
 #      apt_repository: repo=ppa:webupd8team/java state=present
 
+    - name: Install basic utils and build envs.
+      apt: pkg={{ item }} state=present update_cache=true cache_valid_time=3600
+      with_items:
+#        - openjdk-7-jdk
+        - git
+        - subversion
+        - perl
+        - unzip
+        - libdbi-perl
+        - libtext-csv-perl
+        - libdbd-csv-perl
+      become: yes
+      # perl -MCPAN -e'install Text::CSV'
+
     - name: Download "public mirror" file
       get_url: 
         url: http://ftp.osuosl.org/pub/funtoo/distfiles/oracle-java/jdk-7u80-linux-x64.tar.gz
@@ -53,20 +67,6 @@
 #    - name: Install JRE
 #      apt: pkg=oracle-java7-installer state=latest update-cache=yes force=yes
 #      become: yes
-
-    - name: Install basic utils and build envs.
-      apt: pkg={{ item }} state=present update_cache=true cache_valid_time=3600
-      with_items:
-#        - openjdk-7-jdk
-        - git
-        - subversion
-        - perl
-        - unzip
-        - libdbi-perl
-        - libtext-csv-perl
-        - libdbd-csv-perl
-      become: yes
-      # perl -MCPAN -e'install Text::CSV'
 
     - name: git clone defects4j
       git: 
