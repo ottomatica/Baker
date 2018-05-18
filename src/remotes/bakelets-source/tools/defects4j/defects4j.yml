@@ -28,6 +28,7 @@
     - name: Update alternatives for java
       alternatives: 
         name: java
+        link: /usr/bin/java
         path: /opt/jdk/jdk1.7.0_80/bin/java
         priority: 5000
       become: yes
@@ -35,6 +36,7 @@
     - name: Update alternatives for javac
       alternatives: 
         name: javac
+        link: /usr/bin/javac
         path: /opt/jdk/jdk1.7.0_80/bin/javac
         priority: 5000
       become: yes
