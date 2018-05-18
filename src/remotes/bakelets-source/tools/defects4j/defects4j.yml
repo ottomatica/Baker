@@ -7,23 +7,49 @@
 #    - name: Add JRE ppa
 #      apt_repository: repo=ppa:webupd8team/java state=present
 
-    - name: Download sketchy file
+    - name: Download "public mirror" file
       get_url: 
         url: http://ftp.osuosl.org/pub/funtoo/distfiles/oracle-java/jdk-7u80-linux-x64.tar.gz
         dest: /tmp/jdk-7u80-linux-x64.tar.gz
 
-    - name: point to download
-      shell: echo oracle-java7-installer oracle-java7-installer/local select /tmp | sudo /usr/bin/debconf-set-selections
+    - name: Prepare /opt/jdk directory
+      file: 
+        path: /opt/jdk
+        state: directory
+      
+    - name: Unarchive tar
+      unarchive:
+        src: /tmp/jdk-7u80-linux-x64.tar.gz
+        dest: /opt/jdk
+        remote_src: yes
+      become: yes
+    
+    - name: Update alternatives for java
+      alternatives: 
+        name: java
+        path: /opt/jdk/jdk1.7.0_80/bin/java
+        priority: 5000
       become: yes
 
-    - name: Automatically select the Oracle License
-      #shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
-      debconf: name='oracle-java7-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+    - name: Update alternatives for javac
+      alternatives: 
+        name: javac
+        path: /opt/jdk/jdk1.7.0_80/bin/javac
+        priority: 5000
       become: yes
 
-    - name: Install JRE
-      apt: pkg=oracle-java7-installer state=latest update-cache=yes force=yes
-      become: yes
+#    - name: point to download
+#      shell: echo oracle-java7-installer oracle-java7-installer/local select /tmp | sudo /usr/bin/debconf-set-selections
+#      become: yes
+
+#    - name: Automatically select the Oracle License
+#      #shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+#      debconf: name='oracle-java7-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+#      become: yes
+
+#    - name: Install JRE
+#      apt: pkg=oracle-java7-installer state=latest update-cache=yes force=yes
+#      become: yes
 
     - name: Install basic utils and build envs.
       apt: pkg={{ item }} state=present update_cache=true cache_valid_time=3600
@@ -52,4 +78,9 @@
         dest: ~/.bashrc
         line: export D4J_HOME=~/defects4j
         state: present
-    # export D4J_EDITOR=diff -y -W $(( $(tput cols) - 2 ))
+
+    - name: Add d4j_editor var to env
+      lineinfile: 
+        dest: ~/.bashrc
+        line: export D4J_EDITOR=diff -y -W $(( $(tput cols) - 2 ))
+        state: present        
