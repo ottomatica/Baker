@@ -26,15 +26,15 @@
         - libgtk2.0-dev
       become: yes
 
-    #- name: Install OpenCV 
-    #  apt: pkg={{ item }} state=present
-    #  with_items:
-    #    - libopencv-dev 
-    #    - python-opencv
-    #  become: yes
-    - name: Install OpenCV
-      pip: name=opencv-contrib-python
+    - name: Install OpenCV 
+      apt: pkg={{ item }} state=present
+      with_items:
+        - libopencv-dev 
+        - python-opencv
       become: yes
+#    - name: Install OpenCV
+#      pip: name=opencv-contrib-python
+#      become: yes
 
     - name: Install swig and libeigen3
       apt: pkg={{ item }} state=present
@@ -83,6 +83,7 @@
       git: 
         repo: https://github.com/fehlfarbe/python-aruco
         dest: /tmp/python-aruco
+        version: b8feb03d9049acce08159b411301993130386168
         force: yes
     
     - name: run swig command
