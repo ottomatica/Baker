@@ -76,11 +76,16 @@
     - name: Add d4j_home var to env
       lineinfile: 
         dest: ~/.bashrc
-        line: export D4J_HOME=~/defects4j
+        line: export D4J_HOME="~/defects4j"
         state: present
 
     - name: Add d4j_editor var to env
       lineinfile: 
         dest: ~/.bashrc
-        line: export D4J_EDITOR=diff -y -W $(( $(tput cols) - 2 ))
+        line: export D4J_EDITOR="diff -y -W $(( $(tput cols) - 2 ))"
         state: present        
+
+    - name: Add defects4j to path
+      lineinfile:
+        dest: ~/.bashrc
+        line: export PATH="$D4J_HOME/framework/bin:$PATH"
