@@ -11,7 +11,7 @@
       register: python_version
 
     - debug:
-        msg: "Python Version output: {{python_version}}"
+      msg: "Python Version output: {{python_version}}"
 
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
@@ -20,11 +20,11 @@
         - python-scipy 
         - python-matplotlib
         - python-pandas         
-      when: python_version.stdout.startswith('Python 2')
+      when: python_version.stdout.startswith('Python 2') or python_version.stderr.startswith('Python 2')
 
     - name: Install Jupyter
       pip: name=jupyter
-      when: python_version.stdout.startswith('Python 2')
+      when: python_version.stdout.startswith('Python 2') or python_version.stderr.startswith('Python 2')
 
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
@@ -33,8 +33,8 @@
         - python3-scipy 
         - python3-matplotlib
         - python3-pandas         
-      when: python_version.stdout.startswith('Python 3')
+      when: python_version.stdout.startswith('Python 3') or python_version.stderr.startswith('Python 3')
 
     - name: Install Jupyter
       pip: name=jupyter
-      when: python_version.stdout.startswith('Python 3')
+      when: python_version.stdout.startswith('Python 3') or python_version.stderr.startswith('Python 3')
