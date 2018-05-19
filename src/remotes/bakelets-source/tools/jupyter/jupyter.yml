@@ -11,7 +11,9 @@
       register: python_version
 
     - debug:
-      msg: "Python Version output: {{python_version}}"
+        msg: "Python Version output: {{python_version}}"
+    # https://stackoverflow.com/questions/26028416/why-does-python-print-version-info-to-stderr
+    # Python version outputs to stdout or stderr depending on version. 
 
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
