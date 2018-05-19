@@ -10,6 +10,9 @@
       command: python --version
       register: python_version
 
+    - debug:
+        msg: "Python Version output: {{python_version}}"
+
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
       with_items:
