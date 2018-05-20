@@ -111,24 +111,60 @@ class Docker_Provider {
      * starts a container
      * @param {Container} container container to be started
      */
-    async start (container) {
+    async startContainer (container) {
         return await container.start();
     }
 
     /**
-     * stops a container
+     * starts a container by name
+     * @param {String} containerName name of container to be stopped
+     */
+    async start (containerName) {
+        let container = await this.getContainerByName(containerName);
+        if(container)
+            return await this.startContainer(container);
+        else
+            throw `container doesn't exist: ${containerName}`;
+    }
+
+    /**
+     * private: stops a container
      * @param {Container} container container to be stopped
      */
-    async stop (container) {
+    async _stopContainer (container) {
         return await container.stop();
     }
 
     /**
-     * removes a container
+     * stops a container by name
+     * @param {String} containerName name of container to be stopped
+     */
+    async stop (containerName) {
+        let container = await this.getContainerByName(containerName);
+        if(container)
+            return await this._stopContainer(container);
+        else
+            throw `container doesn't exist: ${containerName}`;
+    }
+
+    /**
+     * private: removes a container
      * @param {Container} container container to be removed
      */
-    async remove (container) {
-        return await container.remove();
+    async _removeContainer (container) {
+        return await container.remove({force: true});
+    }
+
+    /**
+     * removs a container by name
+     * @param {String} containerName name of container to be removed
+     */
+    async remove (containerName) {
+        let container = await this.getContainerByName(containerName);
+        if(container)
+            return await this._removeContainer(container);
+        else
+            throw `container doesn't exist: ${containerName}`;
     }
 
     /**
@@ -142,17 +178,31 @@ class Docker_Provider {
     }
 
     /**
+     * @param {String} containerName name of the container
+     * @returns {Container} container object with the given name, or undefined if it doesn't exist
+     */
+    async getContainerByName(containerName) {
+        let existingContainers = await this.info();
+        let sameNameContainer = existingContainers.filter(c => c.name == containerName)[0];
+        if(sameNameContainer)
+            return this.docker.getContainer(sameNameContainer.id);
+        else
+            return undefined;
+    }
+
+    /**
      * Helper function to get info for all containers
      * Note: This should not be called directly, instead call this.info()
      */
-    async _overalInfo () {
+    async _getOveralInfo () {
         let self = this;
-        let containers = await this.docker.listContainers();
+        let containers = await this.docker.listContainers({all: true});
         let info = [];
-        containers.forEach(async function (containerInfo) {
-            info.push(await self._containerInfo(await self.getContainer(containerInfo.Id)));
-            // console.log(await this._containerInfo(await this.getContainer(containerInfo.Id)))
-        })
+        for (let i = 0; i < containers.length; i++) {
+            let containerInfo = await self._getContainerInfo(await self.getContainer(containers[i].Id));
+            containerInfo.name = containers[i].Names[0].replace('/', ''); //?
+            info.push(containerInfo);
+        }
         return info;
     }
 
@@ -161,24 +211,34 @@ class Docker_Provider {
      * Note: This should not be called directly, instead call this.info()
      * @param {Docker.Container} container
      */
-    async _containerInfo (container) {
+    async _getContainerInfo (container) {
         let inspect = await container.inspect();
         return {
+            id: inspect.Id,
             host: inspect.Config.Hostname,
             hostname: inspect.NetworkSettings.IPAddress,
-            user: inspect.Config.User
+            user: inspect.Config.User,
+            state: inspect.State.Running ? 'running' : 'stopped'
         }
     }
 
     /**
      *
-     * @param {Docker.Container} container
+     * @param {String} containerName
      */
-    async info(container=undefined) {
-        if(container)
-            return this._containerInfo(container);
+    async info(containerName=undefined) {
+        if(containerName){
+            let container = await this.getContainerByName(containerName);
+            if(container){
+                let containerInfo = await this._getContainerInfo(container);
+                containerInfo.name = containerName; // TODO: can we get the name from inspect?
+                return containerInfo;
+            }
+            else
+                throw `container doesn't exist: ${containerName}`;
+        }
         else
-            return this._overalInfo();
+            return this._getOveralInfo();
     }
 
     /**

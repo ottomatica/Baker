@@ -26,6 +26,21 @@ class Ssh {
                 }
             }
 
+            // TODO: Temp: refactor to be able to use the bakelet instead
+            await this.copyFromHostToVM(
+                path.resolve(configPath, './common/installDocker.yml'),
+                `/home/vagrant/baker/installDocker.yml`,
+                ansibleSSHConfig,
+                false
+            );
+
+            await this.copyFromHostToVM(
+                path.resolve(configPath, './common/dockerBootstrap.yml'),
+                `/home/vagrant/baker/dockerBootstrap.yml`,
+                ansibleSSHConfig,
+                false
+            );
+
             // Copy common ansible scripts files
             await this.copyFromHostToVM(
                 path.resolve(configPath, './common/registerhost.yml'),
