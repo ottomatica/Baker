@@ -1,0 +1,98 @@
+- hosts: all 
+  vars:
+    #aruco: aruco-3.0.10 
+    aruco: aruco-2.0.19
+  tasks:
+    - name: Install basic utils and build envs.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - git
+        - unzip
+        - vim
+        - gcc
+        - cmake
+        - build-essential
+      become: yes
+
+    - name: Install required system packages.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - python-dev
+        - python-pip
+        - python-setuptools
+        - python-numpy 
+        - python-scipy 
+        - python-matplotlib
+        - libgtk2.0-dev
+      become: yes
+
+    - name: Install OpenCV 
+      apt: pkg={{ item }} state=present
+      with_items:
+        - libopencv-dev 
+        - python-opencv
+      become: yes
+#    - name: Install OpenCV
+#      pip: name=opencv-contrib-python
+#      become: yes
+
+    - name: Install swig and libeigen3
+      apt: pkg={{ item }} state=present
+      with_items:
+        - libeigen3-dev
+        - swig3.0
+      become: yes
+
+    - name: Set swig3.0 as default swig using alternatives
+      alternatives:
+        name: swig
+        link: /usr/bin/swig
+        path: /usr/bin/swig3.0
+      become: yes
+
+    - name: Download aruco
+      get_url:
+       url: https://sourceforge.net/projects/aruco/files/2.0.19/aruco-2.0.19.zip/download?use_mirror=svwh
+#      url: https://sourceforge.net/projects/aruco/files/3.0.0/aruco-3.0.10.zip/download?use_mirror=svwh
+       dest: "/tmp/{{aruco}}.zip"
+
+    - unarchive:
+        src: "/tmp/{{aruco}}.zip"
+        dest: /tmp
+        remote_src: yes
+
+    - file:
+        path: "/tmp/{{aruco}}/build"
+        state: directory
+        mode: 0755
+
+    - name: run cmake to create make files
+      shell: "cd /tmp/{{aruco}}/build && cmake .."
+
+    - name: Build aruco
+      make:
+        chdir: "/tmp/{{aruco}}/build"
+
+    - name: Build install for aruco
+      make:
+        chdir: "/tmp/{{aruco}}/build"
+        target: install
+      become: yes
+
+    - name: git clone aruco-python
+      git: 
+        repo: https://github.com/fehlfarbe/python-aruco
+        dest: /tmp/python-aruco
+        version: b8feb03d9049acce08159b411301993130386168
+        force: yes
+    
+    - name: run swig command
+      shell: cd /tmp/python-aruco && ./swigbuild.sh
+
+    - name: install libs
+      shell: cd /tmp/python-aruco && python setup.py install
+      become: yes
+    
+    - name: register libs
+      shell: ldconfig
+      become: yes

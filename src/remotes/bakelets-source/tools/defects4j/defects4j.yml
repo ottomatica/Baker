@@ -1,0 +1,94 @@
+- hosts: all 
+  tasks:
+
+  #    - name: register java 7 ppa
+#      apt_repository: repo="ppa:openjdk-r/ppa"
+
+#    - name: Add JRE ppa
+#      apt_repository: repo=ppa:webupd8team/java state=present
+
+    - name: Install basic utils and build envs.
+      apt: pkg={{ item }} state=present update_cache=true cache_valid_time=3600
+      with_items:
+#        - openjdk-7-jdk
+        - git
+        - subversion
+        - perl
+        - unzip
+        - libdbi-perl
+        - libtext-csv-perl
+        - libdbd-csv-perl
+      become: yes
+      # perl -MCPAN -e'install Text::CSV'
+
+    - name: Download "public mirror" file
+      get_url: 
+        url: http://ftp.osuosl.org/pub/funtoo/distfiles/oracle-java/jdk-7u80-linux-x64.tar.gz
+        dest: /tmp/jdk-7u80-linux-x64.tar.gz
+
+    - name: Prepare /opt/jdk directory
+      file: 
+        path: /opt/jdk
+        state: directory
+      become: yes
+      
+    - name: Unarchive tar
+      unarchive:
+        src: /tmp/jdk-7u80-linux-x64.tar.gz
+        dest: /opt/jdk
+        remote_src: yes
+      become: yes
+    
+    - name: Update alternatives for java
+      alternatives: 
+        name: java
+        link: /usr/bin/java
+        path: /opt/jdk/jdk1.7.0_80/bin/java
+        priority: 5000
+      become: yes
+
+    - name: Update alternatives for javac
+      alternatives: 
+        name: javac
+        link: /usr/bin/javac
+        path: /opt/jdk/jdk1.7.0_80/bin/javac
+        priority: 5000
+      become: yes
+
+#    - name: point to download
+#      shell: echo oracle-java7-installer oracle-java7-installer/local select /tmp | sudo /usr/bin/debconf-set-selections
+#      become: yes
+
+#    - name: Automatically select the Oracle License
+#      #shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+#      debconf: name='oracle-java7-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+#      become: yes
+
+#    - name: Install JRE
+#      apt: pkg=oracle-java7-installer state=latest update-cache=yes force=yes
+#      become: yes
+
+    - name: git clone defects4j
+      git: 
+        repo: https://github.com/rjust/defects4j
+        dest: ~/defects4j
+      
+    - name: Run init.sh
+      shell: cd ~/defects4j && ./init.sh
+
+    - name: Add d4j_home var to env
+      lineinfile: 
+        dest: ~/.bashrc
+        line: export D4J_HOME="~/defects4j"
+        state: present
+
+    - name: Add d4j_editor var to env
+      lineinfile: 
+        dest: ~/.bashrc
+        line: export D4J_EDITOR="diff -y -W $(( $(tput cols) - 2 ))"
+        state: present        
+
+    - name: Add defects4j to path
+      lineinfile:
+        dest: ~/.bashrc
+        line: export PATH="$D4J_HOME/framework/bin:$PATH"
