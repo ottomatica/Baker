@@ -24,7 +24,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision "ansible_local", run: 'always' do |ansible|
     ansible.playbook = "dockerConfig.yml"
-    ansible.verbose = true
+    ansible.verbose = false
   end
 
   config.vm.provision "shell", inline: <<-SHELL
