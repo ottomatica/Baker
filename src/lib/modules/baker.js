@@ -391,7 +391,7 @@ class Baker {
                     let template = await fs.readFileAsync(path.join(configPath, './dockerHost/DockerVM.mustache'), 'utf8');
                     let vagrantfile = mustache.render(template, {dockerHostName});
                     await fs.writeFileAsync(path.join(dockerHostPath, 'Vagrantfile'), vagrantfile);
-                    await fs.copyFileAsync(path.join(configPath, './dockerHost/dockerConfig.yml'), path.join(dockerHostPath, 'dockerConfig.yml'));
+                    await fs.copy(path.join(configPath, './dockerHost/dockerConfig.yml'), path.join(dockerHostPath, 'dockerConfig.yml'));
 
                 } else {
                     throw err;
