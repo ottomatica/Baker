@@ -22,14 +22,21 @@ Vagrant.configure("2") do |config|
   config.vm.define "{{dockerHostName}}" do |t|
   end
 
+config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt-get -y install bridge-utils
+  SHELL
+
   config.vm.provision "ansible_local", run: 'always' do |ansible|
     ansible.playbook = "dockerConfig.yml"
     ansible.verbose = false
   end
 
   config.vm.provision "shell", inline: <<-SHELL
-    apt-get update
-    apt-get -y install bridge-utils
     sudo ip addr del 192.168.252.252/24 dev enp0s8
+
+    sudo service  networking restart
+    sudo systemctl daemon-reload
+    sudo service docker restart
   SHELL
 end
