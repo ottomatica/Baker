@@ -531,7 +531,7 @@ class Baker {
         // TODO: Consider also specifying ansible_connection=${} to support containers etc.
         // TODO: Callers of this can be refactored to into two methods, below:
         // return Ssh.sshExec(`mkdir -p /home/vagrant/baker/${name}/ && echo "${name}\tansible_connection=docker\tansible_user=${user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i /home/vagrant/baker/${name}/baker_inventory -m lineinfile -a 'dest=/etc/environments line="DOCKER_HOST=tcp://192.168.252.251:2375"'`, ansibleSSHConfig);
-        return Ssh.sshExec(`ansible all  -i "localhost," -m lineinfile -a 'dest=/etc/environment line="DOCKER_HOST=tcp://192.168.252.251:2375"' -c local --become`, ansibleSSHConfig, true);
+        return Ssh.sshExec(`mkdir -p /home/vagrant/baker/${name}/ && echo "${name}\tansible_connection=docker\tansible_user=${user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all  -i "localhost," -m lineinfile -a 'dest=/etc/environment line="DOCKER_HOST=tcp://192.168.252.251:2375"' -c local --become`, ansibleSSHConfig);
     }
 
 
