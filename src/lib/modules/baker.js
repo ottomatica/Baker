@@ -392,6 +392,7 @@ class Baker {
                     let vagrantfile = mustache.render(template, {dockerHostName});
                     await fs.writeFileAsync(path.join(dockerHostPath, 'Vagrantfile'), vagrantfile);
                     await fs.copy(path.join(configPath, './dockerHost/dockerConfig.yml'), path.join(dockerHostPath, 'dockerConfig.yml'));
+                    await fs.copy(path.join(configPath, './dockerHost/lxd-bridge'), path.join(dockerHostPath, 'lxd-bridge'));
 
                 } else {
                     throw err;
