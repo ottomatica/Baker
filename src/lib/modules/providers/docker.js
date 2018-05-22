@@ -4,6 +4,7 @@ const child_process = require('child_process');
 const _ = require('lodash');
 const stream        = require('stream');
 const Docker = require('dockerode');
+const homedir       = require('os').homedir;
 
 class Docker_Provider {
     constructor(dockerHost) {
@@ -78,14 +79,18 @@ class Docker_Provider {
     /**
      * initialize container
      *
-     * @param {image} image image name and tag
-     * @param {cmds} cmds list of commands [optional]
-     * @param {name} name name of the container [optional]
+     * @param {string} image image name and tag
+     * @param {string[]} cmds list of commands [optional]
+     * @param {string} name name of the container [optional]
+     * @param {string} volume source path to be mounted (will be mounted @ /{base_name})
      * @returns container
      */
-    async init (image, cmds, name, ip) {
-        // promises are supported
-        return await this.docker.createContainer({
+    async init (image, cmds, name, ip, volume) {
+
+        let source = path.join(`/home/vagrant/host_home`, volume.replace(homedir(), ''));
+        let dest = `/${path.basename(volume)}`
+
+        let options = {
             Image: image,
             AttachStdin: false,
             AttachStdout: true,
@@ -95,6 +100,8 @@ class Docker_Provider {
             name: name || undefined,
             OpenStdin: false,
             StdinOnce: false,
+            Volumes: {},
+            Binds: [`${source}:${dest}`],
             NetworkingConfig: {
                 EndpointsConfig: {
                     shared_nw: {
@@ -104,7 +111,9 @@ class Docker_Provider {
                     }
                 }
             }
-        });
+        };
+
+        return await this.docker.createContainer(options);
     }
 
     /**

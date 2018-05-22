@@ -378,6 +378,11 @@ class Baker {
 
             await this.installDocker(ansibleSSHConfig);
 
+            // always update vagrantfile
+            let template = await fs.readFileAsync(path.join(configPath, './dockerHost/DockerVM.mustache'), 'utf8');
+            let vagrantfile = mustache.render(template, {dockerHostName});
+            await fs.writeFileAsync(path.join(dockerHostPath, 'Vagrantfile'), vagrantfile);
+
             let status;
             try{
                 await this.getVMPath('docker-srv')
@@ -388,9 +393,6 @@ class Baker {
                     await this._ensureDir(boxes);
                     await this._ensureDir(dockerHostPath);
 
-                    let template = await fs.readFileAsync(path.join(configPath, './dockerHost/DockerVM.mustache'), 'utf8');
-                    let vagrantfile = mustache.render(template, {dockerHostName});
-                    await fs.writeFileAsync(path.join(dockerHostPath, 'Vagrantfile'), vagrantfile);
                     await fs.copy(path.join(configPath, './dockerHost/dockerConfig.yml'), path.join(dockerHostPath, 'dockerConfig.yml'));
                     await fs.copy(path.join(configPath, './dockerHost/lxd-bridge'), path.join(dockerHostPath, 'lxd-bridge'));
 
@@ -818,7 +820,7 @@ class Baker {
                 throw error;
         }
 
-        let container = await dockerProvider.init(image, [], doc.name, doc.ip);
+        let container = await dockerProvider.init(image, [], doc.name, doc.ip, scriptPath);
         await dockerProvider.startContainer(container);
 
         // TODO: root is hard coded
