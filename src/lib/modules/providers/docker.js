@@ -5,6 +5,7 @@ const _ = require('lodash');
 const stream        = require('stream');
 const Docker = require('dockerode');
 const homedir       = require('os').homedir;
+const slash = require('slash');
 
 class Docker_Provider {
     constructor(dockerHost) {
@@ -87,8 +88,10 @@ class Docker_Provider {
      */
     async init (image, cmds, name, ip, volume) {
 
-        let source = path.join(`/home/vagrant/host_home`, volume.replace(homedir(), ''));
+        let source = slash(path.join(`/home/vagrant/host_root`, volume.split(":").pop()));
         let dest = `/${path.basename(volume)}`
+
+        // console.log(`\n\n\n\n${homedir()}:${source}:${dest}\n\n\n\n`)
 
         let options = {
             Image: image,

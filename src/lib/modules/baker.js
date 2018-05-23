@@ -378,6 +378,10 @@ class Baker {
 
             await this.installDocker(ansibleSSHConfig);
 
+            // ensure needed dir exist
+            await this._ensureDir(boxes);
+            await this._ensureDir(dockerHostPath);
+
             // always update vagrantfile
             let template = await fs.readFileAsync(path.join(configPath, './dockerHost/DockerVM.mustache'), 'utf8');
             let vagrantfile = mustache.render(template, {dockerHostName});
