@@ -376,8 +376,6 @@ class Baker {
             let ansibleVM = vagrant.create({ cwd: ansible });
             let ansibleSSHConfig = await Baker.getSSHConfig(ansibleVM);
 
-            await this.installDocker(ansibleSSHConfig);
-
             // ensure needed dir exist
             await this._ensureDir(boxes);
             await this._ensureDir(dockerHostPath);
@@ -400,6 +398,7 @@ class Baker {
                     await fs.copy(path.join(configPath, './dockerHost/dockerConfig.yml'), path.join(dockerHostPath, 'dockerConfig.yml'));
                     await fs.copy(path.join(configPath, './dockerHost/lxd-bridge'), path.join(dockerHostPath, 'lxd-bridge'));
 
+                    await this.installDocker(ansibleSSHConfig);
                 } else {
                     throw err;
                 }
@@ -793,7 +792,10 @@ class Baker {
         return await dockerProvider.info();
     }
 
-    static async startDocker(scriptPath, ansibleSSHConfig) {
+    static async startDocker(scriptPath) {
+        // Make sure Baker control machine is running
+        let ansibleVM = await spinner.spinPromise(this.prepareAnsibleServer(scriptPath), 'Preparing Baker control machine', spinnerDot);
+        let ansibleSSHConfig = await Baker.getSSHConfig(ansibleVM);
         // Make sure Docker VM is running
         await spinner.spinPromise(this.prepareDockerVM(), `Preparing Docker host`, spinnerDot);
 
@@ -838,9 +840,12 @@ class Baker {
         // let vmSSHConfig = await this.getSSHConfig(machine);
     }
 
-    static async bakeDocker(scriptPath, ansibleSSHConfig) {
+    static async bakeDocker(scriptPath) {
         // Start the container
-        await this.startDocker(scriptPath, ansibleSSHConfig);
+        await this.startDocker(scriptPath);
+
+        let ansibleVM = vagrant.create({ cwd: ansible });
+        let ansibleSSHConfig = await Baker.getSSHConfig(ansibleVM);
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 

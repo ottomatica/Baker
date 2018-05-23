@@ -1,3 +1,4 @@
+const Promise         = require('bluebird');
 const Baker           = require('../modules/baker');
 const Docker_Provider = require('../modules/providers/docker');
 const fs              = require('fs-extra');
@@ -5,8 +6,9 @@ const Git             = require('../modules/utils/git');
 const path            = require('path');
 const Print           = require('../modules/print');
 const Spinner         = require('../modules/spinner');
+const vagrant         = Promise.promisifyAll(require('node-vagrant'));
 
-const { spinnerDot } = require('../../global-vars');
+const { ansible, spinnerDot } = require('../../global-vars');
 
 exports.command = 'docker [command]';
 exports.desc    = 'Spin up docker containers';
@@ -42,41 +44,30 @@ exports.handler = async function(argv) {
 
 
     let bakePath = local || process.cwd();
-    let ansibleVM;
-    try {
-        ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
-    }
-    catch(ex) {
-        await Spinner.spinPromise(Baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
-        ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
-    }
-
-    let sshConfig = await Baker.getSSHConfig(ansibleVM);
 
     switch (argv.command) {
         case 'bake':
-            await Baker.bakeDocker(local || process.cwd(), sshConfig);
+            await Baker.bakeDocker(bakePath);
             break;
 
         case 'start':
-            await Baker.startDocker(local || process.cwd(), sshConfig);
+            await Baker.startDocker(bakePath);
             break;
 
         case 'stop':
-            await Spinner.spinPromise(Baker.stopDocker(local || process.cwd()), `Stopping Docker container`, spinnerDot);
+            await Spinner.spinPromise(Baker.stopDocker(bakePath), `Stopping Docker container`, spinnerDot);
             break;
 
         case 'destroy':
-            await Spinner.spinPromise(Baker.removeDocker(local || process.cwd()), `Removing Docker container`, spinnerDot);
+            await Spinner.spinPromise(Baker.removeDocker(bakePath), `Removing Docker container`, spinnerDot);
             break;
 
         case 'list':
-            await Spinner.spinPromise(Baker.prepareDockerVM(), `Preparing Docker host`, spinnerDot);
             console.log(await Baker.listDocker());
             break;
 
         case 'ssh':
-            await Baker.SSHDocker(local || process.cwd());
+            await Baker.SSHDocker(bakePath);
 
         default:
             break;
