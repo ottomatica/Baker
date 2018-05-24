@@ -3,6 +3,9 @@
   become: yes
 
   tasks:
+    - name: Ensure apt-transport-https is installed.
+      apt: name=apt-transport-https state=present
+
     - name: Add R deb package
       apt_repository:
         repo: "deb https://cran.rstudio.com/bin/linux/ubuntu {{=<% %>=}}{{ ansible_distribution_release }}<%={{ }}=%>/"
