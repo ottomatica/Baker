@@ -83,10 +83,10 @@ module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, b
         {
             for (var i = 0; i < doc.custom.length; i++)
             {
-                let externalBakeletPath = path.resolve(bakeletsPath, doc.custom[i].path);
-                let info = getBakeletInformation(doc.custom[i]);
+                let info = getBakeletInformation(doc.custom[i], "");
+                let externalBakeletPath = path.resolve(bakeletsPath, doc.custom[i][info.bakeletName].path);
                 info.mod = bakeletsPath + "/custom";
-                await resolve(doc.name, bakerScriptPath, externalBakeletPath, bakeletsPath, doc.resources[i], extra_vars, verbose);
+                await resolve(doc.name, bakerScriptPath, externalBakeletPath, info, doc.custom[i], extra_vars, verbose);
             }
         }
 
@@ -130,7 +130,7 @@ async function getSSHConfig(machine) {
 }
 
 
-function getBakeletInformation(bakelet)
+function getBakeletInformation(bakelet, dir)
 {
     let mod = "";
     let version = "";
@@ -163,7 +163,7 @@ function getBakeletInformation(bakelet)
                 bakeletName = match[1];
             }
         }
-    }    
+    }
     return {mod: mod, version: version, bakeletName: bakeletName };
 }
 
@@ -174,7 +174,7 @@ async function resolveCustom(vmName, bakerScriptPath, remotesPath, info, extra_v
     let mod = info.mod;
     let version = info.version;
     let bakeletName = info.bakeletName;
-    
+
     if( verbose ) console.log("Found", bakeletName, version, extra_vars);
 
     let classFoo = require(mod)
