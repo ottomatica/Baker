@@ -84,9 +84,10 @@ module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, b
             for (var i = 0; i < doc.custom.length; i++)
             {
                 let info = getBakeletInformation(doc.custom[i], "");
-                let externalBakeletPath = path.resolve(bakeletsPath, doc.custom[i][info.bakeletName].path);
+                let externalBakeletPath = path.resolve(bakerScriptPath, doc.custom[i][info.bakeletName].path);
                 info.mod = bakeletsPath + "/custom";
-                await resolve(doc.name, bakerScriptPath, externalBakeletPath, info, doc.custom[i], extra_vars, verbose);
+                console.log( info, externalBakeletPath);
+                await resolveCustom(doc.name, bakerScriptPath, bakerScriptPath, doc.custom[i][info.bakeletName].path, info, doc.custom[i], extra_vars, verbose);
             }
         }
 
@@ -169,7 +170,7 @@ function getBakeletInformation(bakelet, dir)
 
 
 
-async function resolveCustom(vmName, bakerScriptPath, remotesPath, info, extra_vars, verbose)
+async function resolveCustom(vmName, bakerScriptPath, remotesPath, bakeletPath, info, bakelet, extra_vars, verbose)
 {
     let mod = info.mod;
     let version = info.version;
@@ -189,6 +190,7 @@ async function resolveCustom(vmName, bakerScriptPath, remotesPath, info, extra_v
     j.setBakePath(bakerScriptPath);
     j.setVerbose(verbose);
     j.setBakeletName(bakeletName);
+    j.setBakeletPath(bakeletPath);
 
     await Spinner.spinPromise(j.load(bakelet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
     await Spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);

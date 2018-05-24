@@ -28,6 +28,12 @@ class Bakelet
         this.bakeletName = bakeletName;
     }
 
+    setBakeletPath(bakeletPath)
+    {
+        this.bakeletPath = bakeletPath;
+    }
+
+
     async copy(src,dest)
     {
         // Copy common ansible scripts files
