@@ -806,7 +806,14 @@ class Baker {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         const dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
-        let image = doc.image || 'ubuntu:latest'
+        let image;
+        if(doc.container)
+            image = doc.container.image || 'ubuntu:latest'
+        else {
+            print.error('To use Docker commands, you need to add `container` specifiction in your baker.yml');
+            process.exit(1);
+        }
+
         await dockerProvider.pull(image);
 
         // Check if a contaienr with this name exists and do something based on its state
@@ -826,7 +833,7 @@ class Baker {
                 throw error;
         }
 
-        let container = await dockerProvider.init(image, [], doc.name, doc.ip, scriptPath);
+        let container = await dockerProvider.init(image, [], doc.name, doc.container.ip, scriptPath);
         await dockerProvider.startContainer(container);
 
         // TODO: root is hard coded
