@@ -23,6 +23,11 @@ class Bakelet
         this.verbose = verbose;
     }
 
+    setBakeletName(bakeletName)
+    {
+        this.bakeletName = bakeletName;
+    }
+
     async copy(src,dest)
     {
         // Copy common ansible scripts files
