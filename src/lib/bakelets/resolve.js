@@ -79,6 +79,18 @@ module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, b
             await resolve(doc.name, bakerScriptPath, remotesPath, path.join(bakeletsPath,"env"), doc.env[0], extra_vars, verbose);
         }
 
+        if( doc.custom )
+        {
+            for (var i = 0; i < doc.custom.length; i++)
+            {
+                let info = getBakeletInformation(doc.custom[i], "");
+                let externalBakeletPath = path.resolve(bakerScriptPath, doc.custom[i][info.bakeletName].path);
+                info.mod = bakeletsPath + "/custom";
+                console.log( info, externalBakeletPath);
+                await resolveCustom(doc.name, bakerScriptPath, bakerScriptPath, doc.custom[i][info.bakeletName].path, info, doc.custom[i], extra_vars, verbose);
+            }
+        }
+
         if( doc.start )
         {
             // let dir = path.join(boxes, doc.name);
@@ -118,14 +130,17 @@ async function getSSHConfig(machine) {
     }
 }
 
-async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra_vars, verbose)
+
+function getBakeletInformation(bakelet, dir)
 {
     let mod = "";
     let version = "";
+    let bakeletName = "";
     if( isObject(bakelet) )
     {
         // complex objects, like templates.
-        mod = dir + "/" + Object.keys(bakelet)[0];
+        bakeletName = Object.keys(bakelet)[0];
+        mod = dir + "/" + bakeletName;
     }
     else
     {
@@ -140,15 +155,28 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra
                 // We did not capture anything in the first part of regex. So, we have no version, just the mod.
                 // This is captured in third group.
                 mod =  dir + "/" + match[3];
+                bakeletName = match[3];
             }
             else
             {
                 mod =  dir + "/" + match[1];
                 version = match[2];
+                bakeletName = match[1];
             }
         }
-        if( verbose ) console.log("Found", mod, version, extra_vars);
     }
+    return {mod: mod, version: version, bakeletName: bakeletName };
+}
+
+
+
+async function resolveCustom(vmName, bakerScriptPath, remotesPath, bakeletPath, info, bakelet, extra_vars, verbose)
+{
+    let mod = info.mod;
+    let version = info.version;
+    let bakeletName = info.bakeletName;
+
+    if( verbose ) console.log("Found", bakeletName, version, extra_vars);
 
     let classFoo = require(mod)
 
@@ -161,6 +189,34 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra
     j.setRemotesPath(remotesPath);
     j.setBakePath(bakerScriptPath);
     j.setVerbose(verbose);
+    j.setBakeletName(bakeletName);
+    j.setBakeletPath(bakeletPath);
+
+    await Spinner.spinPromise(j.load(bakelet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
+    await Spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);
+}
+
+async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra_vars, verbose)
+{
+    let info = getBakeletInformation(bakelet);
+    let mod = info.mod;
+    let version = info.version;
+    let bakeletName = info.bakeletName;
+
+    if( verbose ) console.log("Found", bakeletName, version, extra_vars);
+
+    let classFoo = require(mod)
+
+    const boxes = path.join(require('os').homedir(), '.baker');
+    const ansible = path.join(boxes, 'ansible-srv');
+    let machine = vagrant.create({ cwd: ansible });
+    let ansibleSSHConfig = await getSSHConfig(machine);
+
+    let j = new classFoo(vmName, ansibleSSHConfig, version);
+    j.setRemotesPath(remotesPath);
+    j.setBakePath(bakerScriptPath);
+    j.setVerbose(verbose);
+    j.setBakeletName(bakeletName);
 
     await Spinner.spinPromise(j.load(bakelet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
     await Spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);
