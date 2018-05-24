@@ -7,3 +7,8 @@
 
   - name: Install python
     raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
+
+  # Address bug affecting apt_repository
+  # https://github.com/ansible/ansible/issues/40608
+  - name: Install lsb-release
+    raw: sudo apt install -y lsb-release
