@@ -198,7 +198,7 @@ async function resolveCustom(vmName, bakerScriptPath, remotesPath, bakeletPath, 
 
 async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra_vars, verbose)
 {
-    let info = getBakeletInformation(bakelet);
+    let info = getBakeletInformation(bakelet, dir);
     let mod = info.mod;
     let version = info.version;
     let bakeletName = info.bakeletName;
