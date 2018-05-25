@@ -891,8 +891,7 @@ class Baker {
             let privateKeyPath = (await this.getSSHConfig(machine)).private_key;
 
             try {
-                child_process.execSync(`ssh -tt -i ${privateKeyPath} vagrant@192.168.252.251 docker exec -it ${doc.name} /bin/bash`, {stdio: ['inherit', 'inherit', 'ignore']});
-
+                child_process.execSync(`ssh -tt -i ${privateKeyPath} -o IdentitiesOnly=yes vagrant@192.168.252.251 docker exec -it ${doc.name} /bin/bash`, {stdio: ['inherit', 'inherit', 'inherit']});
             } catch (err) {
                 // throw `VM must be running to open SSH connection. Run \`baker status\` to check status of your VMs.`
             }
