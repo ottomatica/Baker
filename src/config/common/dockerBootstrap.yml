@@ -12,3 +12,13 @@
   # https://github.com/ansible/ansible/issues/40608
   - name: Install lsb-release
     raw: sudo apt install -y lsb-release
+
+  # Some apt-get installs require aptitude. Unless we specify force_apt_get: yes
+  # then this is required
+  # https://github.com/ansible/ansible/pull/27962/files
+  - name: Install aptitude
+    apt: pkg="{{item}}" state=present
+    with_items:
+      - python-apt
+      - aptitude
+
