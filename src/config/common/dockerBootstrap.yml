@@ -21,4 +21,5 @@
     with_items:
       - python-apt
       - aptitude
+      - dpkg-dev
 
