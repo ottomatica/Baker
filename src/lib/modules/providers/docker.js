@@ -86,7 +86,7 @@ class Docker_Provider {
      * @param {string} volume source path to be mounted (will be mounted @ /{base_name})
      * @returns container
      */
-    async init (image, cmds, name, ip, volume) {
+    async init (image, cmds, name, ip, volume, ports) {
 
         let source = slash(path.join(`/home/vagrant/host_root`, volume.split(":").pop()));
         let dest = `/${path.basename(volume)}`
@@ -104,6 +104,7 @@ class Docker_Provider {
             OpenStdin: false,
             StdinOnce: false,
             Volumes: {},
+            ExposedPorts: {},
             Binds: [`${source}:${dest}`],
             NetworkingConfig: {
                 EndpointsConfig: {
@@ -115,6 +116,9 @@ class Docker_Provider {
                 }
             }
         };
+        ports.forEach(port => {
+            options.ExposedPorts[`${port}/tcp`] = {}
+        })
 
         return await this.docker.createContainer(options);
     }

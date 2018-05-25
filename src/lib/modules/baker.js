@@ -833,7 +833,20 @@ class Baker {
                 throw error;
         }
 
-        let container = await dockerProvider.init(image, [], doc.name, doc.container.ip, scriptPath);
+        let exposedPorts = [];
+        if( doc.container.ports ) {
+            // ports: '8000, 9000,  1000:3000'
+            let ports = doc.container.ports.toString().trim().split(/\s*,\s*/g);
+            for( var port of ports  ) {
+                let p = port.trim().split(/\s*:\s*/g);
+                let guest = p[0];
+                // ignoring host port for now. only exposing the guest port
+                // let host  = a[1] || a[0];
+                exposedPorts.push(guest);
+            }
+        }
+
+        let container = await dockerProvider.init(image, [], doc.name, doc.container.ip, scriptPath, exposedPorts);
         await dockerProvider.startContainer(container);
 
         // TODO: root is hard coded
