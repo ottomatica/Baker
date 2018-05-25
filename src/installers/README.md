@@ -10,9 +10,10 @@
 
     note: if you have a ./src/lib/.DS_Store file, this will fail and you have to remove it ...
 
-    The executable for mac and .deb for linux are in these paths:
+    The executables are in these paths:
         ./src/installers/macos/bin/baker
         ./src/installers/linux/deb/baker.deb
+        ./src/installers/win/bin/baker-setup.exe
 
     create a release here: https://github.com/ottomatica/baker-release/releases
 
