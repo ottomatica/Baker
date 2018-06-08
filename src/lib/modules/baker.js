@@ -1,6 +1,6 @@
 const Promise       = require('bluebird');
-const _             = require('underscore');
 const child_process = Promise.promisifyAll(require('child_process'));
+const conf          = require('./configstore');
 const fs            = Promise.promisifyAll(require('fs-extra'));
 const inquirer      = require('inquirer');
 const mustache      = require('mustache');
@@ -20,7 +20,10 @@ const VagrantProvider = require('./providers/vagrant');
 const DO_Provider     = require('./providers/digitalocean');
 const Docker_Provider = require('./providers/docker');
 
-const { spinnerDot, configPath, ansible, boxes, bakeletsPath, remotesPath } = require('../../global-vars');
+// conf variables:
+const spinnerDot = conf.get('spinnerDot');
+
+const { configPath, ansible, boxes, bakeletsPath, remotesPath } = require('../../global-vars');
 
 class Baker {
     constructor() {

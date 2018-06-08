@@ -1,7 +1,8 @@
 const Baker          = require('../modules/baker');
+const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
-const { spinnerDot } = require('../../global-vars');
+const spinnerDot     = conf.get('spinnerDot');
 
 exports.command = 'package <VMName>';
 exports.desc = `package a Baker environment`;

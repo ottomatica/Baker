@@ -1,11 +1,13 @@
 const Baker     = require('../modules/baker');
+const conf      = require('../../lib/modules/configstore');
 const fs        = require('fs-extra');
 const path      = require('path');
 const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');
 const Validator = require('../modules/validator');
 
-const { spinnerDot, configPath, ansible } = require('../../global-vars');
+const spinnerDot = conf.get('spinnerDot');
+const { configPath, ansible } = require('../../global-vars');
 
 exports.command = 'setup'
 exports.desc = 'create a Baker server which will be used for provisioning yor VMs'

@@ -1,11 +1,12 @@
 const Baker     = require('../modules/baker');
+const conf      = require('../../lib/modules/configstore');
 const Git       = require('../modules/utils/git');
 const path      = require('path');
 const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');
 const Validator = require('../modules/validator');
 
-const { spinnerDot } = require('../../global-vars');
+const spinnerDot = conf.get('spinnerDot');
 
 exports.command = 'custom';
 exports.desc = 'Bake your VM given local path or repository URL containing the baker.yml';
