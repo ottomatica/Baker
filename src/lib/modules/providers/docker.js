@@ -1,11 +1,11 @@
-const fs = require('fs');
 const path = require('path');
-const child_process = require('child_process');
-const _ = require('lodash');
 const stream        = require('stream');
 const Docker = require('dockerode');
 const homedir       = require('os').homedir;
 const slash = require('slash');
+const jsonfile = require('jsonfile')
+
+const { environmentIndexPath } = require('../../../global-vars');
 
 class Docker_Provider {
     constructor(dockerHost) {
@@ -33,6 +33,10 @@ class Docker_Provider {
             };
             resolve()
         });
+    }
+
+    async images(){
+        return await this.docker.listImages();
     }
 
     async pull(imageName)
@@ -306,6 +310,51 @@ class Docker_Provider {
         });
     }
 
+    /**
+     * returns if the container with this name exists
+     * @param {String} name name of the container
+     */
+    static isInIndex(name) {
+        jsonfile.readFile(environmentIndexPath, function (err, index) {
+            index.containers.find(container => container.name === name) ? true : false;
+        })
+    }
+
+    /**
+     * adds the new container to the index if it doesn't already exist, otherwise throws error.
+     * @param {String} name name of the container
+     * @param {String} image the image container is using
+     * @param {String} ip ip address of the contaienr
+     */
+    static addToIndex(name, image, ip) {
+        if (!isInIndex(name)) {
+            jsonfile.readFile(environmentIndexPath, function (err, index) {
+                index.container.push({name, image, ip});
+                jsonfile.writeFile(environmentIndexPath, index, function (err, index) {
+                    console.error(err);
+                })
+            })
+        } else {
+            throw `another container with this name exists.`
+        }
+    }
+
+    /**
+     * removes contaiener with given name if it exists, otherwise  throws error.
+     * @param {String} name name of the container ro be removed from index
+     */
+    static removeFromIndex(name){
+        if (isInIndex(name)) {
+            jsonfile.readFile(environmentIndexPath, function (err, index) {
+                index.containers = index.container.filter(container => container.name != name);
+                jsonfile.writeFile(environmentIndexPath, index, function (err, index) {
+                    console.error(err);
+                })
+            })
+        } else {
+            throw `container with this name doesn't exist.`
+        }
+    }
 }
 
 module.exports = Docker_Provider;

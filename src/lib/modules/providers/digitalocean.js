@@ -2,14 +2,13 @@ const digitalocean = require('digitalocean');
 const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
-const _ = require('lodash');
 
 class DO_Provider {
     constructor(token,clusterDir) {
         this.token = token || process.env.DOTOKEN;
         if( !token )
             throw new Error("Must provide an API token for digital ocean");
-        this.client = digitalocean.client(this.token);    
+        this.client = digitalocean.client(this.token);
 
         this.clusterDir = clusterDir;
         this.clusterName = path.basename(clusterDir);
@@ -34,7 +33,7 @@ class DO_Provider {
         for( var node of nodes )
         {
             facts.push(
-            { 
+            {
                 host: node.name,
                 port: '22',
                 hostname: node.networks.v4[0].ip_address,
@@ -115,7 +114,7 @@ class DO_Provider {
         }
         catch(err)
         {
-            let attributes = 
+            let attributes =
             {
                 name: this.clusterName,
                 public_key: key,
@@ -130,7 +129,7 @@ class DO_Provider {
         let privatePath = path.resolve(this.clusterDir,'id_rsa');
         let droplet = await this.getDropletFromName(nodeName);
         let ip = droplet.networks.v4[0].ip_address;
-        return { 
+        return {
             host: nodeName,
             port: '22',
             hostname: ip,
@@ -167,7 +166,7 @@ class DO_Provider {
                         console.log("We have a droplet: " + droplet.id + "!");
                         resolve(droplet);
                     });
-                } 
+                }
                 else {
                     console.log(err);
                     reject();

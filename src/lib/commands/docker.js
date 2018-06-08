@@ -1,12 +1,6 @@
-const Promise         = require('bluebird');
 const Baker           = require('../modules/baker');
-const Docker_Provider = require('../modules/providers/docker');
-const fs              = require('fs-extra');
-const Git             = require('../modules/utils/git');
-const path            = require('path');
 const Print           = require('../modules/print');
 const Spinner         = require('../modules/spinner');
-const vagrant         = Promise.promisifyAll(require('node-vagrant'));
 
 const { ansible, spinnerDot } = require('../../global-vars');
 

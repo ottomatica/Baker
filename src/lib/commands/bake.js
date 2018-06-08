@@ -1,10 +1,8 @@
 const Baker          = require('../modules/baker');
-const fs             = require('fs-extra')
 const Git            = require('../modules/utils/git');
 const path           = require('path');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
-const Validator      = require('../modules/validator');
 
 const { spinnerDot } = require('../../global-vars');
 

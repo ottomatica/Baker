@@ -1,6 +1,5 @@
 const Promise = require('bluebird');
 const vagrant       = Promise.promisifyAll(require('node-vagrant'));
-const child_process = require('child_process');
 const path          = require('path');
 const yaml = require('js-yaml');
 const fs = Promise.promisifyAll(require('fs-extra'));
