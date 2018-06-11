@@ -32,7 +32,7 @@ exports.handler = async function(argv) {
     const { local, repo, verbose } = argv;
 
     // Check if command is valid
-    if(!['bake', 'start', 'stop', 'destroy', 'list', 'ssh'].includes(argv.command)) {
+    if(!['bake', 'start', 'stop', 'destroy', 'list', 'ssh', 'images'].includes(argv.command)) {
         Print.error(`invalid command: ${argv.command}`);
         process.exit(1);
     }
@@ -63,6 +63,9 @@ exports.handler = async function(argv) {
 
         case 'ssh':
             await Baker.SSHDocker(bakePath);
+
+        case 'images':
+            await Baker.imagesDocker();
 
         default:
             break;
