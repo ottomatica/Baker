@@ -4,6 +4,7 @@ const Git            = require('../modules/utils/git');
 const path           = require('path');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
+const VagrantProvider = require('../modules/providers/vagrant');
 
 const spinnerDot = conf.get('spinnerDot');
 
@@ -64,6 +65,10 @@ exports.builder = (yargs) => {
 exports.handler = async function(argv) {
     const { local, repo, box, remote, remote_key, remote_user, verbose } = argv;
 
+    //TODO: if vagrant:
+    const provider = new VagrantProvider();
+    const BakerObj = new Baker(provider);
+
     try{
         let ansibleVM;
         let bakePath;
@@ -97,7 +102,7 @@ exports.handler = async function(argv) {
         }
         catch(ex)
         {
-            await Spinner.spinPromise(Baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
+            await Spinner.spinPromise(BakerObj.start('baker'), `Restarting Baker control machine`, spinnerDot);
             ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
         }
 
@@ -108,7 +113,7 @@ exports.handler = async function(argv) {
         else if(remote)
             await Baker.bakeRemote(sshConfig, remote, remote_key, remote_user, bakePath, verbose);
         else
-            await Baker.bake2(sshConfig, ansibleVM, bakePath, verbose);
+            await BakerObj.bake(sshConfig, ansibleVM, bakePath, verbose);
 
     } catch (err) {
         Print.error(err);

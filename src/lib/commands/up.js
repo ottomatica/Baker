@@ -2,6 +2,7 @@ const Baker   = require('../modules/baker');
 const conf    = require('../../lib/modules/configstore')
 const Print   = require('../modules/print');
 const Spinner = require('../modules/spinner');
+const VagrantProvider = require('../modules/providers/vagrant');
 
 const spinnerDot = conf.get('spinnerDot');
 
@@ -21,7 +22,11 @@ exports.builder = (yargs) => {
 }
 
 exports.handler = async function(argv) {
-    let { VMName } = argv;
+    let { VMName, verbose } = argv;
+
+    //TODO: if vagrant:
+    const provider = new VagrantProvider();
+    const BakerObj = new Baker(provider);
 
     try{
         if(!VMName){
@@ -34,7 +39,7 @@ exports.handler = async function(argv) {
             }
         }
 
-        await Spinner.spinPromise(Baker.upVM(VMName), `Starting VM: ${VMName}`, spinnerDot);
+        await Spinner.spinPromise(BakerObj.start(VMName, verbose), `Starting VM: ${VMName}`, spinnerDot);
     } catch (err){
         Print.error(err);
     }

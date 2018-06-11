@@ -7,11 +7,10 @@ const mustache      = require('mustache');
 const netaddr       = require('netaddr');
 const path          = require('path');
 const print         = require('./print');
-const ping          = require('ping')
-const prompt        = require('prompt');
-const slash         = require('slash');
+const Provider      = require('../modules/providers/provider');
 const spinner       = require('./Spinner');
 const Ssh           = require('./ssh');
+const Utils         = require('./utils/utils');
 const vagrant       = Promise.promisifyAll(require('node-vagrant'));
 const validator     = require('validator');
 const yaml          = require('js-yaml');
@@ -26,11 +25,36 @@ const spinnerDot = conf.get('spinnerDot');
 const { configPath, ansible, boxes, bakeletsPath, remotesPath } = require('../../global-vars');
 
 class Baker {
-    constructor() {
+    /**
+     *
+     * @param {Provider} provider
+     */
+    constructor(provider) {
+        this.provider = provider;
     }
 
-    static async hostIsAccessible(host) {
-        return (await ping.promise.probe(host, {extra: ['-i 2']})).alive;
+    async ssh(name) {
+        await this.provider.ssh(name);
+    }
+
+    async start(name, verbose) {
+        await this.provider.start(name, verbose);
+    }
+
+    async stop(name, force) {
+        await this.provider.stop(name, force);
+    }
+
+    async delete(name) {
+        await this.provider.delete(name);
+    }
+
+    async bake(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
+        await this.provider.bake(ansibleSSHConfig, ansibleVM, scriptPath, verbose);
+    }
+
+    async list() {
+        await this.provider.list();
     }
 
     static async init() {
@@ -69,7 +93,7 @@ class Baker {
                     validate: async function(ip) {
                         let pass = validator.isIP(ip);
 
-                        var exists = await Baker.hostIsAccessible(ip);
+                        var exists = await Utils.hostIsAccessible(ip);
 
                         if (pass && !exists) {
                             return true;
@@ -165,52 +189,6 @@ class Baker {
     }
 
     /**
-     * get State of a vagrant vm by id.
-     * @param {String} id
-     */
-    static async getState(id) {
-        try {
-            let VMs = await vagrant.globalStatusAsync();
-            let VM = VMs.filter(VM => VM.id == id)[0];
-            if(!VM)
-                throw  `Cannot find machine: ${id}`;
-            return VM.state;
-        } catch (err) {
-            throw err;
-        }
-    }
-
-    /**
-     * get vagrant id of VMs by name
-     */
-    static async getVagrantIDByName(VMName) {
-        let VMs = await vagrant.globalStatusAsync();
-        let VM = VMs.filter(VM => VM.name == VMName)[0];
-
-        if(!VM)
-            throw  `Cannot find machine: ${VMName}`;
-        return VM.id;
-    }
-
-    /**
-     * It will ssh to the vagrant box
-     * @param {String} name
-     */
-    static async bakerSSH (name) {
-        try {
-            let id = await this.getVagrantIDByName(name);
-            try {
-                child_process.execSync(`vagrant ssh ${id}`, {stdio: ['inherit', 'inherit', 'ignore']});
-            } catch (err) {
-                throw `VM must be running to open SSH connection. Run \`baker status\` to check status of your VMs.`
-            }
-        } catch(err) {
-            throw err;
-        }
-    }
-
-
-    /**
      * Checks if ansible server is up, if not it starts the server
      * It will also copy new vm's ansible script to ~/baker/{name}/ in ansible server
      */
@@ -219,8 +197,9 @@ class Baker {
         let doc = yaml.safeLoad(await fs.readFileAsync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
 
         try {
-            let bakerVMID = await this.getVagrantIDByName('baker');
-            let state = await this.getState(bakerVMID);
+            // let bakerVMID = await VagrantProvider.getVagrantID('baker');
+            // let state = await this.getState(bakerVMID);
+            let state = await VagrantProvider.getState('baker');
             if (state === 'running') {
                 let ansibleSSHConfig = await this.getSSHConfig(machine);
                 await Ssh.copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig);
@@ -249,21 +228,6 @@ class Baker {
         }
     }
 
-    /**
-     * Private function
-     * Returns the path of the VM, undefined if VM doesn't exist
-     * @param {String} VMName
-     */
-    static async getVMPath(VMName){
-        let VMs = await vagrant.globalStatusAsync();
-        let VM = VMs.find(VM => VM.name === VMName);
-
-        if(VM)
-            return VM.cwd;
-        else
-            throw `Cannot find machine: ${VMName}`;
-    }
-
     static async getCWDBakerYML(){
         let cwd = path.resolve(process.cwd());
         let bakePath = path.resolve(cwd, 'baker.yml')
@@ -273,90 +237,6 @@ class Baker {
             return bakerYML;
         } else{
             return undefined;
-        }
-    }
-
-    /**
-     * Destroy VM
-     * @param {String} VMName
-     */
-    static async destroyVM (VMName) {
-        try {
-            let VMPath = await this.getVMPath(VMName);
-            let machine = vagrant.create({ cwd: VMPath });
-
-            try {
-                await machine.destroyAsync();
-            } catch (err){
-                throw `Failed to destroy machine ${VMName}`;
-            }
-        } catch (err) {
-            throw err;
-        }
-
-        return;
-    }
-
-    /**
-     * Prune
-     */
-    static async prune() {
-        try {
-            await vagrant.globalStatusAsync('--prune');
-            await this.status();
-            return;
-        } catch (err) {
-            throw err;
-        }
-    }
-
-    /**
-     * Shut down VM
-     * @param {String} id
-     */
-    static async haltVM (VMName, force=false) {
-        try {
-            let VMPath = await this.getVMPath(VMName);
-            let machine = vagrant.create({ cwd: VMPath });
-
-            try {
-                await machine.haltAsync();
-            } catch (err){
-                throw `Failed to shutdown machine ${VMName}`;
-            }
-        } catch (err) {
-            throw err;
-        }
-
-        return;
-    }
-
-    /**
-     * Start VM
-     * @param {String} name
-     */
-    static async upVM (VMName) {
-        try {
-            let VMPath = await this.getVMPath(VMName);
-            let machine = vagrant.create({ cwd: VMPath });
-            try {
-                await machine.upAsync();
-            } catch (err){
-                throw `Failed to start machine ${VMName}`;
-            }
-        } catch (err){
-            throw err;
-        }
-
-        return;
-    }
-
-    // TODO: This shouldn't have to be static
-    static async _ensureDir(path){
-        try {
-            await fs.ensureDir(path);
-        } catch (err) {
-            throw `could not create directory: ${path} \n${err}`;
         }
     }
 
@@ -380,8 +260,8 @@ class Baker {
             let ansibleSSHConfig = await Baker.getSSHConfig(ansibleVM);
 
             // ensure needed dir exist
-            await this._ensureDir(boxes);
-            await this._ensureDir(dockerHostPath);
+            await Utils._ensureDir(boxes);
+            await Utils._ensureDir(dockerHostPath);
 
             // always update vagrantfile
             let template = await fs.readFileAsync(path.join(configPath, './dockerHost/DockerVM.mustache'), 'utf8');
@@ -390,13 +270,13 @@ class Baker {
 
             let status;
             try{
-                await this.getVMPath('docker-srv')
-                status = await this.getState(await this.getVagrantIDByName('docker-srv'));
+                await VagrantProvider.getState('docker-srv')
+                status = await VagrantProvider.getState('docker-srv');
             } catch(err){
                 if (err == 'Cannot find machine: docker-srv') {
                     // Install baker-srv
-                    await this._ensureDir(boxes);
-                    await this._ensureDir(dockerHostPath);
+                    await Utils._ensureDir(boxes);
+                    await Utils._ensureDir(dockerHostPath);
 
                     await fs.copy(path.join(configPath, './dockerHost/dockerConfig.yml'), path.join(dockerHostPath, 'dockerConfig.yml'));
                     await fs.copy(path.join(configPath, './dockerHost/lxd-bridge'), path.join(dockerHostPath, 'lxd-bridge'));
@@ -437,12 +317,10 @@ class Baker {
         }
 
         let machine = vagrant.create({ cwd: ansible });
-        let bakerVMID;
         let bakerVMState;
 
         try {
-            bakerVMID = await this.getVagrantIDByName('baker');
-            bakerVMState = await this.getState(bakerVMID);
+            bakerVMState = await VagrantProvider.getState('baker');
             if(bakerVMState == 'running') return;
         } catch (err) {
             if (err === `Cannot find machine: baker`) {
@@ -478,7 +356,7 @@ class Baker {
      */
     static async reinstallAnsibleServer () {
         try {
-            await this.destroyVM('baker');
+            await VagrantProvider.delete('baker');
         } catch (err) {
             if (err != `Cannot find machine: baker`) {
                 throw err;
@@ -488,6 +366,7 @@ class Baker {
         return;
     }
 
+    // TODO: move to provider
     /**
      * Get ssh configurations
      * @param {Obj} machine
@@ -515,6 +394,7 @@ class Baker {
         }
     }
 
+    // also in provider.vagrant
     /**
      * Adds the host url to /etc/hosts
      *
@@ -585,10 +465,6 @@ class Baker {
         return vmSSHConfigUser;
     }
 
-    static async setKnownHosts (ip, sshConfig) {
-        return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," registerhost.yml -e "ip=${ip}" -c local`, sshConfig);
-    }
-
     // TODO: Temp: refactor to be able to use the docker bakelet instead
     static async installDocker(sshConfig) {
         return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," installDocker.yml -c local`, sshConfig, false);
@@ -644,10 +520,6 @@ class Baker {
         return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m npm -a "path=${packagejson}" -i baker_inventory`, ansibleSSHConfig, verbose);
     }
 
-    static async mkTemplatesDir (doc, ansibleSSHConfig) {
-        return Ssh.sshExec(`mkdir -p /home/vagrant/baker/${doc.name}/templates`, ansibleSSHConfig);
-    }
-
     static async runAnsibleTemplateCmd (doc, src, dest, variables, ansibleSSHConfig, verbose) {
         let flatVars = {};
         for( var i =0; i < variables.length; i++ )
@@ -660,114 +532,6 @@ class Baker {
         let extravars = JSON.stringify(flatVars);
         //let extravars = yaml.dump(variables);
         return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > template.args.json && ansible all -m template -a "src=${src} dest=${dest}" -e @template.args.json -i baker_inventory; rm -f template.args.json`, ansibleSSHConfig, verbose);
-    }
-
-    static async promptValue (propertyName, description, hidden=false) {
-        return new Promise((resolve, reject) => {
-            prompt.start();
-            prompt.get([{ name: propertyName, description: description, hidden:hidden }], function(
-                err,
-                result
-            ) {
-                if (err) {
-                    print.error(err);
-                }
-                //prompt.stop();
-                resolve(result[propertyName]);
-            });
-        });
-    }
-
-    /**
-     * Private function:
-     * Traverse yaml and do prompts
-     */
-    static async traverse(o) {
-        const stack = [{ obj: o, parent: null, parentKey: '' }];
-
-        while (stack.length) {
-            const s = stack.shift();
-            const obj = s.obj;
-            const parent = s.parent;
-            const parentKey = s.parentKey;
-
-            for (var i = 0; i < Object.keys(obj).length; i++) {
-                let key = Object.keys(obj)[i];
-
-                //await fn(key, obj[key], obj)
-
-                if (obj[key] instanceof Object) {
-                    stack.unshift({ obj: obj[key], parent: obj, parentKey: key });
-                }
-
-                if (key == 'prompt') {
-                    const input = await this.promptValue(parentKey, obj[key]);
-                    // Replace "prompt" with an value provided by user.
-                    parent[parentKey] = input;
-                }
-            }
-        }
-        return o;
-    }
-
-    static async initVagrantFile (vagrantFilePath, doc, template, scriptPath) {
-        if (doc.vm ) {
-            doc.vagrant = doc.vm;
-            delete doc.vm;
-        }
-        const vagrant = doc.vagrant;
-        await this.traverse(vagrant);
-        // Defaults
-        // vagrant.box = vagrant.box || "ubuntu/xenial64"
-        // TODO: Cleanup this mess
-        if (vagrant.box && (await this.boxes()).map(e=>e.name).includes(`${vagrant.box}.baker`)){
-            vagrant.box = vagrant.box + '.baker';
-        }
-        else if(vagrant.box && (await this.boxes()).map(e=>e.name).includes(`${vagrant.box}`)){
-            vagrant.box = vagrant.box;
-        }
-        else{
-            vagrant.box = "ubuntu/xenial64";
-        }
-        vagrant.memory = vagrant.memory || "1024"
-
-        // Adaptor pattern: Support baker2 and baker format
-        let network = doc.vagrant.network || [];
-        if( vagrant.ip )
-        {
-            network = [...network, ...[{private_network: {ip: vagrant.ip}}]];
-        }
-        if( vagrant.ports )
-        {
-            // ports: '8000, 9000,  1000:3000'
-            let ports = vagrant.ports.toString().trim().split(/\s*,\s*/g);
-            for( var port of ports  )
-            {
-                let a = port.trim().split(/\s*:\s*/g);
-                let guest = a[0];
-                let host  = a[1] || a[0]; // if undefined use same as guest port for host port.
-                network = [...network, ...[{forwarded_port: {guest: guest, host: host}}]];
-            }
-        }
-        vagrant.network = network;
-
-        let syncFolders = doc.vagrant.synced_folders || [];
-        doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
-        const output = mustache.render(template, doc);
-        await fs.writeFileAsync(vagrantFilePath, output);
-    }
-
-    static async status () {
-        try {
-            let VMs = await vagrant.globalStatusAsync();
-            // Only showing baker VMs
-            VMs = VMs.filter(VM => VM.cwd.includes('.baker/'));
-            console.table('\nBaker status: ', VMs);
-        } catch (err) {
-            throw err
-        }
-
-        return;
     }
 
     static async info (envName, provider, verbose) {
@@ -857,7 +621,7 @@ class Baker {
 
         // prompt for passwords
         if( doc.vars ) {
-            await this.traverse(doc.vars);
+            await Utils.traverse(doc.vars);
         }
 
         // let vmSSHConfig = await this.getSSHConfig(machine);
@@ -916,124 +680,9 @@ class Baker {
         }
     }
 
-    static async bake (ansibleSSHConfig, ansibleVM, scriptPath) {
-        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-
-        let dir = path.join(boxes, doc.name);
-        let template = await fs.readFile(path.join(configPath, './BaseVM.mustache'), 'utf8');
-
-        try {
-            await fs.ensureDir(dir);
-        } catch (err) {
-            throw `Creating directory failed: ${dir}`;
-        }
-
-        let machine = vagrant.create({ cwd: dir });
-
-
-        await this.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
-
-        try {
-
-            await machine.upAsync();
-
-            let sshConfig = await this.getSSHConfig(machine);
-            let ip = doc.vagrant.network.find((item)=>item.private_network!=undefined).private_network.ip;
-            await Ssh.copyFromHostToVM(
-                sshConfig.private_key,
-                `/home/vagrant/baker/${doc.name}/${ip}_rsa`,
-                ansibleSSHConfig
-            );
-
-            await this.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig)
-            await this.setKnownHosts(ip, ansibleSSHConfig);
-
-            if(doc.bake && doc.bake.ansible && doc.bake.ansible.playbooks){
-                print.info('Running your Ansible playbooks.', 1);
-
-                let vmSSHConfig = await this.getSSHConfig(machine);
-
-                for( var i = 0; i < doc.bake.ansible.playbooks.length; i++ ) {
-                    var cmd = doc.bake.ansible.playbooks[i];
-                    await this.runAnsiblePlaybook(
-                        doc, cmd, ansibleSSHConfig, false, {}
-                    )
-                }
-            }
-
-            if( doc.bake && doc.bake.vault && doc.bake.vault.checkout && doc.bake.vault.checkout.key) {
-                print.info('Checking out keys from vault.', 1);
-                let vaultFile = `/home/vagrant/baker/${doc.name}/baker-vault.yml`;
-                await Ssh.copyFromHostToVM(
-                    path.resolve( scriptPath, doc.bake.vault.source ),
-                    vaultFile,
-                    ansibleSSHConfig
-                );
-                // prompt vault pass
-                let pass = await this.promptValue('pass', `vault pass for ${doc.bake.vault.source}`, hidden=true);
-                // ansible-vault to checkout key and copy to dest.
-                await this.runAnsibleVault(doc, pass, doc.bake.vault.checkout.dest, ansibleSSHConfig)
-            }
-
-        } catch (err) {
-            throw err;
-        }
-    }
-
-    static async bake2 (ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
-        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-
-        let dir = path.join(boxes, doc.name);
-        let template = await fs.readFile(path.join(configPath, './BaseVM.mustache'), 'utf8');
-
-        try {
-            await fs.ensureDir(dir);
-        } catch (err) {
-            throw `Creating directory failed: ${dir}`;
-        }
-
-        let machine = vagrant.create({ cwd: dir });
-
-        await this.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
-
-        try {
-
-            machine.on('up-progress', function(data) {
-                //console.log(machine, progress, rate, remaining);
-                if( verbose ) print.info(data);
-            });
-
-            await spinner.spinPromise(machine.upAsync(), `Provisioning VM in VirtualBox`, spinnerDot);
-
-            let sshConfig = await this.getSSHConfig(machine);
-
-            let ip = doc.vagrant.ip;
-            await Ssh.copyFromHostToVM(
-                sshConfig.private_key,
-                `/home/vagrant/baker/${doc.name}/${ip}_rsa`,
-                ansibleSSHConfig
-            );
-
-            await this.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig)
-            await this.setKnownHosts(ip, ansibleSSHConfig);
-            await this.mkTemplatesDir(doc, ansibleSSHConfig);
-
-            // prompt for passwords
-            if( doc.vars )
-            {
-                await this.traverse(doc.vars);
-            }
-
-            // let vmSSHConfig = await this.getSSHConfig(machine);
-
-            // Installing stuff.
-            let resolveB = require('../bakelets/resolve');
-            await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose)
-
-        } catch (err) {
-            console.log(err.stack);
-            throw err;
-        }
+    static async imagesDocker(){
+        const dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
+        console.log(await dockerProvider.images());
     }
 
     static async bakeRemote (ansibleSSHConfig, remoteIP, remoteKey, remoteUser, scriptPath, verbose) {
@@ -1054,12 +703,12 @@ class Baker {
                 ansibleSSHConfig
             );
             await this.addToAnsibleHosts(vmSSHConfig.ip, doc.name + '-cloud', ansibleSSHConfig, vmSSHConfig);
-            await this.setKnownHosts(vmSSHConfig.ip, ansibleSSHConfig);
-            await this.mkTemplatesDir(doc, ansibleSSHConfig);
+            await this.provider.setKnownHosts(vmSSHConfig.ip, ansibleSSHConfig);
+            await this.provider.mkTemplatesDir(doc, ansibleSSHConfig);
 
             // prompt for passwords
             if( doc.vars ) {
-                await this.traverse(doc.vars);
+                await Utils.traverse(doc.vars);
             }
 
             // Installing stuff.
@@ -1077,7 +726,7 @@ class Baker {
         // prompt for passwords
         if( doc.vars )
         {
-            await this.traverse(doc.vars);
+            await Utils.traverse(doc.vars);
         }
 
         let getClusterLength = function (baseName,cluster)
@@ -1135,7 +784,7 @@ class Baker {
             }
         }
 
-        await this.mkTemplatesDir(doc, ansibleSSHConfig);
+        await this.provider.mkTemplatesDir(doc, ansibleSSHConfig);
 
         let provider = null;
         let dir = path.join(boxes, doc.name);
@@ -1198,7 +847,7 @@ class Baker {
                 `/home/vagrant/baker/${doc.name}/${ip}_rsa`,
                 ansibleSSHConfig
             );
-            await this.setKnownHosts(ip, ansibleSSHConfig);
+            await this.provider.setKnownHosts(ip, ansibleSSHConfig);
             await this.addIpToAnsibleHosts(ip, node.name, ansibleSSHConfig);
 
             console.log( `${nodeList[i].ip} ${nodeList[i].user} ${vmSSHConfig.private_key}`);
@@ -1277,7 +926,7 @@ class Baker {
             // if box is specified in baker.yml and this box exists, then use it => otherwise bake it
             if(doc.vagrant.box && (await this.bakerBoxes(false)).map(e=>e.name).includes(`${doc.vagrant.box}`)){
 
-                await this.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
+                await this.provider.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
 
                 let machine = vagrant.create({ cwd: dir });
                 machine.on('up-progress', function(data) {

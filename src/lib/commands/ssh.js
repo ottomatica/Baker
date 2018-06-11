@@ -3,6 +3,7 @@ const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
+const VagrantProvider = require('../modules/providers/vagrant');
 
 exports.command = 'ssh [VMName]';
 exports.desc = 'ssh to a VM';
@@ -21,6 +22,10 @@ exports.builder = (yargs) => {
 exports.handler = async function(argv) {
     let { VMName } = argv;
 
+    //TODO: if vagrant:
+    const provider = new VagrantProvider();
+    const BakerObj = new Baker(provider);
+
     try {
         if(!VMName){
             let cwdVM = (await Baker.getCWDBakerYML());
@@ -32,7 +37,7 @@ exports.handler = async function(argv) {
             }
         }
 
-        await Spinner.spinPromise(Baker.bakerSSH(VMName), `SSHing to ${VMName}`, spinnerDot);
+        await Spinner.spinPromise(BakerObj.ssh(VMName), `SSHing to ${VMName}`, spinnerDot);
     } catch (err) {
         Print.error(err);
     }

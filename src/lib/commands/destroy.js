@@ -3,6 +3,7 @@ const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
+const VagrantProvider = require('../modules/providers/vagrant');
 
 exports.command = 'destroy [VMName]';
 exports.desc = `remove a VM and it's associated files`;
@@ -20,6 +21,10 @@ exports.builder = (yargs) => {
 exports.handler = async function(argv) {
     let { VMName } = argv;
 
+    //TODO: if vagrant:
+    const provider = new VagrantProvider();
+    const BakerObj = new Baker(provider);
+
     try {
         if(!VMName){
             let cwdVM = (await Baker.getCWDBakerYML());
@@ -31,7 +36,7 @@ exports.handler = async function(argv) {
             }
         }
 
-        await Spinner.spinPromise(Baker.destroyVM(VMName), `Destroying VM: ${VMName}`, spinnerDot);
+        await Spinner.spinPromise(BakerObj.delete(VMName), `Destroying VM: ${VMName}`, spinnerDot);
     } catch (err) {
         Print.error(err);
     }

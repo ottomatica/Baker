@@ -3,6 +3,7 @@ const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
+const VagrantProvider = require('../modules/providers/vagrant');
 
 exports.command = 'halt [VMName]';
 exports.desc = `shut down a VM`;
@@ -30,6 +31,10 @@ exports.builder = (yargs) => {
 exports.handler = async function(argv) {
     let { VMName, force } = argv;
 
+    //TODO: if vagrant:
+    const provider = new VagrantProvider();
+    const BakerObj = new Baker(provider);
+
     try {
         if(!VMName){
             let cwdVM = (await Baker.getCWDBakerYML());
@@ -41,7 +46,7 @@ exports.handler = async function(argv) {
             }
         }
 
-        await Spinner.spinPromise(Baker.haltVM(VMName, force), `Stopping VM: ${VMName}`, spinnerDot);
+        await Spinner.spinPromise(BakerObj.stop(VMName, force), `Stopping VM: ${VMName}`, spinnerDot);
     } catch(err) {
         Print.error(err);
     }

@@ -1,5 +1,10 @@
+const Promise = require('bluebird');
+const fs      = Promise.promisifyAll(require('fs-extra'));
+const ping    = require('ping')
+const prompt  = require('prompt');
+
 class Utils {
-    constructor () {}
+    constructor() {}
 
     /**
      * Private function:
@@ -33,8 +38,7 @@ class Utils {
         return o;
     }
 
-
-    static async promptValue (propertyName, description, hidden=false) {
+    static async promptValue(propertyName, description, hidden=false) {
         return new Promise((resolve, reject) => {
             prompt.start();
             prompt.get([{ name: propertyName, description: description, hidden:hidden }], function(
@@ -49,6 +53,19 @@ class Utils {
             });
         });
     }
+
+    static async hostIsAccessible(host) {
+        return (await ping.promise.probe(host, {extra: ['-i 2']})).alive;
+    }
+
+    static async _ensureDir(path) {
+        try {
+            await fs.ensureDir(path);
+        } catch (err) {
+            throw `could not create directory: ${path} \n${err}`;
+        }
+    }
+
 }
 
 module.exports = Utils;
