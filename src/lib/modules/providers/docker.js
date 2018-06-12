@@ -1,14 +1,29 @@
-const path = require('path');
-const stream        = require('stream');
-const Docker = require('dockerode');
-const homedir       = require('os').homedir;
-const slash = require('slash');
-const jsonfile = require('jsonfile')
+const Promise         = require('bluebird');
+const Baker           = require('../baker');
+const child_process   = Promise.promisifyAll(require('child_process'));
+const conf            = require('../configstore');
+const Docker          = require('dockerode');
+const fs              = Promise.promisifyAll(require('fs-extra'));
+const jsonfile        = require('jsonfile')
+const path            = require('path');
+const print           = require('../print');
+const Provider        = require('./provider');
+const slash           = require('slash');
+const spinner         = require('../spinner');
+const spinnerDot      = conf.get('spinnerDot');
+const Ssh             = require('../ssh');
+const stream          = require('stream');
+const Utils           = require('../utils/utils');
+const vagrant         = Promise.promisifyAll(require('node-vagrant'));
+const VagrantProvider = require('./vagrant');
+const yaml            = require('js-yaml');
 
-const { environmentIndexPath } = require('../../../global-vars');
+const { environmentIndexPath, ansible, bakeletsPath, remotesPath, boxes } = require('../../../global-vars');
 
-class Docker_Provider {
+class Docker_Provider extends Provider {
     constructor(dockerHost) {
+        super();
+        this.vagrantProvider = new VagrantProvider();
         // https://stackoverflow.com/questions/26561963/how-to-detect-a-docker-daemon-port
 
         //this.docker = new Docker({socketPath: '/var/run/docker.sock'});
@@ -35,8 +50,8 @@ class Docker_Provider {
         });
     }
 
-    async images(){
-        return await this.docker.listImages();
+    async images() {
+        console.log(await this.docker.listImages());
     }
 
     async pull(imageName)
@@ -171,7 +186,7 @@ class Docker_Provider {
      * private: removes a container
      * @param {Container} container container to be removed
      */
-    async _removeContainer (container) {
+    async _deleteContainer(container) {
         return await container.remove({force: true});
     }
 
@@ -179,10 +194,10 @@ class Docker_Provider {
      * removs a container by name
      * @param {String} containerName name of container to be removed
      */
-    async remove (containerName) {
+    async delete(containerName) {
         let container = await this.getContainerByName(containerName);
         if(container)
-            return await this._removeContainer(container);
+            return await this._deleteContainer(container);
         else
             throw `container doesn't exist: ${containerName}`;
     }
@@ -190,11 +205,131 @@ class Docker_Provider {
     /**
      * stops all the containers on the host
      */
-    async stopall(){
+    async stopall() {
         let containers = await this.docker.listContainers();
         containers.forEach((containerInfo) => {
             this.docker.getContainer(containerInfo.Id).stop();
         });
+    }
+
+    /**
+     * ssh to docker container
+     * @param {String} scriptPath path to the baker.yml file
+     */
+    async ssh(name) {
+        try {
+            const dockerHostName = 'docker-srv';
+            const dockerHostPath = path.join(boxes, dockerHostName);
+            let machine = vagrant.create({
+                cwd: dockerHostPath
+            });
+            let privateKeyPath = (await this.vagrantProvider.getSSHConfig(machine)).private_key;
+
+            try {
+                child_process.execSync(`ssh -tt -i ${privateKeyPath} -o IdentitiesOnly=yes vagrant@192.168.252.251 docker exec -it ${name} /bin/bash`, {
+                    stdio: ['inherit', 'inherit', 'inherit']
+                });
+            } catch (err) {
+                // throw `VM must be running to open SSH connection. Run \`baker status\` to check status of your VMs.`
+            }
+        } catch (err) {
+            throw err;
+        }
+    }
+
+    async list() {
+        console.log(await this.info());
+    }
+
+    async runDockerBootstrap(sshConfig, containerName) {
+        return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i ./${containerName}/baker_inventory dockerBootstrap.yml`, sshConfig, true);
+    }
+
+    async start(scriptPath) {
+        // Make sure Baker control machine is running
+        const Baker = require('../baker'); // TODO: Weird, why can't just import this outside?
+
+        let ansibleVM = await spinner.spinPromise(Baker.prepareAnsibleServer(scriptPath), 'Preparing Baker control machine', spinnerDot);
+        let ansibleSSHConfig = await this.vagrantProvider.getSSHConfig(ansibleVM);
+        // Make sure Docker VM is running
+        await spinner.spinPromise(Baker.prepareDockerVM(), `Preparing Docker host`, spinnerDot);
+
+        // Installing Docker
+        // let resolveB = require('../bakelets/resolve');
+        // await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose)
+
+        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
+
+        let image;
+        if(doc.container)
+            image = doc.container.image || 'ubuntu:latest'
+        else {
+            print.error('To use Docker commands, you need to add `container` specifiction in your baker.yml');
+            process.exit(1);
+        }
+
+        await this.pull(image);
+
+        // Check if a contaienr with this name exists and do something based on its state
+        // let existingContainers = await dockerProvider.info();
+        // let sameNameContainer = existingContainers.filter(c => c.name == doc.name)[0];
+        // if (sameNameContainer && sameNameContainer.state == 'stopped') {
+        // }
+        try {
+            let sameNameContainer = await this.info(doc.name);
+            if(sameNameContainer.state == 'stopped')
+                await this.delete(doc.name);
+            else
+                throw  `the container name ${doc.name} is already in use by another running container.`
+
+        } catch (error) {
+            if(error != `container doesn't exist: ${doc.name}`)
+                throw error;
+        }
+
+        let exposedPorts = [];
+        if( doc.container.ports ) {
+            // ports: '8000, 9000,  1000:3000'
+            let ports = doc.container.ports.toString().trim().split(/\s*,\s*/g);
+            for( var port of ports  ) {
+                let p = port.trim().split(/\s*:\s*/g);
+                let guest = p[0];
+                // ignoring host port for now. only exposing the guest port
+                // let host  = a[1] || a[0];
+                exposedPorts.push(guest);
+            }
+        }
+
+        let container = await this.init(image, [], doc.name, doc.container.ip, scriptPath, exposedPorts);
+        await this.startContainer(container);
+
+        // TODO: root is hard coded
+        await this.addToAnsibleHostsDocker(doc.name, ansibleSSHConfig, 'root')
+
+        // prompt for passwords
+        if( doc.vars ) {
+            await Utils.traverse(doc.vars);
+        }
+
+        // let vmSSHConfig = await this.getSSHConfig(machine);
+    }
+
+    async bake(scriptPath) {
+        // Start the container
+        await this.start(scriptPath);
+
+        let ansibleVM = vagrant.create({ cwd: ansible });
+        let ansibleSSHConfig = await this.vagrantProvider.getSSHConfig(ansibleVM);
+
+        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
+
+        // run dockerBootstrap.yml
+        // TODO:
+        await this.runDockerBootstrap(ansibleSSHConfig, doc.name);
+
+        // Installing stuff
+        let resolveB = require('../../bakelets/resolve');
+        await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, true);
     }
 
     /**
@@ -355,6 +490,22 @@ class Docker_Provider {
             throw `container with this name doesn't exist.`
         }
     }
+
+    // TODO: could be private?
+    /**
+     * Adds the host url to /etc/hosts
+     *
+     * @param {String} ip
+     * @param {String} name
+     * @param {Object} sshConfig
+     */
+    async addToAnsibleHostsDocker (name, ansibleSSHConfig, user){
+        // TODO: Consider also specifying ansible_connection=${} to support containers etc.
+        // TODO: Callers of this can be refactored to into two methods, below:
+        // return Ssh.sshExec(`mkdir -p /home/vagrant/baker/${name}/ && echo "${name}\tansible_connection=docker\tansible_user=${user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i /home/vagrant/baker/${name}/baker_inventory -m lineinfile -a 'dest=/etc/environments line="DOCKER_HOST=tcp://192.168.252.251:2375"'`, ansibleSSHConfig);
+        return Ssh.sshExec(`mkdir -p /home/vagrant/baker/${name}/ && echo "${name}\tansible_connection=docker\tansible_user=${user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all  -i "localhost," -m lineinfile -a 'dest=/etc/environment line="DOCKER_HOST=tcp://192.168.252.251:2375"' -c local --become`, ansibleSSHConfig);
+    }
+
 }
 
 module.exports = Docker_Provider;

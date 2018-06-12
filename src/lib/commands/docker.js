@@ -1,9 +1,12 @@
-const Baker           = require('../modules/baker');
-const conf            = require('../../lib/modules/configstore');
-const Print           = require('../modules/print');
-const Spinner         = require('../modules/spinner');
-
-const spinnerDot = conf.get('spinnerDot');
+const Baker          = require('../modules/baker');
+const conf           = require('../../lib/modules/configstore');
+const DockerProvider = require('../modules/providers/docker');
+const fs             = require('fs-extra');
+const path           = require('path');
+const Print          = require('../modules/print');
+const Spinner        = require('../modules/spinner');
+const spinnerDot     = conf.get('spinnerDot');
+const yaml           = require('js-yaml');
 
 exports.command = 'docker [command]';
 exports.desc    = 'Spin up docker containers';
@@ -31,41 +34,46 @@ exports.builder = (yargs) => {
 exports.handler = async function(argv) {
     const { local, repo, verbose } = argv;
 
+    const dockerProvider = new DockerProvider({host: '192.168.252.251', port: '2375', protocol: 'http'});
+    const BakerObj = new Baker(dockerProvider);
+
     // Check if command is valid
     if(!['bake', 'start', 'stop', 'destroy', 'list', 'ssh', 'images'].includes(argv.command)) {
         Print.error(`invalid command: ${argv.command}`);
         process.exit(1);
     }
 
-
     let bakePath = local || process.cwd();
+    let doc = yaml.safeLoad(await fs.readFile(path.join(bakePath, 'baker.yml'), 'utf8'));
+    let name = doc.name;
 
     switch (argv.command) {
         case 'bake':
-            await Baker.bakeDocker(bakePath);
+            await BakerObj.bake(bakePath);
             break;
 
         case 'start':
-            await Baker.startDocker(bakePath);
+            console.log('TODO: just starting a VM only gives you a blank container without running any bakelets')
+            await BakerObj.start(bakePath);
             break;
 
         case 'stop':
-            await Spinner.spinPromise(Baker.stopDocker(bakePath), `Stopping Docker container`, spinnerDot);
+            await Spinner.spinPromise(BakerObj.stop(name), `Stopping Docker container`, spinnerDot);
             break;
 
         case 'destroy':
-            await Spinner.spinPromise(Baker.removeDocker(bakePath), `Removing Docker container`, spinnerDot);
+            await Spinner.spinPromise(BakerObj.delete(name), `Removing Docker container`, spinnerDot);
             break;
 
         case 'list':
-            console.log(await Baker.listDocker());
+            await BakerObj.list();
             break;
 
         case 'ssh':
-            await Baker.SSHDocker(bakePath);
+            await BakerObj.ssh(name);
 
         case 'images':
-            await Baker.imagesDocker();
+            await BakerObj.images();
 
         default:
             break;

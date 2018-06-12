@@ -49,12 +49,16 @@ class Baker {
         await this.provider.delete(name);
     }
 
-    async bake(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
-        await this.provider.bake(ansibleSSHConfig, ansibleVM, scriptPath, verbose);
+    async bake(scriptPath, ansibleSSHConfig, ansibleVM, verbose) {
+        await this.provider.bake(scriptPath, ansibleSSHConfig, ansibleVM, verbose);
     }
 
     async list() {
         await this.provider.list();
+    }
+
+    async images(){
+        await this.provider.images();
     }
 
     static async init() {
@@ -192,7 +196,7 @@ class Baker {
      * Checks if ansible server is up, if not it starts the server
      * It will also copy new vm's ansible script to ~/baker/{name}/ in ansible server
      */
-    static async prepareAnsibleServer (bakerScriptPath) {
+    static async prepareAnsibleServer(bakerScriptPath) {
         let machine = vagrant.create({ cwd: ansible });
         let doc = yaml.safeLoad(await fs.readFileAsync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
 
@@ -408,22 +412,6 @@ class Baker {
         return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
     }
 
-
-    /**
-     * Adds the host url to /etc/hosts
-     *
-     * @param {String} ip
-     * @param {String} name
-     * @param {Object} sshConfig
-     */
-    static async addToAnsibleHostsDocker (name, ansibleSSHConfig, user){
-        // TODO: Consider also specifying ansible_connection=${} to support containers etc.
-        // TODO: Callers of this can be refactored to into two methods, below:
-        // return Ssh.sshExec(`mkdir -p /home/vagrant/baker/${name}/ && echo "${name}\tansible_connection=docker\tansible_user=${user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i /home/vagrant/baker/${name}/baker_inventory -m lineinfile -a 'dest=/etc/environments line="DOCKER_HOST=tcp://192.168.252.251:2375"'`, ansibleSSHConfig);
-        return Ssh.sshExec(`mkdir -p /home/vagrant/baker/${name}/ && echo "${name}\tansible_connection=docker\tansible_user=${user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all  -i "localhost," -m lineinfile -a 'dest=/etc/environment line="DOCKER_HOST=tcp://192.168.252.251:2375"' -c local --become`, ansibleSSHConfig);
-    }
-
-
     /**
      * Adds cluster to baker_inventory
      *
@@ -457,21 +445,9 @@ class Baker {
         return Ssh.sshExec(`ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
     }
 
-    static async retrieveSSHConfigByName (name) {
-        let dir = path.join(boxes, name);
-        let vm = vagrant.create({ cwd: dir });
-        let vmSSHConfigUser = await this.getSSHConfig(vm);
-
-        return vmSSHConfigUser;
-    }
-
     // TODO: Temp: refactor to be able to use the docker bakelet instead
     static async installDocker(sshConfig) {
         return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," installDocker.yml -c local`, sshConfig, false);
-    }
-
-    static async runDockerBootstrap(sshConfig, containerName) {
-        return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i ./${containerName}/baker_inventory dockerBootstrap.yml`, sshConfig, true);
     }
 
     static async runAnsibleVault (doc, pass, dest, ansibleSSHConfig) {
@@ -552,137 +528,6 @@ class Baker {
         }
 
         return;
-    }
-
-    static async listDocker() {
-        const dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
-        return await dockerProvider.info();
-    }
-
-    static async startDocker(scriptPath) {
-        // Make sure Baker control machine is running
-        let ansibleVM = await spinner.spinPromise(this.prepareAnsibleServer(scriptPath), 'Preparing Baker control machine', spinnerDot);
-        let ansibleSSHConfig = await Baker.getSSHConfig(ansibleVM);
-        // Make sure Docker VM is running
-        await spinner.spinPromise(this.prepareDockerVM(), `Preparing Docker host`, spinnerDot);
-
-        // Installing Docker
-        // let resolveB = require('../bakelets/resolve');
-        // await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose)
-
-        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-
-        const dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
-        let image;
-        if(doc.container)
-            image = doc.container.image || 'ubuntu:latest'
-        else {
-            print.error('To use Docker commands, you need to add `container` specifiction in your baker.yml');
-            process.exit(1);
-        }
-
-        await dockerProvider.pull(image);
-
-        // Check if a contaienr with this name exists and do something based on its state
-        // let existingContainers = await dockerProvider.info();
-        // let sameNameContainer = existingContainers.filter(c => c.name == doc.name)[0];
-        // if (sameNameContainer && sameNameContainer.state == 'stopped') {
-        // }
-        try {
-            let sameNameContainer = await dockerProvider.info(doc.name);
-            if(sameNameContainer.state == 'stopped')
-                await dockerProvider.remove(doc.name);
-            else
-                throw  `the container name ${doc.name} is already in use by another running container.`
-
-        } catch (error) {
-            if(error != `container doesn't exist: ${doc.name}`)
-                throw error;
-        }
-
-        let exposedPorts = [];
-        if( doc.container.ports ) {
-            // ports: '8000, 9000,  1000:3000'
-            let ports = doc.container.ports.toString().trim().split(/\s*,\s*/g);
-            for( var port of ports  ) {
-                let p = port.trim().split(/\s*:\s*/g);
-                let guest = p[0];
-                // ignoring host port for now. only exposing the guest port
-                // let host  = a[1] || a[0];
-                exposedPorts.push(guest);
-            }
-        }
-
-        let container = await dockerProvider.init(image, [], doc.name, doc.container.ip, scriptPath, exposedPorts);
-        await dockerProvider.startContainer(container);
-
-        // TODO: root is hard coded
-        await this.addToAnsibleHostsDocker(doc.name, ansibleSSHConfig, 'root')
-
-        // prompt for passwords
-        if( doc.vars ) {
-            await Utils.traverse(doc.vars);
-        }
-
-        // let vmSSHConfig = await this.getSSHConfig(machine);
-    }
-
-    static async bakeDocker(scriptPath) {
-        // Start the container
-        await this.startDocker(scriptPath);
-
-        let ansibleVM = vagrant.create({ cwd: ansible });
-        let ansibleSSHConfig = await Baker.getSSHConfig(ansibleVM);
-
-        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-
-        // run dockerBootstrap.yml
-        // TODO:
-        await this.runDockerBootstrap(ansibleSSHConfig, doc.name);
-
-        // Installing stuff
-        let resolveB = require('../bakelets/resolve');
-        await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, true);
-    }
-
-    static async stopDocker(scriptPath) {
-        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-        const dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
-        await dockerProvider.stop(doc.name);
-    }
-
-    static async removeDocker(scriptPath) {
-        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-        const dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
-        await dockerProvider.remove(doc.name);
-    }
-
-    /**
-     * ssh to docker container
-     * @param {String} scriptPath path to the baker.yml file
-     */
-    static async SSHDocker (scriptPath) {
-        try {
-            let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-
-            const dockerHostName = 'docker-srv';
-            const dockerHostPath = path.join(boxes, dockerHostName);
-            let machine = vagrant.create({ cwd: dockerHostPath });
-            let privateKeyPath = (await this.getSSHConfig(machine)).private_key;
-
-            try {
-                child_process.execSync(`ssh -tt -i ${privateKeyPath} -o IdentitiesOnly=yes vagrant@192.168.252.251 docker exec -it ${doc.name} /bin/bash`, {stdio: ['inherit', 'inherit', 'inherit']});
-            } catch (err) {
-                // throw `VM must be running to open SSH connection. Run \`baker status\` to check status of your VMs.`
-            }
-        } catch(err) {
-            throw err;
-        }
-    }
-
-    static async imagesDocker(){
-        const dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
-        console.log(await dockerProvider.images());
     }
 
     static async bakeRemote (ansibleSSHConfig, remoteIP, remoteKey, remoteUser, scriptPath, verbose) {
@@ -866,84 +711,6 @@ class Baker {
 
     }
 
-    static async package (VMName, verbose) {
-        let dir = path.join(boxes, VMName);
-        await child_process.execAsync(`cd ${dir} && vagrant package --output ${path.join(process.cwd(), VMName + '.box')}`, {stdio: ['inherit', 'inherit', 'ignore']});
-    }
-
-
-
-    static async import (box, name, verbose) {
-        let boxName = name ? name : path.basename(box).split('.')[0];
-        await vagrant.boxAddAsync(path.join(process.cwd(), box), ['--name', boxName + '.baker'])
-        // await child_process.execAsync(`vagrant box add ${boxName}.baker ${path.join(process.cwd(), box)}`, {stdio: ['inherit', 'inherit', 'ignore']});
-    }
-
-    static async boxes () {
-        try {
-            let boxes = await vagrant.boxListAsync([]);
-            delete boxes.version;
-            return boxes;
-        } catch (err) {
-            throw err
-        }
-    }
-
-    static async bakerBoxes (verbose=true) {
-        try {
-            let boxes = await this.boxes();
-            let bakerBoxes = boxes.filter(box => box.name.match(/.baker$/));
-            // Hide .baker from the end before printing
-            bakerBoxes.forEach(box => {
-                box.name = box.name.split('.')[0];
-            })
-
-            if(verbose){
-                if(bakerBoxes == [])
-                    print.info(`\nYou currently don't have any boxes.`)
-                else
-                    console.table('\nBaker boxes: ', bakerBoxes);
-            }
-            return bakerBoxes;
-        } catch (err) {
-            throw err
-        }
-    }
-
-    static async bakeBox (ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
-        try {
-            let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-
-            let dir = path.join(boxes, doc.name);
-            try {
-                await fs.ensureDir(dir);
-            } catch (err) {
-                throw `Creating directory failed: ${dir}`;
-            }
-
-            let template = await fs.readFile(path.join(configPath, './BaseVM.mustache'), 'utf8');
-
-            // if box is specified in baker.yml and this box exists, then use it => otherwise bake it
-            if(doc.vagrant.box && (await this.bakerBoxes(false)).map(e=>e.name).includes(`${doc.vagrant.box}`)){
-
-                await this.provider.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
-
-                let machine = vagrant.create({ cwd: dir });
-                machine.on('up-progress', function(data) {
-                    if( verbose ) print.info(data);
-                });
-                await spinner.spinPromise(machine.upAsync(), `Starting VM`, spinnerDot);
-            }
-            else {
-                await this.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
-            }
-
-        } catch (err) {
-            throw err;
-        }
-
-        return;
-    }
 }
 
 module.exports = Baker;
