@@ -1,10 +1,13 @@
 const Baker          = require('../modules/baker');
 const conf           = require('../../lib/modules/configstore');
+const DockerProvider = require('../modules/providers/docker');
+const fs             = require('fs-extra');
 const Git            = require('../modules/utils/git');
 const path           = require('path');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const VagrantProvider = require('../modules/providers/vagrant');
+const yaml           = require('js-yaml');
 
 const spinnerDot = conf.get('spinnerDot');
 
@@ -65,10 +68,6 @@ exports.builder = (yargs) => {
 exports.handler = async function(argv) {
     const { local, repo, box, remote, remote_key, remote_user, verbose } = argv;
 
-    //TODO: if vagrant:
-    const provider = new VagrantProvider();
-    const BakerObj = new Baker(provider);
-
     try{
         let ansibleVM;
         let bakePath;
@@ -95,6 +94,18 @@ exports.handler = async function(argv) {
         }
 
         //let validation = await Spinner.spinPromise(Validator.validateBakerScript(bakePath), 'Validating baker.yml', spinnerDot);
+        let doc = yaml.safeLoad(await fs.readFile(path.join(bakePath, 'baker.yml'), 'utf8'));
+        let envType = doc.container ? 'container' : doc.vm || doc.vagrant ? 'vm' : 'other';
+
+        let provider = null;
+        if(envType === 'container')
+            provider = new DockerProvider({host: '192.168.252.251', port: '2375', protocol: 'http'});
+        else if(envType === 'vm')
+            provider = new VagrantProvider();
+        else
+            console.error('This command only supports VM and container environments');
+
+        let BakerObj = new Baker(provider);
 
         try
         {
