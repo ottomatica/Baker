@@ -3,9 +3,9 @@ const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
-const VagrantProvider = require('../modules/providers/vagrant');
+const Utils          = require('../modules/utils/utils');
 
-exports.command = 'halt [VMName]';
+exports.command = ['stop [VMName]', 'halt [VMName]'];
 exports.desc = `shut down a VM`;
 
 exports.builder = (yargs) => {
@@ -13,10 +13,12 @@ exports.builder = (yargs) => {
         .example(`$0 halt`, `Halts the VM build from baker.yml of current directory`)
         .example(`$0 halt baker-test`, `Halts baker-test VM`);
 
-    yargs.positional('VMName', {
-            describe: 'Name of the VM to be halted',
-            type: 'string'
-        });
+    // TODO: bakePath is required for finding the envType.
+    // for now assuming the command is executed in same dir as baker.yml
+    // yargs.positional('envName', {
+    //         describe: 'Name of the environment to stop',
+    //         type: 'string'
+    //     });
 
     yargs.options({
             force: {
@@ -29,24 +31,23 @@ exports.builder = (yargs) => {
 }
 
 exports.handler = async function(argv) {
-    let { VMName, force } = argv;
-
-    //TODO: if vagrant:
-    const provider = new VagrantProvider();
-    const BakerObj = new Baker(provider);
+    let { envName, force } = argv;
 
     try {
-        if(!VMName){
-            let cwdVM = (await Baker.getCWDBakerYML());
-            if(cwdVM)
-                VMName = (await Baker.getCWDBakerYML()).name;
-            else {
-                Print.error(`Couldn't find baker.yml in cwd. Run the command in a directory with baker.yml or specify a VMName.`);
-                process.exit(1);
-            }
-        }
+        // if(!envName){
+        //     let cwdVM = (await Baker.getCWDBakerYML());
+        //     if(cwdVM)
+        //         envName = (await Baker.getCWDBakerYML()).name;
+        //     else {
+        //         Print.error(`Couldn't find baker.yml in cwd. Run the command in a directory with baker.yml or specify a VMName.`);
+        //         process.exit(1);
+        //     }
+        // }
 
-        await Spinner.spinPromise(BakerObj.stop(VMName, force), `Stopping VM: ${VMName}`, spinnerDot);
+        let bakePath = process.cwd();
+        const {envName, BakerObj} = await Utils.chooseProvider(bakePath);
+
+        await Spinner.spinPromise(BakerObj.stop(envName, force), `Stopping VM: ${envName}`, spinnerDot);
     } catch(err) {
         Print.error(err);
     }

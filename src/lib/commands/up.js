@@ -2,11 +2,12 @@ const Baker   = require('../modules/baker');
 const conf    = require('../../lib/modules/configstore')
 const Print   = require('../modules/print');
 const Spinner = require('../modules/spinner');
+const Utils   = require('../modules/utils/utils');
 const VagrantProvider = require('../modules/providers/vagrant');
 
 const spinnerDot = conf.get('spinnerDot');
 
-exports.command = 'up [VMName]';
+exports.command = ['start [VMName]', 'up [VMName]'];
 exports.desc = `start a VM`;
 
 exports.builder = (yargs) => {
@@ -14,32 +15,33 @@ exports.builder = (yargs) => {
         .example(`$0 up`, `Start the Baker VM of current directory`)
         .example(`$0 up baker-test`, `Start 'baker-test' Baker VM`);
 
-    yargs
-        .positional('VMName', {
-            describe: 'Name of the Baker VM to Start',
-            type: 'string'
-        });
+    // TODO: bakePath is required for finding the envType.
+    // for now assuming the command is executed in same dir as baker.yml
+    // yargs
+    //     .positional('VMName', {
+    //         describe: 'Name of the Baker VM to Start',
+    //         type: 'string'
+    //     });
 }
 
 exports.handler = async function(argv) {
-    let { VMName, verbose } = argv;
-
-    //TODO: if vagrant:
-    const provider = new VagrantProvider();
-    const BakerObj = new Baker(provider);
+    let { envName, verbose } = argv;
 
     try{
-        if(!VMName){
-            let cwdVM = (await Baker.getCWDBakerYML());
-            if(cwdVM)
-                VMName = (await Baker.getCWDBakerYML()).name;
-            else {
-                Print.error(`Couldn't find baker.yml in cwd. Run the command in a directory with baker.yml or specify a VMName.`);
-                process.exit(1);
-            }
-        }
+        // if(!VMName){
+        //     let cwdVM = (await Baker.getCWDBakerYML());
+        //     if(cwdVM)
+        //         VMName = (await Baker.getCWDBakerYML()).name;
+        //     else {
+        //         Print.error(`Couldn't find baker.yml in cwd. Run the command in a directory with baker.yml or specify a VMName.`);
+        //         process.exit(1);
+        //     }
+        // }
 
-        await Spinner.spinPromise(BakerObj.start(VMName, verbose), `Starting VM: ${VMName}`, spinnerDot);
+        let bakePath = process.cwd();
+        const {envName, BakerObj} = await Utils.chooseProvider(bakePath);
+
+        await Spinner.spinPromise(BakerObj.start(envName, verbose), `Starting VM: ${envName}`, spinnerDot);
     } catch (err){
         Print.error(err);
     }

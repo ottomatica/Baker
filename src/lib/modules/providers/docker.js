@@ -245,7 +245,7 @@ class Docker_Provider extends Provider {
         return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i ./${containerName}/baker_inventory dockerBootstrap.yml`, sshConfig, true);
     }
 
-    async start(scriptPath) {
+    async _startContainer(scriptPath) {
         // Make sure Baker control machine is running
         const Baker = require('../baker'); // TODO: Weird, why can't just import this outside?
 
@@ -316,7 +316,7 @@ class Docker_Provider extends Provider {
 
     async bake(scriptPath) {
         // Start the container
-        await this.start(scriptPath);
+        await this._startContainer(scriptPath);
 
         let ansibleVM = vagrant.create({ cwd: ansible });
         let ansibleSSHConfig = await this.vagrantProvider.getSSHConfig(ansibleVM);

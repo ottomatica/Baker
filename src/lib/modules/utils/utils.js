@@ -77,8 +77,9 @@ class Utils {
      */
     static async chooseProvider(bakePath){
         // TODO: same problem with require, can't be outside static function?
-        const Baker          = require('../baker');
+        const Baker = require('../baker');
         let doc = yaml.safeLoad(await fs.readFile(path.join(bakePath, 'baker.yml'), 'utf8'));
+        let envName = doc.name;
         let envType = doc.container ? 'container' : doc.vm || doc.vagrant ? 'vm' : 'other';
 
         let provider = null;
@@ -91,7 +92,7 @@ class Utils {
 
         let BakerObj = new Baker(provider);
 
-        return {provider, BakerObj};
+        return {envName, provider, BakerObj};
     }
 }
 
