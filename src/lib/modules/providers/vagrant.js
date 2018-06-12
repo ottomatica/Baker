@@ -17,7 +17,7 @@ const spinnerDot    =      conf.get('spinnerDot');
 
 const {ansible, boxes, bakeletsPath, remotesPath, configPath} = require('../../../global-vars');
 
-class Vagrant extends Provider {
+class VagrantProvider extends Provider {
     constructor() {
         super();
         this.ansibleSevrer = vagrant.create({cwd: ansible});
@@ -25,7 +25,7 @@ class Vagrant extends Provider {
         // this.machine = vagrant.create({ cwd: VMPath });
     }
 
-    async initVagrantFile (vagrantFilePath, doc, template, scriptPath) {
+    async initVagrantFile(vagrantFilePath, doc, template, scriptPath) {
         if (doc.vm ) {
             doc.vagrant = doc.vm;
             delete doc.vm;
@@ -317,7 +317,7 @@ class Vagrant extends Provider {
         }
     }
 
-    async bake(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
+    async bake(scriptPath, ansibleSSHConfig, ansibleVM, verbose) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         let dir = path.join(boxes, doc.name);
@@ -380,6 +380,85 @@ class Vagrant extends Provider {
         return vmSSHConfigUser;
     }
 
+
+    static async package(VMName, verbose) {
+        let dir = path.join(boxes, VMName);
+        await child_process.execAsync(`cd ${dir} && vagrant package --output ${path.join(process.cwd(), VMName + '.box')}`, {
+            stdio: ['inherit', 'inherit', 'ignore']
+        });
+    }
+
+    static async import(box, name, verbose) {
+        let boxName = name ? name : path.basename(box).split('.')[0];
+        await vagrant.boxAddAsync(path.join(process.cwd(), box), ['--name', boxName + '.baker'])
+        // await child_process.execAsync(`vagrant box add ${boxName}.baker ${path.join(process.cwd(), box)}`, {stdio: ['inherit', 'inherit', 'ignore']});
+    }
+
+    async boxes() {
+        try {
+            let boxes = await vagrant.boxListAsync([]);
+            delete boxes.version;
+            return boxes;
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async bakerBoxes(verbose=true) {
+        try {
+            let boxes = await this.boxes();
+            let bakerBoxes = boxes.filter(box => box.name.match(/.baker$/));
+            // Hide .baker from the end before printing
+            bakerBoxes.forEach(box => {
+                box.name = box.name.split('.')[0];
+            })
+
+            if(verbose){
+                if(bakerBoxes == [])
+                    print.info(`\nYou currently don't have any boxes.`)
+                else
+                    console.table('\nBaker boxes: ', bakerBoxes);
+            }
+            return bakerBoxes;
+        } catch (err) {
+            throw err
+        }
+    }
+
+    async bakeBox(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
+        try {
+            let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
+
+            let dir = path.join(boxes, doc.name);
+            try {
+                await fs.ensureDir(dir);
+            } catch (err) {
+                throw `Creating directory failed: ${dir}`;
+            }
+
+            let template = await fs.readFile(path.join(configPath, './BaseVM.mustache'), 'utf8');
+
+            // if box is specified in baker.yml and this box exists, then use it => otherwise bake it
+            if(doc.vagrant.box && (await this.bakerBoxes(false)).map(e=>e.name).includes(`${doc.vagrant.box}`)){
+
+                await this.provider.initVagrantFile(path.join(dir, 'Vagrantfile'), doc, template, scriptPath);
+
+                let machine = vagrant.create({ cwd: dir });
+                machine.on('up-progress', function(data) {
+                    if( verbose ) print.info(data);
+                });
+                await spinner.spinPromise(machine.upAsync(), `Starting VM`, spinnerDot);
+            }
+            else {
+                await this.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
+            }
+
+        } catch (err) {
+            throw err;
+        }
+
+        return;
+    }
 }
 
-module.exports = Vagrant;
+module.exports = VagrantProvider;

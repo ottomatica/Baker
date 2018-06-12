@@ -3,6 +3,7 @@ const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
+const VagrantProvider = require('../modules/providers/vagrant');
 
 exports.command = 'import <boxPath>';
 exports.desc = `Import packaged Baker environment`;
@@ -35,7 +36,7 @@ exports.handler = async function(argv) {
     const { boxPath, name, verbose } = argv;
 
     try {
-        await Spinner.spinPromise(Baker.import(boxPath, verbose), `Importing box: ${boxPath}`, spinnerDot);
+        await Spinner.spinPromise(VagrantProvider.import(boxPath, verbose), `Importing box: ${boxPath}`, spinnerDot);
     } catch (err) {
         Print.error(err);
     }

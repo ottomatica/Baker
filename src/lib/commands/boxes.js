@@ -2,6 +2,7 @@ const Baker     = require('../modules/baker');
 const conf      = require('../../lib/modules/configstore');
 const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');
+const VagrantProvider = require('../modules/providers/vagrant');
 
 const spinnerDot = conf.get('spinnerDot');
 
@@ -10,8 +11,10 @@ exports.desc = `list existing Baker boxes`;
 exports.handler = async function(argv) {
     const { verbose } = argv;
 
+    const provider = new VagrantProvider();
+
     try {
-        await Spinner.spinPromise(Baker.bakerBoxes(), `Getting list of Baker boxes`, spinnerDot);
+        await Spinner.spinPromise(provider.bakerBoxes(), `Getting list of Baker boxes`, spinnerDot);
     } catch (err) {
         Print.error(err);
     }

@@ -2,6 +2,7 @@ const Bakelet = require('../bakelet');
 const Baker   = require('../../modules/baker');
 const path    = require('path');
 const Ssh     = require('../../modules/ssh');
+const VagrantProvider = require('../../modules/providers/vagrant');
 
 class Keys extends Bakelet {
 
@@ -18,7 +19,8 @@ class Keys extends Bakelet {
         {
             for (let clientName of obj.keys)
             {
-                let sshConfig = await Baker.retrieveSSHConfigByName(clientName);
+                // TODO: I think ssh config should just be passed to the function, instead of getting it here
+                let sshConfig = await VagrantProvider.retrieveSSHConfigByName(clientName);
                 if( sshConfig.private_key == undefined )
                 {
                     throw `Could not retrieve ${clientName}'s ssh key`
