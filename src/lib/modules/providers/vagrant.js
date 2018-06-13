@@ -9,6 +9,7 @@ const Provider      =      require('./provider');
 const slash         =      require('slash')
 const spinner       =      require('../spinner');
 const Ssh           =      require('../ssh');
+const Utils         =      require('../utils/utils');
 const vagrant       =      Promise.promisifyAll(require('node-vagrant'));
 const yaml          =      require('js-yaml');
 
@@ -30,8 +31,6 @@ class VagrantProvider extends Provider {
             delete doc.vm;
         }
         const vagrant = doc.vagrant;
-        // TODO: same problem with require(), can't be outside this function?
-        const Utils = require('../utils/utils');
         await Utils.traverse(vagrant);
         // Defaults
         // vagrant.box = vagrant.box || "ubuntu/xenial64"

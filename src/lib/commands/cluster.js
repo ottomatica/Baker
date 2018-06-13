@@ -4,6 +4,7 @@ const Git       = require('../modules/utils/git');
 const path      = require('path');
 const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');
+const Servers   = require('../modules/servers');
 
 const spinnerDot = conf.get('spinnerDot');
 
@@ -57,12 +58,12 @@ exports.handler = async function(argv) {
 
         try
         {
-            ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+            ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
         }
         catch(ex)
         {
             await Spinner.spinPromise(Baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
-            ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+            ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
         }
 
         let sshConfig = await Baker.getSSHConfig(ansibleVM);

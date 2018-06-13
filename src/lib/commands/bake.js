@@ -3,10 +3,9 @@ const conf           = require('../../lib/modules/configstore');
 const Git            = require('../modules/utils/git');
 const path           = require('path');
 const Print          = require('../modules/print');
+const Servers        = require('../modules/servers');
 const Spinner        = require('../modules/spinner');
-const Utils          = require('../modules/utils/utils');
-
-const spinnerDot = conf.get('spinnerDot');
+const spinnerDot     = conf.get('spinnerDot');
 
 // exports.aliases = ['$0'];
 exports.command = 'bake'
@@ -90,16 +89,16 @@ exports.handler = async function(argv) {
             }
         }
 
-        const {provider, BakerObj} = await Utils.chooseProvider(bakePath);
+        const {provider, BakerObj} = await Baker.chooseProvider(bakePath);
 
         try
         {
-            ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+            ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
         }
         catch(ex)
         {
             await Spinner.spinPromise(BakerObj.start('baker'), `Restarting Baker control machine`, spinnerDot);
-            ansibleVM = await Spinner.spinPromise(Baker.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+            ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
         }
 
         let sshConfig = await Baker.getSSHConfig(ansibleVM);

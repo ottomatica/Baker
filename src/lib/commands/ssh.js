@@ -3,7 +3,6 @@ const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
-const Utils          = require('../modules/utils/utils');
 
 exports.command = 'ssh [VMName]';
 exports.desc = 'ssh to a VM';
@@ -36,7 +35,7 @@ exports.handler = async function(argv) {
         // }
 
         let bakePath = process.cwd();
-        const {envName, BakerObj} = await Utils.chooseProvider(bakePath);
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath);
 
         await Spinner.spinPromise(BakerObj.ssh(envName), `SSHing to ${envName}`, spinnerDot);
     } catch (err) {

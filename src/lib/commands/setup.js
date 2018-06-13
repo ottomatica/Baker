@@ -1,10 +1,10 @@
-const Baker     = require('../modules/baker');
 const conf      = require('../../lib/modules/configstore');
 const fs        = require('fs-extra');
 const path      = require('path');
 const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');
 const Validator = require('../modules/validator');
+const Servers   = require('../modules/servers');
 
 const spinnerDot = conf.get('spinnerDot');
 const { configPath, ansible } = require('../../global-vars');
@@ -35,9 +35,9 @@ exports.handler = async function (argv) {
 
     try {
         if(force)
-            await Spinner.spinPromise(Baker.reinstallAnsibleServer(), 'Re-installing Baker control machine', spinnerDot);
+            await Spinner.spinPromise(Servers.reinstallAnsibleServer(), 'Re-installing Baker control machine', spinnerDot);
         else
-            await Spinner.spinPromise(Baker.installAnsibleServer(), 'Installing Baker control machine', spinnerDot);
+            await Spinner.spinPromise(Servers.installAnsibleServer(), 'Installing Baker control machine', spinnerDot);
 
         await Spinner.spinPromise(
             fs.copy(

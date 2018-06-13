@@ -2,10 +2,6 @@ const Promise         = require('bluebird');
 const ping            = require('ping')
 const prompt          = require('prompt');
 const fs              = require('fs-extra');
-const VagrantProvider = require('../providers/vagrant');
-const DockerProvider  = require('../providers/docker');
-const yaml            = require('js-yaml');
-const path            = require('path');
 
 class Utils {
     constructor() {}
@@ -70,30 +66,6 @@ class Utils {
         }
     }
 
-    /**
-     * detects the type of environment.
-     * Helper function for commands to automatically create the right provider object.
-     * @param {String} bakePath path to the baker.yml file
-     */
-    static async chooseProvider(bakePath){
-        // TODO: same problem with require, can't be outside static function?
-        const Baker = require('../baker');
-        let doc = yaml.safeLoad(await fs.readFile(path.join(bakePath, 'baker.yml'), 'utf8'));
-        let envName = doc.name;
-        let envType = doc.container ? 'container' : doc.vm || doc.vagrant ? 'vm' : 'other';
-
-        let provider = null;
-        if(envType === 'container')
-            provider = new DockerProvider({host: '192.168.252.251', port: '2375', protocol: 'http'});
-        else if(envType === 'vm')
-            provider = new VagrantProvider();
-        else
-            console.error('This command only supports VM and container environments');
-
-        let BakerObj = new Baker(provider);
-
-        return {envName, provider, BakerObj};
-    }
 }
 
 module.exports = Utils;

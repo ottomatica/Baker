@@ -2,7 +2,6 @@ const Baker   = require('../modules/baker');
 const conf    = require('../../lib/modules/configstore')
 const Print   = require('../modules/print');
 const Spinner = require('../modules/spinner');
-const Utils   = require('../modules/utils/utils');
 
 const spinnerDot = conf.get('spinnerDot');
 
@@ -38,7 +37,7 @@ exports.handler = async function(argv) {
         // }
 
         let bakePath = process.cwd();
-        const {envName, BakerObj} = await Utils.chooseProvider(bakePath);
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath);
 
         await Spinner.spinPromise(BakerObj.start(envName, verbose), `Starting VM: ${envName}`, spinnerDot);
     } catch (err){

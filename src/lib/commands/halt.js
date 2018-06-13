@@ -3,7 +3,6 @@ const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
-const Utils          = require('../modules/utils/utils');
 
 exports.command = ['stop [VMName]', 'halt [VMName]'];
 exports.desc = `shut down a VM`;
@@ -45,7 +44,7 @@ exports.handler = async function(argv) {
         // }
 
         let bakePath = process.cwd();
-        const {envName, BakerObj} = await Utils.chooseProvider(bakePath);
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath);
 
         await Spinner.spinPromise(BakerObj.stop(envName, force), `Stopping VM: ${envName}`, spinnerDot);
     } catch(err) {

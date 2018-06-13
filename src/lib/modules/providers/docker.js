@@ -7,6 +7,7 @@ const jsonfile        = require('jsonfile')
 const path            = require('path');
 const print           = require('../print');
 const Provider        = require('./provider');
+const Servers         = require('../servers');
 const slash           = require('slash');
 const spinner         = require('../spinner');
 const spinnerDot      = conf.get('spinnerDot');
@@ -246,12 +247,10 @@ class Docker_Provider extends Provider {
 
     async _startContainer(scriptPath) {
         // Make sure Baker control machine is running
-        const Baker = require('../baker'); // TODO: Weird, why can't just import this outside?
-
-        let ansibleVM = await spinner.spinPromise(Baker.prepareAnsibleServer(scriptPath), 'Preparing Baker control machine', spinnerDot);
+        let ansibleVM = await spinner.spinPromise(Servers.prepareAnsibleServer(scriptPath), 'Preparing Baker control machine', spinnerDot);
         let ansibleSSHConfig = await this.vagrantProvider.getSSHConfig(ansibleVM);
         // Make sure Docker VM is running
-        await spinner.spinPromise(Baker.prepareDockerVM(), `Preparing Docker host`, spinnerDot);
+        await spinner.spinPromise(Servers.prepareDockerVM(), `Preparing Docker host`, spinnerDot);
 
         // Installing Docker
         // let resolveB = require('../bakelets/resolve');

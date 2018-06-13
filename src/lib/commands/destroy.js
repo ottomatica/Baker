@@ -3,7 +3,6 @@ const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
-const Utils          = require('../modules/utils/utils');
 
 exports.command = ['delete [VMName]', 'destroy [VMName]'];
 exports.desc = `remove a VM and it's associated files`;
@@ -35,7 +34,7 @@ exports.handler = async function(argv) {
         // }
 
         let bakePath = process.cwd();
-        const {envName, BakerObj} = await Utils.chooseProvider(bakePath);
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath);
 
         await Spinner.spinPromise(BakerObj.delete(envName), `Destroying VM: ${envName}`, spinnerDot);
     } catch (err) {
