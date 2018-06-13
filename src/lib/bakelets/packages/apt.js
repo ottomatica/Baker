@@ -53,7 +53,7 @@ class Apt extends Bakelet {
             this.remotesPath,
             `bakelets-source/packages/apt.yml.mustache`
         );
-        let playbookRendered = mustache.render(await fs.readFileAsync(playbookTemplate, 'utf8'), packagesObj);
+        let playbookRendered = mustache.render(await fs.readFile(playbookTemplate, 'utf8'), packagesObj);
 
         // console.log('playbookrendered', playbookRendered);
         let cmd = `echo "${playbookRendered.replace(/"/g, '\\"')}" > /home/vagrant/baker/${this.name}/apt.yml`;

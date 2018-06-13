@@ -32,7 +32,7 @@ class R extends Bakelet {
             this.remotesPath,
             `bakelets-source/lang/R/r.yml.mustache`
         );
-        let playbookRendered = mustache.render(await fs.readFileAsync(playbookTemplate, 'utf8'), packagesObj);
+        let playbookRendered = mustache.render(await fs.readFile(playbookTemplate, 'utf8'), packagesObj);
 
         let cmd = `echo "${playbookRendered.replace(/"/g, '\\"')}" > /home/vagrant/baker/${this.name}/r.yml`;
         await this.exec(cmd);

@@ -1,7 +1,7 @@
 const Promise       =      require('bluebird');
 const child_process =      Promise.promisifyAll(require('child_process'));
 const conf          =      require('../configstore');
-const fs            =      Promise.promisifyAll(require('fs-extra'));
+const fs            =      require('fs-extra');
 const mustache      =      require('mustache');
 const path          =      require('path');
 const print         =      require('../print');
@@ -70,7 +70,7 @@ class VagrantProvider extends Provider {
         let syncFolders = doc.vagrant.synced_folders || [];
         doc.vagrant.synced_folders = [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]];
         const output = mustache.render(template, doc);
-        await fs.writeFileAsync(vagrantFilePath, output);
+        await fs.writeFile(vagrantFilePath, output);
     }
 
     /**

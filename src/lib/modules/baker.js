@@ -1,7 +1,6 @@
 const Promise       = require('bluebird');
-const child_process = Promise.promisifyAll(require('child_process'));
 const conf          = require('./configstore');
-const fs            = Promise.promisifyAll(require('fs-extra'));
+const fs            = require('fs-extra');
 const inquirer      = require('inquirer');
 const mustache      = require('mustache');
 const netaddr       = require('netaddr');
@@ -17,7 +16,6 @@ const yaml          = require('js-yaml');
 
 const VagrantProvider = require('./providers/vagrant');
 const DO_Provider     = require('./providers/digitalocean');
-const Docker_Provider = require('./providers/docker');
 
 // conf variables:
 const spinnerDot = conf.get('spinnerDot');
@@ -62,9 +60,9 @@ class Baker {
     }
 
     static async init() {
-        let bakerYML = await fs.readFileAsync(path.join(configPath, './bakerTemplate.yml'), 'utf8');
+        let bakerYML = await fs.readFile(path.join(configPath, './bakerTemplate.yml'), 'utf8');
         let dir = path.resolve(process.cwd());
-        await fs.writeFileAsync('baker.yml', bakerYML, {encoding:'utf8'});
+        await fs.writeFile('baker.yml', bakerYML, {encoding:'utf8'});
     }
 
     static async initBaker2() {
@@ -185,10 +183,10 @@ class Baker {
         vmResponse.services = vmResponse.services.length ? {service: vmResponse.services} : false;
         vmResponse.tools = vmResponse.tools.length ? {tool: vmResponse.tools} : false;
 
-        let baker2Template = await fs.readFileAsync(path.join(configPath, './baker2Template.yml.mustache'), 'utf8');
+        let baker2Template = await fs.readFile(path.join(configPath, './baker2Template.yml.mustache'), 'utf8');
         let bakerYML = mustache.render(baker2Template, vmResponse);
         let cwd = path.resolve(process.cwd());
-        await fs.writeFileAsync(path.resolve(cwd, 'baker.yml'), bakerYML, {encoding:'utf8'});
+        await fs.writeFile(path.resolve(cwd, 'baker.yml'), bakerYML, {encoding:'utf8'});
         return;
     }
 
@@ -198,7 +196,7 @@ class Baker {
      */
     static async prepareAnsibleServer(bakerScriptPath) {
         let machine = vagrant.create({ cwd: ansible });
-        let doc = yaml.safeLoad(await fs.readFileAsync(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
+        let doc = yaml.safeLoad(await fs.readFile(path.join(bakerScriptPath, 'baker.yml'), 'utf8'));
 
         try {
             // let bakerVMID = await VagrantProvider.getVagrantID('baker');
@@ -268,9 +266,9 @@ class Baker {
             await Utils._ensureDir(dockerHostPath);
 
             // always update vagrantfile
-            let template = await fs.readFileAsync(path.join(configPath, './dockerHost/DockerVM.mustache'), 'utf8');
+            let template = await fs.readFile(path.join(configPath, './dockerHost/DockerVM.mustache'), 'utf8');
             let vagrantfile = mustache.render(template, {dockerHostName});
-            await fs.writeFileAsync(path.join(dockerHostPath, 'Vagrantfile'), vagrantfile);
+            await fs.writeFile(path.join(dockerHostPath, 'Vagrantfile'), vagrantfile);
 
             let status;
             try{
@@ -328,9 +326,9 @@ class Baker {
             if(bakerVMState == 'running') return;
         } catch (err) {
             if (err === `Cannot find machine: baker`) {
-                let template = await fs.readFileAsync(path.join(configPath, './AnsibleVM.mustache'), 'utf8');
+                let template = await fs.readFile(path.join(configPath, './AnsibleVM.mustache'), 'utf8');
                 let vagrantfile = mustache.render(template, require('../../config/AnsibleVM'));
-                await fs.writeFileAsync(path.join(ansible, 'Vagrantfile'), vagrantfile)
+                await fs.writeFile(path.join(ansible, 'Vagrantfile'), vagrantfile)
 
                 await fs.copy(
                     path.resolve(configPath, './provision.shell.sh'),
@@ -654,7 +652,7 @@ class Baker {
             provider = new VagrantProvider(dir);
 
             const output = mustache.render(template, cluster);
-            await fs.writeFileAsync(path.join(dir, 'Vagrantfile'), output);
+            await fs.writeFile(path.join(dir, 'Vagrantfile'), output);
 
             let machine = vagrant.create({ cwd: dir });
 

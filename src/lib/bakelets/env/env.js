@@ -24,7 +24,7 @@ class Env extends Bakelet {
             this.remotesPath,
             `bakelets-source/env/env.yml.mustache`
         );
-        let playbookRendered = mustache.render(await fs.readFileAsync(playbookTemplate, 'utf8'), this.envVars);
+        let playbookRendered = mustache.render(await fs.readFile(playbookTemplate, 'utf8'), this.envVars);
 
         let cmd = `echo "${playbookRendered.replace(/"/g, '\\"')}" > /home/vagrant/baker/${this.name}/env.yml`;
         await this.exec(cmd);
