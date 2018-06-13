@@ -4,7 +4,6 @@ const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
 const Utils          = require('../modules/utils/utils');
-const VagrantProvider = require('../modules/providers/vagrant');
 
 exports.command = 'ssh [VMName]';
 exports.desc = 'ssh to a VM';

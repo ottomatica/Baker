@@ -1,4 +1,3 @@
-const path = require('path');
 const Ssh = require('../modules/ssh');
 
 async function start(cmd, vmName, ansibleSSHConfig, verbose)

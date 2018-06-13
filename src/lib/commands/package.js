@@ -1,4 +1,3 @@
-const Baker          = require('../modules/baker');
 const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');

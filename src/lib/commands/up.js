@@ -3,7 +3,6 @@ const conf    = require('../../lib/modules/configstore')
 const Print   = require('../modules/print');
 const Spinner = require('../modules/spinner');
 const Utils   = require('../modules/utils/utils');
-const VagrantProvider = require('../modules/providers/vagrant');
 
 const spinnerDot = conf.get('spinnerDot');
 

@@ -4,7 +4,6 @@ const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
 const Utils          = require('../modules/utils/utils');
-const VagrantProvider = require('../modules/providers/vagrant');
 
 exports.command = ['delete [VMName]', 'destroy [VMName]'];
 exports.desc = `remove a VM and it's associated files`;

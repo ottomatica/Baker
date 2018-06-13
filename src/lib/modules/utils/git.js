@@ -1,4 +1,3 @@
-const child_process = require('child_process');
 const git           = require('simple-git');
 const path          = require('path');
 
