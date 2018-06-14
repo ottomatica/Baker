@@ -17,6 +17,7 @@ const yaml          = require('js-yaml');
 const VagrantProvider = require('./providers/vagrant');
 const DockerProvider  = require('./providers/docker');
 const DO_Provider     = require('./providers/digitalocean');
+const RemoteProvider  = require('./providers/remote');
 
 // conf variables:
 const spinnerDot = conf.get('spinnerDot');
@@ -48,8 +49,8 @@ class Baker {
         await this.provider.delete(name);
     }
 
-    async bake(scriptPath, ansibleSSHConfig, ansibleVM, verbose) {
-        await this.provider.bake(scriptPath, ansibleSSHConfig, ansibleVM, verbose);
+    async bake(scriptPath, ansibleSSHConfig, verbose) {
+        await this.provider.bake(scriptPath, ansibleSSHConfig, verbose);
     }
 
     async list() {
@@ -199,13 +200,21 @@ class Baker {
     static async chooseProvider(bakePath){
         let doc = yaml.safeLoad(await fs.readFile(path.join(bakePath, 'baker.yml'), 'utf8'));
         let envName = doc.name;
-        let envType = doc.container ? 'container' : doc.vm || doc.vagrant ? 'vm' : 'other';
+        let envType = doc.container ? 'container' : doc.vm || doc.vagrant ? 'vm' : doc.remote ? 'remote' : 'other';
 
         let provider = null;
         if(envType === 'container')
             provider = new DockerProvider({host: '192.168.252.251', port: '2375', protocol: 'http'});
         else if(envType === 'vm')
             provider = new VagrantProvider();
+        else if(envType === 'remote'){
+            if(!RemoteProvider.validateBakerYML(bakePath)){
+                console.error('invalid baker.yml for remote provider');
+                process.exit(1);
+            }
+            else
+                provider = new RemoteProvider(doc.remote.user, doc.remote.private_key, doc.remote.ip, doc.remote.port);
+        }
         else
             console.error('This command only supports VM and container environments');
 
@@ -252,20 +261,6 @@ class Baker {
         } catch (err) {
             throw `Couldn't get private ssh key of machine ${err}`;
         }
-    }
-
-    // also in provider.vagrant
-    /**
-     * Adds the host url to /etc/hosts
-     *
-     * @param {String} ip
-     * @param {String} name
-     * @param {Object} sshConfig
-     */
-    static async addToAnsibleHosts (ip, name, ansibleSSHConfig, vmSSHConfig){
-        // TODO: Consider also specifying ansible_connection=${} to support containers etc.
-        // TODO: Callers of this can be refactored to into two methods, below:
-        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
     }
 
     /**
@@ -379,41 +374,6 @@ class Baker {
         }
 
         return;
-    }
-
-    static async bakeRemote (ansibleSSHConfig, remoteIP, remoteKey, remoteUser, scriptPath, verbose) {
-        let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-        let vmSSHConfig = {
-            user: remoteUser,
-            private_key: remoteKey,
-            ip: remoteIP,
-            hostname: remoteIP,
-            port: 22
-        }
-
-        try {
-            // TODO: copy the ssh key to ${ip}_rsa instead of id_rsa
-            await Ssh.copyFromHostToVM(
-                vmSSHConfig.private_key,
-                `/home/vagrant/baker/${doc.name}/${vmSSHConfig.ip}_rsa`,
-                ansibleSSHConfig
-            );
-            await this.addToAnsibleHosts(vmSSHConfig.ip, doc.name + '-cloud', ansibleSSHConfig, vmSSHConfig);
-            await this.provider.setKnownHosts(vmSSHConfig.ip, ansibleSSHConfig);
-            await this.provider.mkTemplatesDir(doc, ansibleSSHConfig);
-
-            // prompt for passwords
-            if( doc.vars ) {
-                await Utils.traverse(doc.vars);
-            }
-
-            // Installing stuff.
-            let resolveB = require('../bakelets/resolve');
-            await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose);
-
-        } catch (err) {
-            throw err;
-        }
     }
 
     static async cluster (ansibleSSHConfig, ansibleVM, scriptPath, verbose) {

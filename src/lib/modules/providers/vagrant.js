@@ -240,6 +240,7 @@ class VagrantProvider extends Provider {
         }
     }
 
+    // also in servers.js
     /**
      * Adds inventory
      *
@@ -317,7 +318,7 @@ class VagrantProvider extends Provider {
         }
     }
 
-    async bake(scriptPath, ansibleSSHConfig, ansibleVM, verbose) {
+    async bake(scriptPath, ansibleSSHConfig, verbose) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         let dir = path.join(boxes, doc.name);

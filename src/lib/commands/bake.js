@@ -106,9 +106,11 @@ exports.handler = async function(argv) {
         if(box)
             await provider.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
         else if(remote)
-            await Baker.bakeRemote(sshConfig, remote, remote_key, remote_user, bakePath, verbose);
-        else
+            await BakerObj.bakeRemote(sshConfig, remote, remote_key, remote_user, bakePath, verbose);
+        else{
             await BakerObj.bake(bakePath, sshConfig, ansibleVM, verbose);
+        }
+
 
     } catch (err) {
         Print.error(err);

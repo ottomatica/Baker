@@ -214,7 +214,6 @@ class Docker_Provider extends Provider {
 
     /**
      * ssh to docker container
-     * @param {String} scriptPath path to the baker.yml file
      */
     async ssh(name) {
         try {

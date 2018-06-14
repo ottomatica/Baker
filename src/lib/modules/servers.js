@@ -14,6 +14,8 @@ const VagrantProviderObj = new VagrantProvider();
 const { configPath, ansible, boxes } = require('../../global-vars');
 
 class Servers {
+    constructor() {}
+
     /**
      * Checks if ansible server is up, if not it starts the server
      * It will also copy new vm's ansible script to ~/baker/{name}/ in ansible server
@@ -184,6 +186,20 @@ class Servers {
     // TODO: Temp: refactor to be able to use the docker bakelet instead
     static async installDocker(sshConfig) {
         return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," installDocker.yml -c local`, sshConfig, false);
+    }
+
+    // also in provider.vagrant
+    /**
+     * Adds the host url to /etc/hosts
+     *
+     * @param {String} ip
+     * @param {String} name
+     * @param {Object} sshConfig
+     */
+    async addToAnsibleHosts (ip, name, ansibleSSHConfig, vmSSHConfig){
+        // TODO: Consider also specifying ansible_connection=${} to support containers etc.
+        // TODO: Callers of this can be refactored to into two methods, below:
+        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
     }
 }
 
