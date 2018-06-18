@@ -113,6 +113,19 @@ class Utils {
         await fs.outputJson(envIndexPath, envIndex, {spaces: 4});
     }
 
+    static async setEnvIndexState(name, state) {
+        let envIndex = await fs.readJson(envIndexPath);
+        envIndex.forEach(env => {
+            if(env.name === name)
+                env.state = state;
+        })
+        await fs.outputJson(envIndexPath, envIndex, {spaces: 4});
+    }
+
+    static async getEnvIndex() {
+        return await fs.readJson(envIndexPath);
+    }
+
 }
 
 module.exports = Utils;
