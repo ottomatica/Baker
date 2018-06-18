@@ -164,6 +164,9 @@ class Servers {
         //     print.info(data);
         // });
 
+        let sshConfig = await machine.sshConfigAsync();
+        Utils.addToIndex('baker', ansible, 'vm', sshConfig);
+
         return;
     }
 
@@ -174,6 +177,7 @@ class Servers {
     static async reinstallAnsibleServer () {
         try {
             await (new VagrantProvider()).delete('baker');
+            Utils.removeFromIndex('baker');
         } catch (err) {
             if (err != `Cannot find machine: baker`) {
                 throw err;

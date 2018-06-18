@@ -7,5 +7,6 @@ module.exports = {
     configPath  : path.join(__dirname, './config'),
     bakeletsPath: path.join(__dirname, './lib/bakelets'),
     remotesPath : path.join(__dirname, './remotes'),
-    spinnerDot  : 'dots'
+    envIndexPath: path.join(boxes, 'data', 'index.json')
+    // spinnerDot  : 'dots'
 };

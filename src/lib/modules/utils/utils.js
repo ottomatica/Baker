@@ -2,6 +2,8 @@ const Promise         = require('bluebird');
 const ping            = require('ping')
 const prompt          = require('prompt');
 const fs              = require('fs-extra');
+const _               = require('underscore');
+const { envIndexPath } = require('../../../global-vars');
 
 class Utils {
     constructor() {}
@@ -64,6 +66,51 @@ class Utils {
         } catch (err) {
             throw `could not create directory: ${path} \n${err}`;
         }
+    }
+
+    static async initIndex(force = false) {
+        if (!(await fs.pathExists(envIndexPath)) || force) {
+            let envIndex = []
+
+            try {
+                await fs.outputJson(envIndexPath, envIndex, {spaces: 4});
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    }
+
+    /**
+     *
+     * @param {String} type vm | container | DO
+     * @param {Object} env
+     */
+    static async addToIndex(name, path, type, info) {
+        try {
+            let env = {name, path, type, info: _.pick(info, 'host', 'hostname', 'user', 'image', 'private_key', 'port')};
+            if(!(await this.FindInIndex(env.name))){
+                let envIndex = await fs.readJson(envIndexPath);
+                envIndex.push(env);
+                await fs.outputJson(envIndexPath, envIndex, {spaces: 4});
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    /**
+     * Find and return the env object from index or return null if it doesn't exist
+     * @param {String} name name of the environment
+     */
+    static async FindInIndex(name) {
+        let envIndex = await fs.readJson(envIndexPath);
+        return envIndex.find(e => e.name === name) || null;
+    }
+
+    static async removeFromIndex(name) {
+        let envIndex = await fs.readJson(envIndexPath);
+        envIndex = envIndex.filter(e => e.name != name);
+        await fs.outputJson(envIndexPath, envIndex, {spaces: 4});
     }
 
 }

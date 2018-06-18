@@ -196,8 +196,10 @@ class Docker_Provider extends Provider {
      */
     async delete(containerName) {
         let container = await this.getContainerByName(containerName);
-        if(container)
-            return await this._deleteContainer(container);
+        if(container){
+            await this._deleteContainer(container);
+            Utils.removeFromIndex(containerName);
+        }
         else
             throw `container doesn't exist: ${containerName}`;
     }
@@ -327,6 +329,8 @@ class Docker_Provider extends Provider {
         // Installing stuff
         let resolveB = require('../../bakelets/resolve');
         await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, true);
+
+        Utils.addToIndex(doc.name, scriptPath, 'container', await this.info(doc.name));
     }
 
     /**
@@ -368,9 +372,10 @@ class Docker_Provider extends Provider {
         return {
             id: inspect.Id,
             host: inspect.Config.Hostname,
-            hostname: inspect.NetworkSettings.IPAddress,
-            user: inspect.Config.User,
-            state: inspect.State.Running ? 'running' : 'stopped'
+            hostname: inspect.NetworkSettings.Networks.shared_nw.IPAddress,
+            user: inspect.Config.User === '' ? 'root' : inspect.Config.User,
+            state: inspect.State.Running ? 'running' : 'stopped',
+            image: inspect.Config.Image
         }
     }
 
@@ -440,52 +445,6 @@ class Docker_Provider extends Provider {
                 });
             });
         });
-    }
-
-    /**
-     * returns if the container with this name exists
-     * @param {String} name name of the container
-     */
-    static isInIndex(name) {
-        jsonfile.readFile(environmentIndexPath, function (err, index) {
-            index.containers.find(container => container.name === name) ? true : false;
-        })
-    }
-
-    /**
-     * adds the new container to the index if it doesn't already exist, otherwise throws error.
-     * @param {String} name name of the container
-     * @param {String} image the image container is using
-     * @param {String} ip ip address of the contaienr
-     */
-    static addToIndex(name, image, ip) {
-        if (!isInIndex(name)) {
-            jsonfile.readFile(environmentIndexPath, function (err, index) {
-                index.container.push({name, image, ip});
-                jsonfile.writeFile(environmentIndexPath, index, function (err, index) {
-                    console.error(err);
-                })
-            })
-        } else {
-            throw `another container with this name exists.`
-        }
-    }
-
-    /**
-     * removes contaiener with given name if it exists, otherwise  throws error.
-     * @param {String} name name of the container ro be removed from index
-     */
-    static removeFromIndex(name){
-        if (isInIndex(name)) {
-            jsonfile.readFile(environmentIndexPath, function (err, index) {
-                index.containers = index.container.filter(container => container.name != name);
-                jsonfile.writeFile(environmentIndexPath, index, function (err, index) {
-                    console.error(err);
-                })
-            })
-        } else {
-            throw `container with this name doesn't exist.`
-        }
     }
 
     // TODO: could be private?

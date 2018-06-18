@@ -142,6 +142,7 @@ class VagrantProvider extends Provider {
 
         try {
             await machine.destroyAsync();
+            Utils.removeFromIndex(VMName);
         } catch (err) {
             throw `Failed to destroy machine ${VMName}`;
         }
@@ -368,6 +369,7 @@ class VagrantProvider extends Provider {
             let resolveB = require('../../bakelets/resolve');
             await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose)
 
+            Utils.addToIndex(doc.name, scriptPath, 'vm', sshConfig);
         } catch (err) {
             console.log(err.stack);
             throw err;
