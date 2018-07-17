@@ -212,28 +212,34 @@ class Servers {
         if(force){
             await fs.remove(bakerForMacPath);
         }
-        if (await fs.pathExists(bakerForMacPath)) {
-            // download files if not available locally
-            if (!(await fs.pathExists(path.join(bakerForMacPath, 'kernel')))) {
-                await download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/kernel', bakerForMacPath);
-            }
-            if (!(await fs.pathExists(path.join(bakerForMacPath, 'file.img.gz')))) {
-                await download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/file.img.gz', bakerForMacPath);
-            }
 
-            // copy key if not available locally
-            if (!(await fs.pathExists(path.join(bakerForMacPath, 'baker_rsa')))) {
-                await fs.copy(path.join(configPath, 'baker_rsa'), path.join(bakerForMacPath, 'baker_rsa'));
-                await fs.chmod(path.join(bakerForMacPath, 'baker_rsa'), '600');
-            }
+        if(!(await fs.pathExists(bakerForMacPath)) && process.platform === 'darwin') {
+            await fs.ensureDir(bakerForMacPath);
+            await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'hyperkit'), path.join(bakerForMacPath, 'vendor'), 'hyperkit');
+            await fs.chmod(path.join(bakerForMacPath, 'vendor', 'hyperkit'), '511');
+            await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'vpnkit.exe'), path.join(bakerForMacPath, 'vendor'), 'vpnkit.exe');
+            await fs.chmod(path.join(bakerForMacPath, 'vendor', 'vpnkit.exe'), '511');
+            await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'bakerformac.sh'), bakerForMacPath, 'bakerformac.sh');
+            await fs.chmod(path.join(bakerForMacPath, 'bakerformac.sh'), '511');
+            await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'hyperkitrun.sh'), bakerForMacPath, 'hyperkitrun.sh');
+            await fs.chmod(path.join(bakerForMacPath, 'hyperkitrun.sh'), '511');
 
-            // only start server if not running
-            child_process.execSync(`ps -fu $USER| grep "Library/Baker/BakerForMac/bakerformac.sh" | grep -v "grep" || screen -dm -S BakerForMac bash -c "${path.join(bakerForMacPath, 'bakerformac.sh')}"`, {stdio: ['ignore', 'ignore', 'inherit']});
-        } else if (process.platform === 'darwin') {
-            // await fs.ensureDir(bakerForMacPath);
-            await fs.copy(path.join(configPath, 'BakerForMac'), bakerForMacPath);
-            this.setupBakerForMac();
+            // console.log('baker_rsa', await fs.readFile(path.join(configPath, 'baker_rsa'), 'utf8'));
+
+            await Utils.copyFileSync(path.join(configPath, 'baker_rsa'), bakerForMacPath, 'baker_rsa');
+            await fs.chmod(path.join(bakerForMacPath, 'baker_rsa'), '600');
         }
+
+        // download files if not available locally
+        if (!(await fs.pathExists(path.join(bakerForMacPath, 'kernel')))) {
+            await download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/kernel', bakerForMacPath);
+        }
+        if (!(await fs.pathExists(path.join(bakerForMacPath, 'file.img.gz')))) {
+            await download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/file.img.gz', bakerForMacPath);
+        }
+
+        // only start server if not running
+        child_process.execSync(`ps -fu $USER| grep "Library/Baker/BakerForMac/bakerformac.sh" | grep -v "grep" || screen -dm -S BakerForMac bash -c "${path.join(bakerForMacPath, 'bakerformac.sh')}"`, {stdio: ['ignore', 'ignore', 'inherit']});
     }
 }
 

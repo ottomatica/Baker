@@ -1,3 +1,4 @@
+const path            = require('path');
 const Promise         = require('bluebird');
 const ping            = require('ping')
 const prompt          = require('prompt');
@@ -125,6 +126,34 @@ class Utils {
     static async getEnvIndex() {
         return await fs.readJson(envIndexPath);
     }
+
+    // adapted from http://procbits.com/2011/11/15/synchronous-file-copy-in-node-js
+    static async copyFileSync (inFile, outDir, fileName) {
+        var BUF_LENGTH = 64 * 1024;
+
+        var read;
+        var write;
+
+        var buffer = new Buffer.alloc(BUF_LENGTH); // new Buffer(BUF_LENGTH);
+
+        var bytesRead = 1;
+        var outFile = path.join( outDir, fileName || path.basename(inFile) );
+        var pos = 0;
+
+        await fs.ensureDir(outDir);
+        read = fs.openSync(inFile, 'r');
+        write = fs.openSync(outFile, 'w');
+
+        while (bytesRead > 0) {
+            bytesRead = fs.readSync(read, buffer, 0, BUF_LENGTH, pos);
+            fs.writeSync(write, buffer, 0, bytesRead);
+            pos += bytesRead;
+        }
+
+        fs.closeSync(read);
+
+        return fs.closeSync(write);
+    };
 
 }
 
