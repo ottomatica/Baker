@@ -1,17 +1,19 @@
-const Promise  = require('bluebird');
-const fs       = require('fs-extra');
-const mustache = require('mustache');
-const path     = require('path');
-const print    = require('./print');
-const Ssh      = require('./ssh');
-const Utils    = require('./utils/utils');
-const vagrant  = Promise.promisifyAll(require('node-vagrant'));
-const yaml     = require('js-yaml');
+const Promise       = require('bluebird');
+const child_process = require('child_process');
+const download      = require('download');
+const fs            = require('fs-extra');
+const mustache      = require('mustache');
+const path          = require('path');
+const print         = require('./print');
+const Ssh           = require('./ssh');
+const Utils         = require('./utils/utils');
+const vagrant       = Promise.promisifyAll(require('node-vagrant'));
+const yaml          = require('js-yaml');
 
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
 
-const { configPath, ansible, boxes } = require('../../global-vars');
+const { configPath, ansible, boxes, bakerForMacPath } = require('../../global-vars');
 
 class Servers {
     constructor() {}
@@ -204,6 +206,34 @@ class Servers {
         // TODO: Consider also specifying ansible_connection=${} to support containers etc.
         // TODO: Callers of this can be refactored to into two methods, below:
         return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
+    }
+
+    static async setupBakerForMac(force=undefined){
+        if(force){
+            await fs.remove(bakerForMacPath);
+        }
+        if (await fs.pathExists(bakerForMacPath)) {
+            // download files if not available locally
+            if (!(await fs.pathExists(path.join(bakerForMacPath, 'kernel')))) {
+                await download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/kernel', bakerForMacPath);
+            }
+            if (!(await fs.pathExists(path.join(bakerForMacPath, 'file.img.gz')))) {
+                await download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/file.img.gz', bakerForMacPath);
+            }
+
+            // copy key if not available locally
+            if (!(await fs.pathExists(path.join(bakerForMacPath, 'baker_rsa')))) {
+                await fs.copy(path.join(configPath, 'baker_rsa'), path.join(bakerForMacPath, 'baker_rsa'));
+                await fs.chmod(path.join(bakerForMacPath, 'baker_rsa'), '600');
+            }
+
+            // only start server if not running
+            child_process.execSync(`ps -fu $USER| grep "Library/Baker/BakerForMac/bakerformac.sh" | grep -v "grep" || screen -dm -S BakerForMac bash -c "${path.join(bakerForMacPath, 'bakerformac.sh')}"`, {stdio: ['ignore', 'ignore', 'inherit']});
+        } else if (process.platform === 'darwin') {
+            // await fs.ensureDir(bakerForMacPath);
+            await fs.copy(path.join(configPath, 'BakerForMac'), bakerForMacPath);
+            this.setupBakerForMac();
+        }
     }
 }
 

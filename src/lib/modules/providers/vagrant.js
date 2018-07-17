@@ -353,6 +353,13 @@ class VagrantProvider extends Provider {
                 ansibleSSHConfig
             );
 
+            //TODO: temperary for bakerformac PoC
+            await Ssh.copyFromHostToVM(
+                path.join(configPath, 'common', 'registerhost.yml'),
+                `/home/vagrant/baker/registerhost.yml`,
+                ansibleSSHConfig
+            );
+
             await this.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig)
             await this.setKnownHosts(ip, ansibleSSHConfig);
             await this.mkTemplatesDir(doc, ansibleSSHConfig);

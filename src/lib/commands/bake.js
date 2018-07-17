@@ -7,6 +7,8 @@ const Servers        = require('../modules/servers');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
 
+const  { bakerForMacSSHConfig } = require('../../global-vars');
+
 // exports.aliases = ['$0'];
 exports.command = 'bake'
 exports.desc = 'Bake your VM given local path or repository URL containing the baker.yml';
@@ -91,24 +93,35 @@ exports.handler = async function(argv) {
 
         const {provider, BakerObj} = await Baker.chooseProvider(bakePath);
 
-        try
-        {
-            ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
-        }
-        catch(ex)
-        {
-            await Spinner.spinPromise(BakerObj.start('baker'), `Restarting Baker control machine`, spinnerDot);
-            ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+        if(process.platform != 'darwin') {
+            try
+            {
+                ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+            }
+            catch(ex)
+            {
+                await Spinner.spinPromise(BakerObj.start('baker'), `Restarting Baker control machine`, spinnerDot);
+                ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
+            }
         }
 
-        let sshConfig = await Baker.getSSHConfig(ansibleVM);
+        let sshConfig;
+        if(process.platform != 'darwin') {
+            sshConfig = await Baker.getSSHConfig(ansibleVM);
+        }
 
         if(box)
             await provider.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
         else if(remote)
             await BakerObj.bakeRemote(sshConfig, remote, remote_key, remote_user, bakePath, verbose);
         else{
-            await BakerObj.bake(bakePath, sshConfig, ansibleVM, verbose);
+            if(process.platform === 'darwin'){
+                await Servers.setupBakerForMac();
+                await BakerObj.bake(bakePath, bakerForMacSSHConfig, verbose);
+            }
+            else {
+                await BakerObj.bake(bakePath, sshConfig, ansibleVM, verbose);
+            }
         }
 
 

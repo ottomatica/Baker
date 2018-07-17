@@ -6,7 +6,7 @@ const start   = require('./start');
 const vagrant = Promise.promisifyAll(require('node-vagrant'));
 const yaml    = require('js-yaml');
 
-const { boxes, spinnerDot } = require('../../global-vars');
+const { boxes, spinnerDot, bakerForMacSSHConfig } = require('../../global-vars');
 
 module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, bakerScriptPath, verbose)
 {
@@ -99,7 +99,7 @@ module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, b
             const boxes = path.join(require('os').homedir(), '.baker');
             const ansible = path.join(boxes, 'ansible-srv');
             let machine = vagrant.create({ cwd: ansible });
-            let ansibleSSHConfig = await getSSHConfig(machine);
+            let ansibleSSHConfig = bakerForMacSSHConfig || await getSSHConfig(machine);
 
             console.log("Starting command", doc.start);
             start(doc.start, doc.name, ansibleSSHConfig, verbose);
@@ -183,7 +183,7 @@ async function resolveCustom(vmName, bakerScriptPath, remotesPath, bakeletPath, 
     const boxes = path.join(require('os').homedir(), '.baker');
     const ansible = path.join(boxes, 'ansible-srv');
     let machine = vagrant.create({ cwd: ansible });
-    let ansibleSSHConfig = await getSSHConfig(machine);
+    let ansibleSSHConfig = bakerForMacSSHConfig || await getSSHConfig(machine);
 
     let j = new classFoo(vmName, ansibleSSHConfig, version);
     j.setRemotesPath(remotesPath);
@@ -210,7 +210,7 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra
     const boxes = path.join(require('os').homedir(), '.baker');
     const ansible = path.join(boxes, 'ansible-srv');
     let machine = vagrant.create({ cwd: ansible });
-    let ansibleSSHConfig = await getSSHConfig(machine);
+    let ansibleSSHConfig = bakerForMacSSHConfig || await getSSHConfig(machine);
 
     let j = new classFoo(vmName, ansibleSSHConfig, version);
     j.setRemotesPath(remotesPath);
