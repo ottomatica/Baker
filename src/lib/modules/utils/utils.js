@@ -87,6 +87,7 @@ class Utils {
      * @param {Object} env
      */
     static async addToIndex(name, path, type, info) {
+        await this.initIndex();
         try {
             let env = {name, path, type, info: _.pick(info, 'host', 'hostname', 'user', 'image', 'private_key', 'port')};
             if(!(await this.FindInIndex(env.name))){
