@@ -130,7 +130,9 @@ class Utils {
 
     // adapted from http://procbits.com/2011/11/15/synchronous-file-copy-in-node-js
     static async copyFileSync (inFile, outDir, fileName) {
-        if(await fs.pathExists(path.join( outDir, fileName || path.basename(inFile) )))
+        var outFile = path.join(outDir, fileName || path.basename(inFile));
+
+        if (await fs.pathExists(outFile))
             return;
 
         var BUF_LENGTH = 64 * 1024;
@@ -141,7 +143,6 @@ class Utils {
         var buffer = new Buffer.alloc(BUF_LENGTH); // new Buffer(BUF_LENGTH);
 
         var bytesRead = 1;
-        var outFile = path.join( outDir, fileName || path.basename(inFile) );
         var pos = 0;
 
         await fs.ensureDir(outDir);
