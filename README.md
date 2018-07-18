@@ -9,10 +9,3 @@ $ baker bake --repo https://github.com/alt-code/Dazed
 ```
 
 [![asciicast](https://asciinema.org/a/tc5QYoqkpDUlczVFKe9PQZRY4.png)](https://asciinema.org/a/tc5QYoqkpDUlczVFKe9PQZRY4)
-
-
-### Clone submodules:
-```
-git submodule init
-git submodule update
-```
