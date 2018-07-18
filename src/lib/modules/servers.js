@@ -1,5 +1,6 @@
 const Promise       = require('bluebird');
 const child_process = require('child_process');
+const conf          = require('../../lib/modules/configstore');
 const download      = require('download');
 const fs            = require('fs-extra');
 const mustache      = require('mustache');
@@ -9,6 +10,8 @@ const Ssh           = require('./ssh');
 const Utils         = require('./utils/utils');
 const vagrant       = Promise.promisifyAll(require('node-vagrant'));
 const yaml          = require('js-yaml');
+const Spinner       = require('../modules/spinner');
+const spinnerDot    = conf.get('spinnerDot');
 
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
@@ -97,8 +100,8 @@ class Servers {
                     await Utils._ensureDir(boxes);
                     await Utils._ensureDir(dockerHostPath);
 
-                    await fs.copy(path.join(configPath, './dockerHost/dockerConfig.yml'), path.join(dockerHostPath, 'dockerConfig.yml'));
-                    await fs.copy(path.join(configPath, './dockerHost/lxd-bridge'), path.join(dockerHostPath, 'lxd-bridge'));
+                    await Utils.copyFileSync(path.join(configPath, './dockerHost/dockerConfig.yml'), path.join(dockerHostPath), 'dockerConfig.yml');
+                    await Utils.copyFileSync(path.join(configPath, './dockerHost/lxd-bridge'), path.join(dockerHostPath), 'lxd-bridge');
 
                     await this.installDocker(ansibleSSHConfig);
                 } else {
@@ -147,9 +150,10 @@ class Servers {
                 let vagrantfile = mustache.render(template, require('../../config/AnsibleVM'));
                 await fs.writeFile(path.join(ansible, 'Vagrantfile'), vagrantfile)
 
-                await fs.copy(
+                await Utils.copyFileSync(
                     path.resolve(configPath, './provision.shell.sh'),
-                    path.resolve(ansible, 'provision.shell.sh')
+                    path.resolve(ansible),
+                    'provision.shell.sh'
                 );
             } else {
                 throw err;
@@ -213,29 +217,27 @@ class Servers {
             await fs.remove(bakerForMacPath);
         }
 
-        if(!(await fs.pathExists(bakerForMacPath)) && process.platform === 'darwin') {
-            await fs.ensureDir(bakerForMacPath);
-            await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'hyperkit'), path.join(bakerForMacPath, 'vendor'), 'hyperkit');
-            await fs.chmod(path.join(bakerForMacPath, 'vendor', 'hyperkit'), '511');
-            await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'vpnkit.exe'), path.join(bakerForMacPath, 'vendor'), 'vpnkit.exe');
-            await fs.chmod(path.join(bakerForMacPath, 'vendor', 'vpnkit.exe'), '511');
-            await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'bakerformac.sh'), bakerForMacPath, 'bakerformac.sh');
-            await fs.chmod(path.join(bakerForMacPath, 'bakerformac.sh'), '511');
-            await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'hyperkitrun.sh'), bakerForMacPath, 'hyperkitrun.sh');
-            await fs.chmod(path.join(bakerForMacPath, 'hyperkitrun.sh'), '511');
+        await fs.ensureDir(bakerForMacPath);
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'hyperkit'), path.join(bakerForMacPath, 'vendor'), 'hyperkit');
+        await fs.chmod(path.join(bakerForMacPath, 'vendor', 'hyperkit'), '511');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'vpnkit.exe'), path.join(bakerForMacPath, 'vendor'), 'vpnkit.exe');
+        await fs.chmod(path.join(bakerForMacPath, 'vendor', 'vpnkit.exe'), '511');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'bakerformac.sh'), bakerForMacPath, 'bakerformac.sh');
+        await fs.chmod(path.join(bakerForMacPath, 'bakerformac.sh'), '511');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'hyperkitrun.sh'), bakerForMacPath, 'hyperkitrun.sh');
+        await fs.chmod(path.join(bakerForMacPath, 'hyperkitrun.sh'), '511');
 
-            // console.log('baker_rsa', await fs.readFile(path.join(configPath, 'baker_rsa'), 'utf8'));
+        // console.log('baker_rsa', await fs.readFile(path.join(configPath, 'baker_rsa'), 'utf8'));
 
-            await Utils.copyFileSync(path.join(configPath, 'baker_rsa'), bakerForMacPath, 'baker_rsa');
-            await fs.chmod(path.join(bakerForMacPath, 'baker_rsa'), '600');
-        }
+        await Utils.copyFileSync(path.join(configPath, 'baker_rsa'), bakerForMacPath, 'baker_rsa');
+        await fs.chmod(path.join(bakerForMacPath, 'baker_rsa'), '600');
 
         // download files if not available locally
         if (!(await fs.pathExists(path.join(bakerForMacPath, 'kernel')))) {
-            await download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/kernel', bakerForMacPath);
+            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/kernel', bakerForMacPath), 'Downloading BakerForMac kernel', spinnerDot);
         }
         if (!(await fs.pathExists(path.join(bakerForMacPath, 'file.img.gz')))) {
-            await download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/file.img.gz', bakerForMacPath);
+            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/file.img.gz', bakerForMacPath), 'Downloading BakerForMac filesystem image', spinnerDot);
         }
 
         // only start server if not running

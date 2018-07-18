@@ -5,6 +5,7 @@ const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');
 const Validator = require('../modules/validator');
 const Servers   = require('../modules/servers');
+const Utils     = require('../modules/utils/utils');
 
 const spinnerDot = conf.get('spinnerDot');
 const { configPath, ansible } = require('../../global-vars');
@@ -40,20 +41,21 @@ exports.handler = async function (argv) {
             await Spinner.spinPromise(Servers.installAnsibleServer(), 'Installing Baker control machine', spinnerDot);
 
         await Spinner.spinPromise(
-            fs.copy(
+            Utils.copyFileSync(
                 path.resolve(configPath, './baker_rsa.pub'),
-                path.resolve(ansible, 'keys','baker_rsa.pub')
+                path.resolve(ansible, 'keys'),
+                'baker_rsa.pub'
             ),
             'Copying private ssh key',
             spinnerDot
         );
 
         await Spinner.spinPromise(
-            fs.copy(
+            Utils.copyFileSync(
                 path.resolve(configPath, './baker_rsa'),
-                path.resolve(ansible, 'keys','baker_rsa')
-            )
-            ,
+                path.resolve(ansible, 'keys'),
+                'baker_rsa'
+            ),
             'Copying public ssh key',
             spinnerDot
         );
