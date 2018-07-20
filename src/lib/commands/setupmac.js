@@ -31,7 +31,7 @@ exports.handler = async function (argv) {
 
     try {
         if(ssh) {
-            child_process.execSync(`ssh -i "${path.join(bakerForMacPath, 'baker_rsa')}" -p 6022 -o StrictHostKeyChecking=no root@localhost`, {stdio: ['inherit', 'inherit', 'inherit']});
+            child_process.execSync(`ssh -q -i "${path.join(bakerForMacPath, 'baker_rsa')}" -p 6022 -o StrictHostKeyChecking=no root@localhost`, {stdio: ['inherit', 'inherit', 'inherit']});
         }
         else {
             await Servers.setupBakerForMac(force);
