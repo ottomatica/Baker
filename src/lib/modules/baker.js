@@ -15,6 +15,7 @@ const validator     = require('validator');
 const yaml          = require('js-yaml');
 
 const VagrantProvider = require('./providers/vagrant');
+const VirtualBoxProvider = require('./providers/virtualbox');
 const DockerProvider  = require('./providers/docker');
 const DO_Provider     = require('./providers/digitalocean');
 const RemoteProvider  = require('./providers/remote');
@@ -206,7 +207,8 @@ class Baker {
         if(envType === 'container')
             provider = new DockerProvider({host: '192.168.252.251', port: '2375', protocol: 'http'});
         else if(envType === 'vm')
-            provider = new VagrantProvider();
+            //provider = new VagrantProvider();
+            provider = new VirtualBoxProvider();
         else if(envType === 'remote'){
             if(!RemoteProvider.validateBakerYML(bakePath)){
                 console.error('invalid baker.yml for remote provider');
