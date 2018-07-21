@@ -105,17 +105,20 @@ class Utils {
      * @param {String} name name of the environment
      */
     static async FindInIndex(name) {
+        await this.initIndex();
         let envIndex = await fs.readJson(envIndexPath);
         return envIndex.find(e => e.name === name) || null;
     }
 
     static async removeFromIndex(name) {
+        await this.initIndex();
         let envIndex = await fs.readJson(envIndexPath);
         envIndex = envIndex.filter(e => e.name != name);
         await fs.outputJson(envIndexPath, envIndex, {spaces: 4});
     }
 
     static async setEnvIndexState(name, state) {
+        await this.initIndex();
         let envIndex = await fs.readJson(envIndexPath);
         envIndex.forEach(env => {
             if(env.name === name)
@@ -125,6 +128,7 @@ class Utils {
     }
 
     static async getEnvIndex() {
+        await this.initIndex();
         return await fs.readJson(envIndexPath);
     }
 
