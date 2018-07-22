@@ -1,5 +1,6 @@
 const Bakelet = require('../bakelet');
 const Baker   = require('../../modules/baker');
+const Ansible   = require('../../modules/configuration/ansible');
 const fs      = require('fs-extra');
 const path    = require('path');
 
@@ -25,7 +26,7 @@ class Nodejs extends Bakelet {
     async install()
     {
         var cmd = `nodejs${this.version}.yml`;
-        await Baker.runAnsiblePlaybook(
+        await Ansible.runAnsiblePlaybook(
             {name: this.name}, cmd, this.ansibleSSHConfig, this.verbose, this.variables
         );
 

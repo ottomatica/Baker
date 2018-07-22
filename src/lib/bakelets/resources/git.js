@@ -1,7 +1,7 @@
 const Bakelet  = require('../bakelet');
-const Baker    = require('../../modules/baker');
 const chalk = require('chalk');
 const _ = require('underscore');
+const Ssh = require('./../modules/ssh');
 
 class Git extends Bakelet {
     constructor(name, ansibleSSHConfig, version) {
@@ -45,8 +45,12 @@ class Git extends Bakelet {
         }
     }
 
+    static async runGitClone (doc, repo, dest, ansibleSSHConfig,verbose) {
+        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m git -a "repo=${repo} dest=${dest} version=HEAD" -i baker_inventory`, ansibleSSHConfig, verbose);
+    }
+
     async install() {
-        await Baker.runGitClone({name: this.name}, this.repo, this.dest, this.ansibleSSHConfig, this.verbose);
+        await runGitClone({name: this.name}, this.repo, this.dest, this.ansibleSSHConfig, this.verbose);
     }
 }
 

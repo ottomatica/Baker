@@ -1,5 +1,6 @@
 const Bakelet = require('../bakelet');
 const Baker   = require('../../modules/baker');
+const Ansible   = require('../../modules/configuration/ansible');
 const path    = require('path');
 
 class Latex extends Bakelet {
@@ -19,7 +20,7 @@ class Latex extends Bakelet {
 
     async install() {
         var cmd = `latex${this.version}.yml`;
-        await Baker.runAnsiblePlaybook({ name: this.name }, cmd, this.ansibleSSHConfig, this.verbose, this.variables);
+        await Ansible.runAnsiblePlaybook({ name: this.name }, cmd, this.ansibleSSHConfig, this.verbose, this.variables);
     }
 }
 
