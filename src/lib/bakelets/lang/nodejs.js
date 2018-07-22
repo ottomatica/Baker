@@ -38,7 +38,7 @@ class Nodejs extends Bakelet {
             // https://github.com/ansible/ansible/pull/29131
             var vmPackagePath = `/${path.basename(this.bakePath)}`;
             if( this.verbose ) console.log(`Attempting to run npm install in vm at ${vmPackagePath}`);
-            await Baker.runAnsibleNpmInstall(
+            await Ansible.runAnsibleNpmInstall(
                 {name: this.name}, vmPackagePath, this.ansibleSSHConfig, this.verbose
             );
         }

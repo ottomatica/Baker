@@ -36,7 +36,7 @@ class Python extends Bakelet {
         if( fs.existsSync(localRequirementsPath) )
         {
             var vmRequirementsPath = `/${path.basename(this.bakePath)}/requirements.txt`;
-            await Baker.runAnsiblePipInstall(
+            await Ansible.runAnsiblePipInstall(
                 {name: this.name}, vmRequirementsPath, this.ansibleSSHConfig, this.verbose
             );
         }

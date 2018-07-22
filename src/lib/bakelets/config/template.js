@@ -1,5 +1,6 @@
 const Bakelet = require('../bakelet');
 const Baker   = require('../../modules/baker');
+const Ansible = require('../../modules/configuration/ansible');
 const path    = require('path');
 const Ssh     = require('../../modules/ssh');
 
@@ -29,7 +30,7 @@ class Template extends Bakelet {
 
     async install()
     {
-        await Baker.runAnsibleTemplateCmd(
+        await Ansible.runAnsibleTemplateCmd(
             {name: this.name}, this.src, this.dest, this.variables, this.ansibleSSHConfig, this.verbose
         );
     }
