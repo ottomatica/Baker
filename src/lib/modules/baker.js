@@ -237,32 +237,13 @@ class Baker {
         }
     }
 
-    // TODO: move to provider
     /**
      * Get ssh configurations
      * @param {Obj} machine
      * @param {Obj} nodeName Optionally give name of machine when multiple machines declared in single Vagrantfile.
      */
     static async getSSHConfig (machine, nodeName) {
-        try {
-            let sshConfig = await machine.sshConfigAsync();
-            if(sshConfig && sshConfig.length > 0){
-
-                if( nodeName )
-                {
-                    for( var i = 0; i < sshConfig.length; i++ )
-                    {
-                        if( sshConfig[i].host === nodeName )
-                           return sshConfig[i];
-                    }
-                }
-                return sshConfig[0];
-            } else{
-                throw '';
-            }
-        } catch (err) {
-            throw `Couldn't get private ssh key of machine ${err}`;
-        }
+        this.provider.getSSHConfig(machine, nodeName);
     }
 
     /**
