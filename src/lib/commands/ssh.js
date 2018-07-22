@@ -24,16 +24,6 @@ exports.handler = async function(argv) {
     // let { envName } = argv;
 
     try {
-        // if(!VMName){
-        //     let cwdVM = (await Baker.getCWDBakerYML());
-        //     if(cwdVM)
-        //         VMName = (await Baker.getCWDBakerYML()).name;
-        //     else {
-        //         Print.error(`Couldn't find baker.yml in cwd. Run the command in a directory with baker.yml or specify a VMName.`);
-        //         process.exit(1);
-        //     }
-        // }
-
         let bakePath = process.cwd();
         const {envName, BakerObj} = await Baker.chooseProvider(bakePath);
 
