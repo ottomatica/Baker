@@ -5,6 +5,7 @@ const path      = require('path');
 const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');
 const Servers   = require('../modules/servers');
+const Cluster   = require('../modules/clusters/cluster');
 
 const spinnerDot = conf.get('spinnerDot');
 
@@ -68,7 +69,8 @@ exports.handler = async function(argv) {
 
         let sshConfig = await Baker.getSSHConfig(ansibleVM);
 
-        await Baker.cluster(sshConfig, ansibleVM, bakePath, verbose);
+        let cluster = new Cluster();
+        await cluster.cluster(sshConfig, ansibleVM, bakePath, verbose);
 
     } catch (err) {
         Print.error(err);
