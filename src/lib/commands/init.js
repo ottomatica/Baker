@@ -1,7 +1,7 @@
-const Baker = require('../modules/baker');
+const Interactive = require('../modules/init/interactive');
 
 exports.command = 'init';
 exports.desc = 'initializes a new Baker environment by creating a baker.yml file';
 exports.handler = async function(argv) {
-    await Baker.initBaker2();
+    await Interactive.initBaker2();
 }
