@@ -53,10 +53,11 @@ class Servers {
      * @param {String} name
      * @param {Object} sshConfig
      */
-    async addToAnsibleHosts (ip, name, ansibleSSHConfig, vmSSHConfig){
+    static async addToAnsibleHosts (ip, name, ansibleSSHConfig, vmSSHConfig, usePython3){
+        let pythonPath = usePython3 ? '/usr/bin/python3' : '/usr/bin/python';
         // TODO: Consider also specifying ansible_connection=${} to support containers etc.
         // TODO: Callers of this can be refactored to into two methods, below:
-        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
+        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}\tansible_python_interpreter=${pythonPath}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
     }
 
     static async setupBakerForMac(force=undefined){

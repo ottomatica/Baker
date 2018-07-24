@@ -4,6 +4,11 @@ const fs            =      require('fs-extra');
 const path          =      require('path');
 const Provider      =      require('./provider');
 const Ssh           =      require('../ssh');
+const Servers       =      require('../../modules/servers');
+const conf          = require('../../modules/configstore');
+const Spinner       = require('../../modules/spinner');
+const spinnerDot    = conf.get('spinnerDot');
+
 
 const vbox          =      require('node-virtualbox');
 const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
@@ -111,20 +116,6 @@ class VirtualBoxProvider extends Provider {
         }
     }
 
-    // also in servers.js
-    /**
-     * Adds inventory
-     *
-     * @param {String} ip
-     * @param {String} name
-     * @param {Object} sshConfig
-     */
-    async addToAnsibleHosts(ip, name, ansibleSSHConfig, vmSSHConfig) {
-        // TODO: Consider also specifying ansible_connection=${} to support containers etc.
-        // TODO: Callers of this can be refactored to into two methods, below:
-        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
-    }
-
     async bake(scriptPath, ansibleSSHConfig, verbose) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
@@ -173,7 +164,7 @@ class VirtualBoxProvider extends Provider {
             ansibleSSHConfig
         );
 
-        await this.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig)
+        await Servers.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig, true)
         await this.setKnownHosts(ip, ansibleSSHConfig);
         await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
@@ -183,15 +174,8 @@ class VirtualBoxProvider extends Provider {
             await this.traverse(doc.vars);
         }
 
-        // Hack make sure has python2
-        try
-        {
-            await Ssh.sshExec(`/usr/bin/python --version 2> /dev/null || (sudo apt-get update && sudo apt-get -y install python-minimal)`, sshConfig, true);
-        }
-        catch(e)
-        {
+        await Spinner.spinPromise(Ssh.sshExec(`sudo apt-get update`, sshConfig, false), `Running apt-get update on VM`, spinnerDot);
 
-        }
         // Installing stuff.
         let resolveB = require('../../bakelets/resolve');
         await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose)
