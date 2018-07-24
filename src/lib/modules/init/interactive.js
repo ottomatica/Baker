@@ -1,29 +1,17 @@
 const Promise       = require('bluebird');
-const conf          = require('./configstore');
+const conf          = require('../configstore');
 const fs            = require('fs-extra');
 const inquirer      = require('inquirer');
 const mustache      = require('mustache');
-const netaddr       = require('netaddr');
 const path          = require('path');
-const print         = require('./print');
-const Provider      = require('../modules/providers/provider');
-const spinner       = require('./Spinner');
-const Ssh           = require('./ssh');
-const Utils         = require('./utils/utils');
-const vagrant       = Promise.promisifyAll(require('node-vagrant'));
+const spinner       = require('../Spinner');
+const Utils         = require('../utils/utils');
 const validator     = require('validator');
-const yaml          = require('js-yaml');
-
-const VagrantProvider = require('./providers/vagrant');
-const VirtualBoxProvider = require('./providers/virtualbox');
-const DockerProvider  = require('./providers/docker');
-const DO_Provider     = require('./providers/digitalocean');
-const RemoteProvider  = require('./providers/remote');
 
 // conf variables:
 const spinnerDot = conf.get('spinnerDot');
 
-const { configPath, ansible, boxes, bakeletsPath, remotesPath } = require('../../global-vars');
+const { configPath} = require('../../../global-vars');
 
 class Interactive {
 

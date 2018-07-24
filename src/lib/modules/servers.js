@@ -13,6 +13,8 @@ const yaml          = require('js-yaml');
 const Spinner       = require('../modules/spinner');
 const spinnerDot    = conf.get('spinnerDot');
 
+const vbox          =      require('node-virtualbox');
+const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
 
@@ -124,6 +126,21 @@ class Servers {
         } else {
             // TODO: custom docker hosts
             console.log('Docker-srv is running!')
+        }
+    }
+
+    static async installBakerServer() {
+        if (require('os').platform() === 'darwin') {
+            await this.setupBakerForMac();
+        } else {
+            // TODO: check if virtualbox is installed
+            // TODO: update node-virtualbox to return the port if it has to use something else
+            await vbox({
+                micro: true,
+                vmname: 'baker',
+                port: 6022,
+                verbose: true
+            });
         }
     }
 

@@ -115,13 +115,8 @@ exports.handler = async function(argv) {
         else if(remote)
             await BakerObj.bakeRemote(sshConfig, remote, remote_key, remote_user, bakePath, verbose);
         else{
-            if(process.platform === 'darwin'){
-                await Servers.setupBakerForMac();
-                await BakerObj.bake(bakePath, bakerForMacSSHConfig, verbose);
-            }
-            else {
-                await BakerObj.bake(bakePath, sshConfig, ansibleVM, verbose);
-            }
+            await Servers.installBakerServer();
+            await BakerObj.bake(bakePath, bakerForMacSSHConfig, verbose);
         }
 
 

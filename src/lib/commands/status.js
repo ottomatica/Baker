@@ -6,13 +6,15 @@ const Utils          = require('../modules/utils/utils');
 const _              = require('underscore');
 const spinnerDot     = conf.get('spinnerDot');
 const VagrantProvider = require('../modules/providers/vagrant');
+const VirtualboxProvider = require('../modules/providers/virtualbox');
 
 exports.command = 'status';
 exports.desc = `Show status for all Baker VMs`;
 exports.handler = async function(argv) {
 
     //TODO: if vagrant:
-    const provider = new VagrantProvider();
+    // const provider = new VagrantProvider();
+    const provider = new VirtualboxProvider();
     const BakerObj = new Baker(provider);
 
     try {

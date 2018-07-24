@@ -38,9 +38,10 @@ class VirtualBoxProvider extends Provider {
 
     async list() {
         try {
-            let VMs = await vagrant.globalStatusAsync();
+            // let VMs = await vagrant.globalStatusAsync();
+            let VMs = await this.driver.list();
             // Only showing baker VMs
-            VMs = VMs.filter(VM => VM.cwd.includes('.baker/'));
+            // VMs = VMs.filter(VM => VM.cwd.includes('.baker/'));
             console.table('\nBaker status: ', VMs);
         } catch (err) {
             throw err
@@ -54,7 +55,7 @@ class VirtualBoxProvider extends Provider {
      * @param {boolean} verbose
      */
     async start(VMName, verbose = false) {
-        await vbox({start: true, vmname: doc.name, syncs: [], verbose: true});
+        await vbox({start: true, vmname: VMName, syncs: [], verbose: verbose});
     }
 
     /**
@@ -63,7 +64,7 @@ class VirtualBoxProvider extends Provider {
      * TODO: add force option
      */
     async stop(VMName, force = false) {
-        await vbox({stopCmd: true, vmname: doc.name, syncs: [], verbose: true});
+        await vbox({stopCmd: true, vmname: VMName, syncs: [], verbose: true});
     }
 
     /**
@@ -71,7 +72,7 @@ class VirtualBoxProvider extends Provider {
      * @param {String} VMName
      */
     async delete(VMName) {
-        await vbox({deleteCmd: true, vmname: doc.name, syncs: [], verbose: true});
+        await vbox({deleteCmd: true, vmname: VMName, syncs: [], verbose: true});
     }
 
     /**
