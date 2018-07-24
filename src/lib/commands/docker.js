@@ -47,6 +47,8 @@ exports.handler = async function(argv) {
     let doc = yaml.safeLoad(await fs.readFile(path.join(bakePath, 'baker.yml'), 'utf8'));
     let name = doc.name;
 
+    await Servers.installBakerServer();
+
     switch (argv.command) {
         case 'bake':
             await BakerObj.bake(bakePath);
