@@ -12,7 +12,7 @@ class Git {
         return new Promise((resolve, reject) => {
             git(dir).silent(true).clone(repoURL, (err, data) => {
                 if (err)
-                    reject(`A directory with same name as this repository exists in current directory.`);
+                    reject(err);
                 else
                     resolve(path.join(dir, name));
             });
