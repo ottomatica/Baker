@@ -14,6 +14,7 @@ const Spinner       = require('../modules/spinner');
 const spinnerDot    = conf.get('spinnerDot');
 
 const vbox          =      require('node-virtualbox');
+const VirtualboxProvider = require('../modules/providers/virtualbox');
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
 
@@ -132,14 +133,16 @@ class Servers {
         if (require('os').platform() === 'darwin') {
             await this.setupBakerForMac();
         } else {
+            const provider = new VirtualboxProvider();
             // TODO: check if virtualbox is installed
-            // TODO: update node-virtualbox to return the port if it has to use something else
-            await vbox({
-                micro: true,
-                vmname: 'baker',
-                port: 6022,
-                verbose: true
-            });
+            if((await provider.driver.list()).filter(e => e.name === 'baker-srv').length == 0) {
+                await vbox({
+                    micro: true,
+                    vmname: 'baker-srv',
+                    port: 6022,
+                    verbose: true
+                });
+            }
         }
     }
 
