@@ -134,6 +134,11 @@ class Servers {
             await this.setupBakerForMac();
         } else {
             const provider = new VirtualboxProvider();
+
+            // Ensure baker keys are installed.
+            await Utils.copyFileSync(path.join(configPath, 'baker_rsa'), boxes, 'baker_rsa');
+            await fs.chmod(path.join(boxes, 'baker_rsa'), '600');
+
             // TODO: check if virtualbox is installed
             if((await provider.driver.list()).filter(e => e.name === 'baker-srv').length == 0) {
                 await vbox({

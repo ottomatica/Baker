@@ -4,7 +4,7 @@ const path           = require('path');
 const Print          = require('../modules/print');
 const Servers        = require('../modules/servers');
 
-const  { bakerForMacSSHConfig } = require('../../global-vars');
+const  { bakerSSHConfig } = require('../../global-vars');
 
 // exports.aliases = ['$0'];
 exports.command = 'bake'
@@ -91,12 +91,12 @@ exports.handler = async function(argv) {
         const {provider, BakerObj} = await Baker.chooseProvider(bakePath);
 
         if(box)
-            await provider.bakeBox(bakerForMacSSHConfig, ansibleVM, bakePath, verbose);
+            await provider.bakeBox(bakerSSHConfig, ansibleVM, bakePath, verbose);
         else if(remote)
-            await BakerObj.bakeRemote(bakerForMacSSHConfig, remote, remote_key, remote_user, bakePath, verbose);
+            await BakerObj.bakeRemote(bakerSSHConfig, remote, remote_key, remote_user, bakePath, verbose);
         else{
             await Servers.installBakerServer();
-            await BakerObj.bake(bakePath, bakerForMacSSHConfig, verbose);
+            await BakerObj.bake(bakePath, bakerSSHConfig, verbose);
         }
 
     } catch (err) {
