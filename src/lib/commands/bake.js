@@ -1,11 +1,8 @@
 const Baker          = require('../modules/baker');
-const conf           = require('../../lib/modules/configstore');
 const Git            = require('../modules/utils/git');
 const path           = require('path');
 const Print          = require('../modules/print');
 const Servers        = require('../modules/servers');
-const Spinner        = require('../modules/spinner');
-const spinnerDot     = conf.get('spinnerDot');
 
 const  { bakerForMacSSHConfig } = require('../../global-vars');
 
@@ -93,32 +90,14 @@ exports.handler = async function(argv) {
 
         const {provider, BakerObj} = await Baker.chooseProvider(bakePath);
 
-        if(process.platform != 'darwin') {
-            try
-            {
-                ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
-            }
-            catch(ex)
-            {
-                await Spinner.spinPromise(BakerObj.start('baker'), `Restarting Baker control machine`, spinnerDot);
-                ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
-            }
-        }
-
-        let sshConfig;
-        if(process.platform != 'darwin') {
-            sshConfig = await Baker.getSSHConfig(ansibleVM);
-        }
-
         if(box)
-            await provider.bakeBox(sshConfig, ansibleVM, bakePath, verbose);
+            await provider.bakeBox(bakerForMacSSHConfig, ansibleVM, bakePath, verbose);
         else if(remote)
-            await BakerObj.bakeRemote(sshConfig, remote, remote_key, remote_user, bakePath, verbose);
+            await BakerObj.bakeRemote(bakerForMacSSHConfig, remote, remote_key, remote_user, bakePath, verbose);
         else{
             await Servers.installBakerServer();
             await BakerObj.bake(bakePath, bakerForMacSSHConfig, verbose);
         }
-
 
     } catch (err) {
         Print.error(err);
