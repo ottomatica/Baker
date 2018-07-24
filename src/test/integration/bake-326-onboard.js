@@ -10,12 +10,12 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
     this.timeout(1000000);
 
     // https://github.ncsu.edu/engr-csc326-staff/Onboarding
+    const tstDir = path.join(os.homedir(), 'Library', 'Baker', 'int-test');
+    const onboarding = path.join(tstDir, 'Onboarding');
 
     it('should run coffeemaker project', function(done) {
 
-        const tstDir = path.join(os.homedir(), 'Library', 'Baker', 'int-test');
         fs.mkdirpSync(tstDir);
-        const onboarding = path.join(tstDir, 'Onboarding');
         fs.removeSync(onboarding);
 
         // echo value for prompt input for password.
@@ -38,12 +38,14 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
 
             },90000);
 
+            console.log(`Waiting 90 seconds for coffeemaker to start springboot:run`);
+
         });
         child.stdout.pipe(process.stdout);
     });
 
-    /*it('should destroy VM', function(done) {
-        var child = child_process.exec('node cmd.js destroy onboard', function(error, stdout, stderr)
+    it('should destroy coffeemaker VM', function(done) {
+        var child = child_process.exec(`cd ${onboarding} && baker destroy`, function(error, stdout, stderr)
         {
             console.log(stderr);
             expect(stderr).to.be.empty;
@@ -51,6 +53,5 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
         });
         child.stdout.pipe(process.stdout);
     });
-    */
 
 });

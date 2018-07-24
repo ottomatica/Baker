@@ -70,6 +70,11 @@ class VirtualBoxProvider extends Provider {
      * @param {String} VMName
      */
     async delete(VMName) {
+        let state = await this.getState(VMName);
+        if( state == 'running' )
+        {
+            await this.stop(VMName);
+        }
         await vbox({deleteCmd: true, vmname: VMName, syncs: [], verbose: true});
     }
 
@@ -94,9 +99,9 @@ class VirtualBoxProvider extends Provider {
      * Returns State of a VM
      * @param {String} VMName
      */
-    static async getState(VMName) {
-        let vmInfo = await this.driver.info(doc.name);
-        return vmInfo.VMState.replace('"','');
+    async getState(VMName) {
+        let vmInfo = await this.driver.info(VMName);
+        return vmInfo.VMState.replace(/"/g,'');
     }
 
     /**
