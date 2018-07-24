@@ -142,7 +142,9 @@ class VirtualBoxProvider extends Provider {
         {
             // Create VM
             console.log( "Creating vm. ")
-            await vbox({provision: true, ip: doc.vm.ip, vmname: doc.name, syncs: [], verbose: true});
+            let mem = doc.vm.memory || 1024;
+            let cpus = doc.vm.cpus || 2;
+            await vbox({provision: true, ip: doc.vm.ip, mem: mem, cpus: cpus, vmname: doc.name, syncs: [], verbose: true});
         }
         let vmInfo = await this.driver.info(doc.name);
         console.log( `VM is currently in state ${vmInfo.VMState}`)
