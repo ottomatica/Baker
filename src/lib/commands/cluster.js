@@ -5,7 +5,6 @@ const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');
 const Servers   = require('../modules/servers');
 const Cluster   = require('../modules/clusters/cluster');
-const Servers        = require('../modules/servers');
 
 const spinnerDot = conf.get('spinnerDot');
 const  { bakerSSHConfig } = require('../../global-vars');
