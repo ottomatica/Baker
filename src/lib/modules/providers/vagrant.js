@@ -303,7 +303,7 @@ class VagrantProvider extends Provider {
             // prompt for passwords
             if( doc.vars )
             {
-                await this.traverse(doc.vars);
+                await Utils.traverse(doc.vars);
             }
 
             // let vmSSHConfig = await this.getSSHConfig(machine);

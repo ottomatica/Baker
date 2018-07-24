@@ -8,7 +8,7 @@ const Servers       =      require('../../modules/servers');
 const conf          = require('../../modules/configstore');
 const Spinner       = require('../../modules/spinner');
 const spinnerDot    = conf.get('spinnerDot');
-
+const Utils         = require('../utils/utils');
 
 const vbox          =      require('node-virtualbox');
 const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
@@ -121,6 +121,12 @@ class VirtualBoxProvider extends Provider {
 
         let dir = path.join(boxes, doc.name);
 
+        // handle prompts for vm settings.
+        if( doc.vm )
+        {
+            await Utils.traverse(doc.vm);
+        }
+
         try {
             await fs.ensureDir(dir);
         } catch (err) {
@@ -168,10 +174,10 @@ class VirtualBoxProvider extends Provider {
         await this.setKnownHosts(ip, ansibleSSHConfig);
         await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
-        // prompt for passwords
+        // prompt for passwords/vars
         if( doc.vars )
         {
-            await this.traverse(doc.vars);
+            await Utils.traverse(doc.vars);
         }
 
         await Spinner.spinPromise(Ssh.sshExec(`sudo apt-get update`, sshConfig, false), `Running apt-get update on VM`, spinnerDot);
