@@ -12,11 +12,15 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
     // https://github.ncsu.edu/engr-csc326-staff/Onboarding
 
     it('should run coffeemaker project', function(done) {
-        const tstDir = path.join(os.tmpdir(), 'Onboarding');
-        fs.remove(tstDir);
+
+        const tstDir = path.join(os.homedir(), 'Library', 'Baker', 'int-test');
+        fs.mkdirpSync(tstDir);
+        const onboarding = path.join(tstDir, 'Onboarding');
+        fs.removeSync(onboarding);
+
         // echo value for prompt input for password.
         var child = child_process.exec('echo 326 | baker bake --repo git@github.ncsu.edu:engr-csc326-staff/Onboarding.git',
-                                       {cwd: os.tmpdir()  }, function(error, stdout, stderr) {
+                                       {cwd: tstDir }, function(error, stdout, stderr) {
             setTimeout( function()
             {
                 expect(stderr).to.be.empty;
@@ -32,17 +36,10 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
                     done();
                 });
 
-            },30000);
+            },90000);
 
         });
         child.stdout.pipe(process.stdout);
-        // Read prompts
-        //process.stdin.pipe(child.stdin);
-        //child.on('close', function (code) {
-        //    callback(code, 'closing callback');
-        //    // resume the main process stdin after child ends so the repl continues to run
-        //    process.stdin.resume();
-        //});
     });
 
     /*it('should destroy VM', function(done) {
