@@ -1,4 +1,3 @@
-const Baker     = require('../modules/baker');
 const conf      = require('../../lib/modules/configstore');
 const Git       = require('../modules/utils/git');
 const path      = require('path');
@@ -6,8 +5,10 @@ const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');
 const Servers   = require('../modules/servers');
 const Cluster   = require('../modules/clusters/cluster');
+const Servers        = require('../modules/servers');
 
 const spinnerDot = conf.get('spinnerDot');
+const  { bakerSSHConfig } = require('../../global-vars');
 
 exports.command = 'cluster';
 exports.desc    = 'Bake your Cluster given local path or repository URL containing the baker.yml';
@@ -57,20 +58,10 @@ exports.handler = async function(argv) {
             process.exit(1);
         }
 
-        try
-        {
-            ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
-        }
-        catch(ex)
-        {
-            await Spinner.spinPromise(Baker.upVM('baker'), `Restarting Baker control machine`, spinnerDot);
-            ansibleVM = await Spinner.spinPromise(Servers.prepareAnsibleServer(bakePath), 'Preparing Baker control machine', spinnerDot);
-        }
-
-        let sshConfig = await Baker.getSSHConfig(ansibleVM);
-
+        await Servers.installBakerServer();
+        
         let cluster = new Cluster();
-        await cluster.cluster(sshConfig, ansibleVM, bakePath, verbose);
+        await cluster.cluster(bakerSSHConfig, ansibleVM, bakePath, verbose);
 
     } catch (err) {
         Print.error(err);
