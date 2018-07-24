@@ -9,6 +9,7 @@ const conf          = require('../../modules/configstore');
 const Spinner       = require('../../modules/spinner');
 const spinnerDot    = conf.get('spinnerDot');
 const Utils         = require('../utils/utils');
+const slash         =      require('slash');
 
 const vbox          =      require('node-virtualbox');
 const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
@@ -138,10 +139,12 @@ class VirtualBoxProvider extends Provider {
         if( !vm )
         {
             // Create VM
-            console.log( "Creating vm. ")
+            console.log( `Creating vm. ${doc.name}`);
             let mem = doc.vm.memory || 1024;
             let cpus = doc.vm.cpus || 2;
-            await vbox({provision: true, ip: doc.vm.ip, mem: mem, cpus: cpus, vmname: doc.name, syncs: [], verbose: true});
+            let syncs = [`${slash(scriptPath)};/${path.basename(scriptPath)}`];
+            // [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]]
+            await vbox({provision: true, ip: doc.vm.ip, mem: mem, cpus: cpus, vmname: doc.name, syncs: syncs, verbose: true});
         }
         let vmInfo = await this.driver.info(doc.name);
         console.log( `VM is currently in state ${vmInfo.VMState}`)
