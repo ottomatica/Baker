@@ -1,9 +1,7 @@
 const Bakelet = require('../bakelet');
-const Baker   = require('../../modules/baker');
-const Ansible   = require('../../modules/configuration/ansible');
+const Ansible = require('../../modules/configuration/ansible');
 const fs      = require('fs-extra');
 const path    = require('path');
-const Ssh     = require('../../modules/ssh');
 
 class Python extends Bakelet {
 

@@ -2,10 +2,7 @@ const Baker          = require('../modules/baker');
 const conf           = require('../../lib/modules/configstore')
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
-const Utils          = require('../modules/utils/utils');
-const _              = require('underscore');
 const spinnerDot     = conf.get('spinnerDot');
-const VagrantProvider = require('../modules/providers/vagrant');
 const VirtualboxProvider = require('../modules/providers/virtualbox');
 
 exports.command = 'status';

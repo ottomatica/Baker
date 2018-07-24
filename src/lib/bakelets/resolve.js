@@ -1,12 +1,10 @@
-const fs      = require('fs');
 const path    = require('path');
 const Promise = require('bluebird');
 const Spinner = require('../modules/spinner');
 const start   = require('./start');
 const vagrant = Promise.promisifyAll(require('node-vagrant'));
-const yaml    = require('js-yaml');
 
-const { boxes, spinnerDot, bakerForMacSSHConfig } = require('../../global-vars');
+const { spinnerDot, bakerForMacSSHConfig } = require('../../global-vars');
 
 module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, bakerScriptPath, verbose)
 {

@@ -1,5 +1,4 @@
 const conf      = require('../../lib/modules/configstore');
-const fs        = require('fs-extra');
 const path      = require('path');
 const Print     = require('../modules/print');
 const Spinner   = require('../modules/spinner');

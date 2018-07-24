@@ -1,27 +1,19 @@
 const Promise       =      require('bluebird');
 const child_process =      Promise.promisifyAll(require('child_process'));
-const conf          =      require('../configstore');
 const fs            =      require('fs-extra');
-const mustache      =      require('mustache');
 const path          =      require('path');
-const print         =      require('../print');
 const Provider      =      require('./provider');
-const slash         =      require('slash')
-const spinner       =      require('../spinner');
 const Ssh           =      require('../ssh');
-const Utils         =      require('../utils/utils');
-const vagrant       =      Promise.promisifyAll(require('node-vagrant'));
 
 const vbox          =      require('node-virtualbox');
 const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
 const private_key   =      require.resolve('node-virtualbox/config/resources/insecure_private_key');
 
 const yaml          =      require('js-yaml');
-const spinnerDot    =      conf.get('spinnerDot');
 
 const _             =      require('underscore');
 
-const {ansible, boxes, bakeletsPath, remotesPath, configPath} = require('../../../global-vars');
+const {boxes, bakeletsPath, remotesPath, configPath} = require('../../../global-vars');
 
 class VirtualBoxProvider extends Provider {
     constructor() {

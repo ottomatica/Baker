@@ -1,11 +1,9 @@
 const child_process = require('child_process');
-const conf          = require('../../lib/modules/configstore');
-const fs            = require('fs-extra')
 const path          = require('path');
 const Print         = require('../modules/print');
 const Servers        = require('../modules/servers');
 
-const { configPath, bakerForMacPath } = require('../../global-vars');
+const { bakerForMacPath } = require('../../global-vars');
 
 exports.command = 'setupmac'
 exports.desc = 'create a Baker server which will be used for provisioning yor VMs'

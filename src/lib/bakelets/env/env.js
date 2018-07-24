@@ -1,6 +1,5 @@
 const Bakelet  = require('../bakelet');
-const Baker    = require('../../modules/baker');
-const Ansible   = require('../../modules/configuration/ansible');
+const Ansible  = require('../../modules/configuration/ansible');
 const fs       = require('fs-extra');
 const mustache = require('mustache');
 const path     = require('path');

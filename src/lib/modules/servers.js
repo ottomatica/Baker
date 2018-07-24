@@ -14,7 +14,6 @@ const Spinner       = require('../modules/spinner');
 const spinnerDot    = conf.get('spinnerDot');
 
 const vbox          =      require('node-virtualbox');
-const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
 

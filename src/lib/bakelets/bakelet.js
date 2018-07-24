@@ -1,4 +1,3 @@
-const path    = require('path');
 const Ssh = require('../modules/ssh');
 
 class Bakelet
