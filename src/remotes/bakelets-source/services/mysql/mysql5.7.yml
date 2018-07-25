@@ -24,7 +24,13 @@
         - git-core
         - python-setuptools
         - debconf-utils
+        - python-mysqldb
       become: yes
+
+    # we're using the apt-get version instead.
+    # - name: Install the Python MySQLB module
+    #   pip: name=MySQL-python
+    #   become: yes
 
     # For 5.7, password is required during install. Normally, this is prompted by an interactive script.
     # But by populating the debconf database, we can setup a password that gets asked during install.
@@ -71,10 +77,6 @@
 
     - name: ensure mysql is running and starts on boot
       service: name=mysql state=restarted enabled=true
-      become: yes
-
-    - name: Install the Python MySQLB module
-      pip: name=MySQL-python
       become: yes
 
     - name: update mysql root password for all root accounts
