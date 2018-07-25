@@ -155,7 +155,7 @@ class VirtualBoxProvider extends Provider {
                 cpus: cpus,
                 vmname: doc.name,
                 syncs: syncs,
-                forward_ports: doc.vm.ports ? typeof (doc.vm.ports) === 'object' ? doc.vm.ports : doc.vm.ports.replace(/\s/g, '').split(',') : undefined,
+                forward_ports: doc.vm.ports ? typeof (doc.vm.ports) === 'object' ? doc.vm.ports : String(doc.vm.ports).replace(/\s/g, '').split(',') : undefined,
                 add_ssh_key: path.join(os.tmpdir(), 'baker_rsa.pub'),
                 verbose: true
             });
