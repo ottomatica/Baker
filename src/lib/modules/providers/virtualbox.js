@@ -10,16 +10,14 @@ const Spinner       = require('../../modules/spinner');
 const spinnerDot    = conf.get('spinnerDot');
 const Utils         = require('../utils/utils');
 const slash         =      require('slash');
+const os            =      require('os');
+const _             =      require('underscore');
+const yaml          =      require('js-yaml');
 
 const vbox          =      require('node-virtualbox');
 const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
-const private_key   =      require.resolve('node-virtualbox/config/resources/insecure_private_key');
+const {boxes, bakeletsPath, remotesPath, configPath, privateKey} = require('../../../global-vars');
 
-const yaml          =      require('js-yaml');
-
-const _             =      require('underscore');
-
-const {boxes, bakeletsPath, remotesPath, configPath} = require('../../../global-vars');
 
 class VirtualBoxProvider extends Provider {
     constructor() {
@@ -92,7 +90,7 @@ class VirtualBoxProvider extends Provider {
         {
           port = parseInt( vmInfo['Forwarding(0)'].split(',')[3]);
         }
-        return {user: 'vagrant', port: port, host: machine, hostname: '127.0.0.1', private_key: private_key};
+        return {user: 'vagrant', port: port, host: machine, hostname: '127.0.0.1', private_key: privateKey};
     }
 
     /**
@@ -149,7 +147,18 @@ class VirtualBoxProvider extends Provider {
             let cpus = doc.vm.cpus || 2;
             let syncs = [`${slash(scriptPath)};/${path.basename(scriptPath)}`];
             // [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]]
-            await vbox({provision: true, ip: doc.vm.ip, mem: mem, cpus: cpus, vmname: doc.name, syncs: syncs, verbose: true});
+            await Utils.copyFileSync(path.join(configPath, 'baker_rsa.pub'), os.tmpdir(), 'baker_rsa.pub');
+            await vbox({
+                provision: true,
+                ip: doc.vm.ip,
+                mem: mem,
+                cpus: cpus,
+                vmname: doc.name,
+                syncs: syncs,
+                forward_ports: doc.ports ? typeof (doc.ports) === 'object' ? doc.ports : doc.ports.replace(/\s/g, '').split(',') : undefined,
+                add_ssh_key: path.join(os.tmpdir(), 'baker_rsa.pub'),
+                verbose: true
+            });
         }
         let vmInfo = await this.driver.info(doc.name);
         console.log( `VM is currently in state ${vmInfo.VMState}`)
