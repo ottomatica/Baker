@@ -4,7 +4,6 @@ const fs            =      require('fs-extra');
 const path          =      require('path');
 const Provider      =      require('./provider');
 const Ssh           =      require('../ssh');
-const Servers       =      require('../../modules/servers');
 const conf          = require('../../modules/configstore');
 const Spinner       = require('../../modules/spinner');
 const spinnerDot    = conf.get('spinnerDot');
@@ -188,7 +187,7 @@ class VirtualBoxProvider extends Provider {
             ansibleSSHConfig
         );
 
-        await Servers.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig, true)
+        await this.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig, true)
         await this.setKnownHosts(ip, ansibleSSHConfig);
         await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
@@ -209,6 +208,19 @@ class VirtualBoxProvider extends Provider {
     static async retrieveSSHConfigByName(name) {
         let vmSSHConfigUser = await this.getSSHConfig(name);
         return vmSSHConfigUser;
+    }
+
+    // also in servers.js
+    /**
+     * Adds the host url to /etc/hosts
+     *
+     * @param {String} ip
+     * @param {String} name
+     * @param {Object} sshConfig
+     */
+    async addToAnsibleHosts (ip, name, ansibleSSHConfig, vmSSHConfig, usePython3){
+        let pythonPath = usePython3 ? '/usr/bin/python3' : '/usr/bin/python';
+        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}\tansible_python_interpreter=${pythonPath}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
     }
 }
 
