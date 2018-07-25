@@ -1,6 +1,6 @@
 ---
 name: r-tidy-test
-vagrant:
+vm:
   ip: "192.168.88.3"
 
 lang:

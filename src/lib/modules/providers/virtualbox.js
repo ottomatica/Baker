@@ -4,16 +4,20 @@ const fs            =      require('fs-extra');
 const path          =      require('path');
 const Provider      =      require('./provider');
 const Ssh           =      require('../ssh');
+const Servers       =      require('../../modules/servers');
+const conf          = require('../../modules/configstore');
+const Spinner       = require('../../modules/spinner');
+const spinnerDot    = conf.get('spinnerDot');
+const Utils         = require('../utils/utils');
+const slash         =      require('slash');
+const os            =      require('os');
+const _             =      require('underscore');
+const yaml          =      require('js-yaml');
 
 const vbox          =      require('node-virtualbox');
 const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
-const private_key   =      require.resolve('node-virtualbox/config/resources/insecure_private_key');
+const {boxes, bakeletsPath, remotesPath, configPath, privateKey} = require('../../../global-vars');
 
-const yaml          =      require('js-yaml');
-
-const _             =      require('underscore');
-
-const {boxes, bakeletsPath, remotesPath, configPath} = require('../../../global-vars');
 
 class VirtualBoxProvider extends Provider {
     constructor() {
@@ -64,6 +68,11 @@ class VirtualBoxProvider extends Provider {
      * @param {String} VMName
      */
     async delete(VMName) {
+        let state = await this.getState(VMName);
+        if( state == 'running' )
+        {
+            await this.stop(VMName);
+        }
         await vbox({deleteCmd: true, vmname: VMName, syncs: [], verbose: true});
     }
 
@@ -77,20 +86,21 @@ class VirtualBoxProvider extends Provider {
         // Use VirtualBox driver
         let vmInfo = await this.driver.info(machine);
         let port = null;
-        if( vmInfo.hasOwnProperty('Forwarding(0)') )
-        {
-          port = parseInt( vmInfo['Forwarding(0)'].split(',')[3]);
-        }
-        return {user: 'vagrant', port: port, host: machine, hostname: '127.0.0.1', private_key: private_key};
+        Object.keys(vmInfo).forEach(key => {
+            if(vmInfo[key].includes('guestssh')){
+                port = parseInt( vmInfo[key].split(',')[3]);
+            }
+        });
+        return {user: 'vagrant', port: port, host: machine, hostname: '127.0.0.1', private_key: privateKey};
     }
 
     /**
      * Returns State of a VM
      * @param {String} VMName
      */
-    static async getState(VMName) {
-        let vmInfo = await this.driver.info(doc.name);
-        return vmInfo.VMState.replace('"','');
+    async getState(VMName) {
+        let vmInfo = await this.driver.info(VMName);
+        return vmInfo.VMState.replace(/"/g,'');
     }
 
     /**
@@ -111,24 +121,16 @@ class VirtualBoxProvider extends Provider {
         }
     }
 
-    // also in servers.js
-    /**
-     * Adds inventory
-     *
-     * @param {String} ip
-     * @param {String} name
-     * @param {Object} sshConfig
-     */
-    async addToAnsibleHosts(ip, name, ansibleSSHConfig, vmSSHConfig) {
-        // TODO: Consider also specifying ansible_connection=${} to support containers etc.
-        // TODO: Callers of this can be refactored to into two methods, below:
-        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
-    }
-
     async bake(scriptPath, ansibleSSHConfig, verbose) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         let dir = path.join(boxes, doc.name);
+
+        // handle prompts for vm settings.
+        if( doc.vm )
+        {
+            await Utils.traverse(doc.vm);
+        }
 
         try {
             await fs.ensureDir(dir);
@@ -141,8 +143,23 @@ class VirtualBoxProvider extends Provider {
         if( !vm )
         {
             // Create VM
-            console.log( "Creating vm. ")
-            await vbox({provision: true, ip: doc.vm.ip, vmname: doc.name, syncs: [], verbose: true});
+            console.log( `Creating vm. ${doc.name}`);
+            let mem = doc.vm.memory || 1024;
+            let cpus = doc.vm.cpus || 2;
+            let syncs = [`${slash(scriptPath)};/${path.basename(scriptPath)}`];
+            // [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]]
+            await Utils.copyFileSync(path.join(configPath, 'baker_rsa.pub'), os.tmpdir(), 'baker_rsa.pub');
+            await vbox({
+                provision: true,
+                ip: doc.vm.ip,
+                mem: mem,
+                cpus: cpus,
+                vmname: doc.name,
+                syncs: syncs,
+                forward_ports: doc.vm.ports ? typeof (doc.vm.ports) === 'object' ? doc.vm.ports : doc.vm.ports.replace(/\s/g, '').split(',') : undefined,
+                add_ssh_key: path.join(os.tmpdir(), 'baker_rsa.pub'),
+                verbose: true
+            });
         }
         let vmInfo = await this.driver.info(doc.name);
         console.log( `VM is currently in state ${vmInfo.VMState}`)
@@ -171,25 +188,18 @@ class VirtualBoxProvider extends Provider {
             ansibleSSHConfig
         );
 
-        await this.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig)
+        await Servers.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig, true)
         await this.setKnownHosts(ip, ansibleSSHConfig);
         await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
-        // prompt for passwords
+        // prompt for passwords/vars
         if( doc.vars )
         {
-            await this.traverse(doc.vars);
+            await Utils.traverse(doc.vars);
         }
 
-        // Hack make sure has python2
-        try
-        {
-            await Ssh.sshExec(`/usr/bin/python --version 2> /dev/null || (sudo apt-get update && sudo apt-get -y install python-minimal)`, sshConfig, true);
-        }
-        catch(e)
-        {
+        await Spinner.spinPromise(Ssh.sshExec(`sudo apt-get update`, sshConfig, false), `Running apt-get update on VM`, spinnerDot);
 
-        }
         // Installing stuff.
         let resolveB = require('../../bakelets/resolve');
         await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose)

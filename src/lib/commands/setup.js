@@ -34,10 +34,7 @@ exports.handler = async function (argv) {
     }
 
     try {
-        if(force)
-            await Spinner.spinPromise(Servers.reinstallAnsibleServer(), 'Re-installing Baker control machine', spinnerDot);
-        else
-            await Spinner.spinPromise(Servers.installAnsibleServer(), 'Installing Baker control machine', spinnerDot);
+        await Spinner.spinPromise(Servers.installBakerServer(), 'Installing Baker control machine', spinnerDot);
 
         await Spinner.spinPromise(
             Utils.copyFileSync(

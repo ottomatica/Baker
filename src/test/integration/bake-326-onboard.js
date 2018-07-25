@@ -10,13 +10,17 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
     this.timeout(1000000);
 
     // https://github.ncsu.edu/engr-csc326-staff/Onboarding
+    const tstDir = path.join(os.homedir(), 'Library', 'Baker', 'int-test');
+    const onboarding = path.join(tstDir, 'Onboarding');
 
     it('should run coffeemaker project', function(done) {
-        const tstDir = path.join(os.tmpdir(), 'Onboarding');
-        fs.remove(tstDir);
+
+        fs.mkdirpSync(tstDir);
+        fs.removeSync(onboarding);
+
         // echo value for prompt input for password.
         var child = child_process.exec('echo 326 | baker bake --repo git@github.ncsu.edu:engr-csc326-staff/Onboarding.git',
-                                       {cwd: os.tmpdir()  }, function(error, stdout, stderr) {
+                                       {cwd: tstDir }, function(error, stdout, stderr) {
             setTimeout( function()
             {
                 expect(stderr).to.be.empty;
@@ -32,21 +36,16 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
                     done();
                 });
 
-            },30000);
+            },90000);
+
+            console.log(`Waiting 90 seconds for coffeemaker to start springboot:run`);
 
         });
         child.stdout.pipe(process.stdout);
-        // Read prompts
-        //process.stdin.pipe(child.stdin);
-        //child.on('close', function (code) {
-        //    callback(code, 'closing callback');
-        //    // resume the main process stdin after child ends so the repl continues to run
-        //    process.stdin.resume();
-        //});
     });
 
-    /*it('should destroy VM', function(done) {
-        var child = child_process.exec('node cmd.js destroy onboard', function(error, stdout, stderr)
+    it('should destroy coffeemaker VM', function(done) {
+        var child = child_process.exec(`cd ${onboarding} && baker destroy`, function(error, stdout, stderr)
         {
             console.log(stderr);
             expect(stderr).to.be.empty;
@@ -54,6 +53,5 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
         });
         child.stdout.pipe(process.stdout);
     });
-    */
 
 });

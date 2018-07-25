@@ -18,7 +18,7 @@ const vagrant         = Promise.promisifyAll(require('node-vagrant'));
 const VagrantProvider = require('./vagrant');
 const yaml            = require('js-yaml');
 
-const { environmentIndexPath, ansible, bakeletsPath, remotesPath, boxes } = require('../../../global-vars');
+const { environmentIndexPath, bakerSSHConfig, bakeletsPath, remotesPath, boxes } = require('../../../global-vars');
 
 class Docker_Provider extends Provider {
     constructor(dockerHost) {
@@ -247,9 +247,6 @@ class Docker_Provider extends Provider {
     }
 
     async _startContainer(scriptPath) {
-        // Make sure Baker control machine is running
-        let ansibleVM = await spinner.spinPromise(Servers.prepareAnsibleServer(scriptPath), 'Preparing Baker control machine', spinnerDot);
-        let ansibleSSHConfig = await this.vagrantProvider.getSSHConfig(ansibleVM);
         // Make sure Docker VM is running
         await spinner.spinPromise(Servers.prepareDockerVM(), `Preparing Docker host`, spinnerDot);
 
@@ -303,7 +300,7 @@ class Docker_Provider extends Provider {
         await this.startContainer(container);
 
         // TODO: root is hard coded
-        await this.addToAnsibleHostsDocker(doc.name, ansibleSSHConfig, 'root')
+        await this.addToAnsibleHostsDocker(doc.name, bakerSSHConfig, 'root')
 
         // prompt for passwords
         if( doc.vars ) {
@@ -317,14 +314,11 @@ class Docker_Provider extends Provider {
         // Start the container
         await this._startContainer(scriptPath);
 
-        let ansibleVM = vagrant.create({ cwd: ansible });
-        let ansibleSSHConfig = await this.vagrantProvider.getSSHConfig(ansibleVM);
-
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         // run dockerBootstrap.yml
         // TODO:
-        await this.runDockerBootstrap(ansibleSSHConfig, doc.name);
+        await this.runDockerBootstrap(bakerSSHConfig, doc.name);
 
         // Installing stuff
         let resolveB = require('../../bakelets/resolve');
