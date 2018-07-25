@@ -8,7 +8,9 @@
       - texlive-generic-extra
       - texlive-latex-recommended
       - texlive-latex-recommended-doc
-      - texlive-science      
+      - texlive-science
+      - texlive-fonts
+      - texlive-fonts-extra
       - latexmk
 
   tasks:
