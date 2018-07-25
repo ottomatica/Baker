@@ -86,10 +86,11 @@ class VirtualBoxProvider extends Provider {
         // Use VirtualBox driver
         let vmInfo = await this.driver.info(machine);
         let port = null;
-        if( vmInfo.hasOwnProperty('Forwarding(0)') )
-        {
-          port = parseInt( vmInfo['Forwarding(0)'].split(',')[3]);
-        }
+        Object.keys(vmInfo).forEach(key => {
+            if(vmInfo[key].includes('guestssh')){
+                port = parseInt( vmInfo[key].split(',')[3]);
+            }
+        });
         return {user: 'vagrant', port: port, host: machine, hostname: '127.0.0.1', private_key: privateKey};
     }
 
@@ -155,7 +156,7 @@ class VirtualBoxProvider extends Provider {
                 cpus: cpus,
                 vmname: doc.name,
                 syncs: syncs,
-                forward_ports: doc.ports ? typeof (doc.ports) === 'object' ? doc.ports : doc.ports.replace(/\s/g, '').split(',') : undefined,
+                forward_ports: doc.vm.ports ? typeof (doc.vm.ports) === 'object' ? doc.vm.ports : doc.vm.ports.replace(/\s/g, '').split(',') : undefined,
                 add_ssh_key: path.join(os.tmpdir(), 'baker_rsa.pub'),
                 verbose: true
             });
