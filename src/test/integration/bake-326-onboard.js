@@ -38,9 +38,9 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
                     done();
                 });
 
-            },90000);
+            },180000);
 
-            console.log(`Waiting 90 seconds for coffeemaker to start springboot:run`);
+            console.log(`Waiting 180 seconds for coffeemaker to start springboot:run`);
 
         });
         child.stdout.pipe(process.stdout);
