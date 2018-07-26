@@ -21,9 +21,11 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
         // echo value for prompt input for password.
         var child = child_process.exec('echo 326 | baker bake --repo git@github.ncsu.edu:engr-csc326-staff/Onboarding.git',
                                        {cwd: tstDir }, function(error, stdout, stderr) {
+
+            expect(stdout).to.not.include("Host key verification failed", "You need to add ssh key to github.ncsu.edu in order to run this test.");
+
             setTimeout( function()
             {
-                expect(stderr).to.be.empty;
 
                 var options = {
                     url: "http://192.168.8.8:8080/api/v1/inventory",
