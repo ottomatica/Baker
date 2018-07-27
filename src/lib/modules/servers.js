@@ -38,8 +38,10 @@ class Servers {
                 await vbox({
                     micro: true,
                     vmname: 'baker-srv',
+                    mem: 1024,
                     ssh_port: bakerSSHConfig.port,
                     syncs: [`${boxes};/data`],
+                    disk: true,
                     verbose: true
                 });
             }

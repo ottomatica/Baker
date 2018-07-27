@@ -19,7 +19,7 @@ describe('baker should create coffeemaker, run it, and destroy it', function() {
         fs.removeSync(onboarding);
 
         // echo value for prompt input for password.
-        var child = child_process.exec('echo 326 | baker bake --repo git@github.ncsu.edu:engr-csc326-staff/Onboarding.git',
+        var child = child_process.exec('echo 326 | baker bake --repo git@github.ncsu.edu:engr-csc326-staff/Onboarding.git -v',
                                        {cwd: tstDir }, function(error, stdout, stderr) {
 
             expect(stdout).to.not.include("Host key verification failed", "You need to add ssh key to github.ncsu.edu in order to run this test.");
