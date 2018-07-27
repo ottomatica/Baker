@@ -55,13 +55,19 @@ exports.builder = (yargs) => {
                 describe: `Provide extra output from baking process`,
                 demand: false,
                 type: 'boolean'
+            },
+            forceVirtualBox: {
+                describe: `Force using virtualbox instead of xhyve VM on Mac (no effect on Windows/Linux)`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
             }
         }
     );
 };
 
 exports.handler = async function(argv) {
-    const { local, repo, box, remote, remote_key, remote_user, verbose } = argv;
+    const { local, repo, box, remote, remote_key, remote_user, verbose, forceVirtualBox } = argv;
 
     try{
         let ansibleVM;
@@ -95,7 +101,7 @@ exports.handler = async function(argv) {
         else if(remote)
             await BakerObj.bakeRemote(bakerSSHConfig, remote, remote_key, remote_user, bakePath, verbose);
         else{
-            await Servers.installBakerServer();
+            await Servers.installBakerServer(forceVirtualBox);
             await BakerObj.bake(bakePath, bakerSSHConfig, verbose);
         }
 

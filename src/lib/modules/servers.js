@@ -23,10 +23,13 @@ const { configPath, ansible, boxes, bakerForMacPath, bakerSSHConfig } = require(
 class Servers {
     constructor() {}
 
-    static async installBakerServer() {
-        if (require('os').platform() === 'darwin') {
+    static async installBakerServer(forceVirtualBox=false) {
+        if (require('os').platform() === 'darwin' && !forceVirtualBox) {
             await this.setupBakerForMac();
         } else {
+            if(require('os').platform() === 'darwin')
+                console.log('=> Using virtualbox as hypervisor for Baker VM.')
+
             const provider = new VirtualboxProvider();
 
             // Ensure baker keys are installed.
