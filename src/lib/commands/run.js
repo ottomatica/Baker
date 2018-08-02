@@ -5,6 +5,7 @@ const conf      = require('../../lib/modules/configstore');
 const yaml      = require('js-yaml');
 const fs        = require('fs');
 const path      = require('path');
+const chalk     = require('chalk');
 
 const  { bakerSSHConfig } = require('../../global-vars');
 
@@ -54,6 +55,15 @@ exports.handler = async function(argv) {
                 let mount = path.basename(bakePath);
 
                 cmd = `cd /${mount}; ${cmdScript}`;
+            }
+            else
+            {
+                console.log(`The following cmdlets are available in ${envName} 🍞:`)
+                for( let c in doc.commands )
+                {
+                    console.log(`${chalk.blueBright(c)}\t${doc.commands[c]}`);
+                }
+                process.exit(1);
             }
         }
 
