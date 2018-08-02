@@ -85,10 +85,9 @@ class RuncProvider extends Provider {
      * It will ssh to the vagrant box
      * @param {String} name
      */
-    async ssh(name) {
+    async ssh(name, cmd) {
         try {
-
-            let cmd = 'cd /mnt/disk/demo && runc run --no-pivot instance-0';
+            cmd = 'cd /mnt/disk/demo && runc run --no-pivot instance-0';
             child_process.execSync(`ssh -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -t "${cmd}"`,  {stdio: ['inherit', 'inherit', 'ignore']});
         } catch(err) {
             throw err;

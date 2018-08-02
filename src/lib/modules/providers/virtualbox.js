@@ -105,8 +105,9 @@ class VirtualBoxProvider extends Provider {
     /**
      * It will ssh to the vagrant box
      * @param {String} name
+     * @param {String} cmd
      */
-    async ssh(name) {
+    async ssh(name, cmdToRun) {
         try {
             let info = await this.getSSHConfig(name);
             // hack
@@ -114,7 +115,9 @@ class VirtualBoxProvider extends Provider {
             fs.copyFileSync(info.private_key, key );
             fs.chmod(key, "600");
 
-            child_process.execSync(`ssh -i ${key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1`, {stdio: ['inherit', 'inherit', 'ignore']});
+            let cmd = cmdToRun || "";
+
+            child_process.execSync(`ssh -i ${key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 "${cmd}"`, {stdio: ['inherit', 'inherit', 'ignore']});
         } catch(err) {
             throw err;
         }
