@@ -117,7 +117,14 @@ class VirtualBoxProvider extends Provider {
 
             let cmd = cmdToRun || "";
 
-            child_process.execSync(`ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 "${cmd}"`, {stdio: ['inherit', 'inherit', 'ignore']});
+            if( cmd == "")
+            {
+                child_process.execSync(`ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1`, {stdio: ['inherit', 'inherit', 'ignore']});
+            }
+            else
+            {
+                child_process.execSync(`ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 "${cmd}"`);
+            }
         } catch(err) {
             throw err;
         }
