@@ -111,13 +111,13 @@ class VirtualBoxProvider extends Provider {
         try {
             let info = await this.getSSHConfig(name);
             // hack
-            let key = path.join(require('os').tmpdir(), `${name}-key`);
-            fs.copyFileSync(info.private_key, key );
-            fs.chmod(key, "600");
+            //let key = path.join(require('os').tmpdir(), `${name}-key`);
+            //fs.copyFileSync(info.private_key, key );
+            //ßfs.chmod(key, "600");
 
             let cmd = cmdToRun || "";
 
-            child_process.execSync(`ssh -i ${key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 "${cmd}"`, {stdio: ['inherit', 'inherit', 'ignore']});
+            child_process.execSync(`ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 "${cmd}"`, {stdio: ['inherit', 'inherit', 'ignore']});
         } catch(err) {
             throw err;
         }
