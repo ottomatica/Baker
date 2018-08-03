@@ -8,6 +8,7 @@ const VirtualBoxProvider = require('./providers/virtualbox');
 const DockerProvider  = require('./providers/docker');
 const DO_Provider     = require('./providers/digitalocean');
 const RemoteProvider  = require('./providers/remote');
+const RuncProvider    = require('./providers/runc');
 
 // conf variables:
 // const spinnerDot = conf.get('spinnerDot');
@@ -65,7 +66,7 @@ class Baker {
     static async chooseProvider(bakePath){
         let doc = yaml.safeLoad(await fs.readFile(path.join(bakePath, 'baker.yml'), 'utf8'));
         let envName = doc.name;
-        let envType = doc.container ? 'container' : doc.vm || doc.vagrant ? 'vm' : doc.remote ? 'remote' : 'other';
+        let envType = doc.container ? 'container' : doc.vm || doc.vagrant ? 'vm' : doc.remote ? 'remote' : doc.persistent ? 'persistent' : 'other';
 
         let provider = null;
         if(envType === 'container')
@@ -73,6 +74,10 @@ class Baker {
         else if(envType === 'vm')
             //provider = new VagrantProvider();
             provider = new VirtualBoxProvider();
+        else if(envType === 'persistent')
+        {
+            provider = new RuncProvider();
+        }
         else if(envType === 'remote'){
             if(!RemoteProvider.validateBakerYML(bakePath)){
                 console.error('invalid baker.yml for remote provider');

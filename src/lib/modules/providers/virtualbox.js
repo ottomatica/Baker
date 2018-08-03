@@ -1,25 +1,22 @@
 const Promise       =      require('bluebird');
+const _             =      require('underscore');
 const child_process =      Promise.promisifyAll(require('child_process'));
+const conf          =      require('../../modules/configstore');
 const fs            =      require('fs-extra');
+const os            =      require('os');
 const path          =      require('path');
 const Provider      =      require('./provider');
-const Ssh           =      require('../ssh');
-const Servers       =      require('../../modules/servers');
-const conf          = require('../../modules/configstore');
-const Spinner       = require('../../modules/spinner');
-const spinnerDot    = conf.get('spinnerDot');
-const Utils         = require('../utils/utils');
 const slash         =      require('slash');
+const Spinner       =      require('../../modules/spinner');
+const spinnerDot    =      conf.get('spinnerDot');
+const Ssh           =      require('../ssh');
+const Utils         =      require('../utils/utils');
+const yaml          =      require('js-yaml');
 
 const vbox          =      require('node-virtualbox');
 const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
-const private_key   =      require.resolve('node-virtualbox/config/resources/insecure_private_key');
+const {boxes, bakeletsPath, remotesPath, configPath, privateKey} = require('../../../global-vars');
 
-const yaml          =      require('js-yaml');
-
-const _             =      require('underscore');
-
-const {boxes, bakeletsPath, remotesPath, configPath} = require('../../../global-vars');
 
 class VirtualBoxProvider extends Provider {
     constructor() {
@@ -88,11 +85,12 @@ class VirtualBoxProvider extends Provider {
         // Use VirtualBox driver
         let vmInfo = await this.driver.info(machine);
         let port = null;
-        if( vmInfo.hasOwnProperty('Forwarding(0)') )
-        {
-          port = parseInt( vmInfo['Forwarding(0)'].split(',')[3]);
-        }
-        return {user: 'vagrant', port: port, host: machine, hostname: '127.0.0.1', private_key: private_key};
+        Object.keys(vmInfo).forEach(key => {
+            if(vmInfo[key].includes('guestssh')){
+                port = parseInt( vmInfo[key].split(',')[3]);
+            }
+        });
+        return {user: 'vagrant', port: port, host: machine, hostname: '127.0.0.1', private_key: privateKey};
     }
 
     /**
@@ -107,8 +105,9 @@ class VirtualBoxProvider extends Provider {
     /**
      * It will ssh to the vagrant box
      * @param {String} name
+     * @param {String} cmd
      */
-    async ssh(name) {
+    async ssh(name, cmdToRun) {
         try {
             let info = await this.getSSHConfig(name);
             // hack
@@ -116,7 +115,9 @@ class VirtualBoxProvider extends Provider {
             fs.copyFileSync(info.private_key, key );
             fs.chmod(key, "600");
 
-            child_process.execSync(`ssh -i ${key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1`, {stdio: ['inherit', 'inherit', 'ignore']});
+            let cmd = cmdToRun || "";
+
+            child_process.execSync(`ssh -i ${key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 "${cmd}"`, {stdio: ['inherit', 'inherit', 'ignore']});
         } catch(err) {
             throw err;
         }
@@ -149,7 +150,18 @@ class VirtualBoxProvider extends Provider {
             let cpus = doc.vm.cpus || 2;
             let syncs = [`${slash(scriptPath)};/${path.basename(scriptPath)}`];
             // [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]]
-            await vbox({provision: true, ip: doc.vm.ip, mem: mem, cpus: cpus, vmname: doc.name, syncs: syncs, verbose: true});
+            await Utils.copyFileSync(path.join(configPath, 'baker_rsa.pub'), os.tmpdir(), 'baker_rsa.pub');
+            await vbox({
+                provision: true,
+                ip: doc.vm.ip,
+                mem: mem,
+                cpus: cpus,
+                vmname: doc.name,
+                syncs: syncs,
+                forward_ports: doc.vm.ports ? typeof (doc.vm.ports) === 'object' ? doc.vm.ports : String(doc.vm.ports).replace(/\s/g, '').split(',') : undefined,
+                add_ssh_key: path.join(os.tmpdir(), 'baker_rsa.pub'),
+                verbose: true
+            });
         }
         let vmInfo = await this.driver.info(doc.name);
         console.log( `VM is currently in state ${vmInfo.VMState}`)
@@ -178,7 +190,7 @@ class VirtualBoxProvider extends Provider {
             ansibleSSHConfig
         );
 
-        await Servers.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig, true)
+        await this.addToAnsibleHosts(ip, doc.name, ansibleSSHConfig, sshConfig, true)
         await this.setKnownHosts(ip, ansibleSSHConfig);
         await this.mkTemplatesDir(doc, ansibleSSHConfig);
 
@@ -199,6 +211,19 @@ class VirtualBoxProvider extends Provider {
     static async retrieveSSHConfigByName(name) {
         let vmSSHConfigUser = await this.getSSHConfig(name);
         return vmSSHConfigUser;
+    }
+
+    // also in servers.js
+    /**
+     * Adds the host url to /etc/hosts
+     *
+     * @param {String} ip
+     * @param {String} name
+     * @param {Object} sshConfig
+     */
+    async addToAnsibleHosts (ip, name, ansibleSSHConfig, vmSSHConfig, usePython3){
+        let pythonPath = usePython3 ? '/usr/bin/python3' : '/usr/bin/python';
+        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}\tansible_python_interpreter=${pythonPath}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
     }
 }
 

@@ -14,7 +14,7 @@ const Spinner       = require('../modules/spinner');
 const spinnerDot    = conf.get('spinnerDot');
 
 const vbox          =      require('node-virtualbox');
-const VirtualboxProvider = require('../modules/providers/virtualbox');
+const VirtualboxProvider = require('./providers/virtualbox');
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
 
@@ -23,10 +23,13 @@ const { configPath, ansible, boxes, bakerForMacPath, bakerSSHConfig } = require(
 class Servers {
     constructor() {}
 
-    static async installBakerServer() {
-        if (require('os').platform() === 'darwin') {
+    static async installBakerServer(forceVirtualBox=false) {
+        if (require('os').platform() === 'darwin' && !forceVirtualBox) {
             await this.setupBakerForMac();
         } else {
+            if(require('os').platform() === 'darwin')
+                console.log('=> Using virtualbox as hypervisor for Baker VM.')
+
             const provider = new VirtualboxProvider();
 
             // Ensure baker keys are installed.
@@ -38,7 +41,10 @@ class Servers {
                 await vbox({
                     micro: true,
                     vmname: 'baker-srv',
-                    port: bakerSSHConfig.port,
+                    mem: 1024,
+                    ssh_port: bakerSSHConfig.port,
+                    syncs: [`${boxes};/data`],
+                    disk: true,
                     verbose: true
                 });
             }
