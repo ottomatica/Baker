@@ -2,6 +2,7 @@ const path            = require('path');
 const Promise         = require('bluebird');
 const ping            = require('ping')
 const prompt          = require('prompt');
+const md5File         = require('md5-file/promise')
 const fs              = require('fs-extra');
 const _               = require('underscore');
 const { envIndexPath } = require('../../../global-vars');
@@ -133,10 +134,10 @@ class Utils {
     }
 
     // adapted from http://procbits.com/2011/11/15/synchronous-file-copy-in-node-js
-    static async copyFileSync (inFile, outDir, fileName) {
+    static async copyFileSync (inFile, outDir, fileName, md5) {
         var outFile = path.join(outDir, fileName || path.basename(inFile));
 
-        if (await fs.pathExists(outFile))
+        if ((await fs.pathExists(outFile)) && (await md5File(outFile)) === md5)
             return;
 
         var BUF_LENGTH = 64 * 1024;

@@ -3,6 +3,7 @@ const child_process = require('child_process');
 const conf          = require('../../lib/modules/configstore');
 const download      = require('download');
 const fs            = require('fs-extra');
+const md5File       = require('md5-file/promise')
 const mustache      = require('mustache');
 const os            = require('os');
 const path          = require('path');
@@ -72,15 +73,15 @@ class Servers {
         }
 
         await fs.ensureDir(bakerForMacPath);
-        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'hyperkit'), path.join(bakerForMacPath, 'vendor'), 'hyperkit');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'hyperkit'), path.join(bakerForMacPath, 'vendor'), 'hyperkit', '894b60e65a10ceaa343f8bd7562563b7');
         await fs.chmod(path.join(bakerForMacPath, 'vendor', 'hyperkit'), '511');
-        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'vpnkit.exe'), path.join(bakerForMacPath, 'vendor'), 'vpnkit.exe');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'vpnkit.exe'), path.join(bakerForMacPath, 'vendor'), 'vpnkit.exe', 'c415a968a9b51787f1505e24991726d5');
         await fs.chmod(path.join(bakerForMacPath, 'vendor', 'vpnkit.exe'), '511');
-        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'u9fs'), path.join(bakerForMacPath, 'vendor'), 'u9fs');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'u9fs'), path.join(bakerForMacPath, 'vendor'), 'u9fs', 'e9189eb4f8e89e232534cffa3cc71856');
         await fs.chmod(path.join(bakerForMacPath, 'vendor', 'u9fs'), '511');
-        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'bakerformac.sh'), bakerForMacPath, 'bakerformac.sh');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'bakerformac.sh'), bakerForMacPath, 'bakerformac.sh', 'bbfbf38501c3bc198a4e98e923e4a521');
         await fs.chmod(path.join(bakerForMacPath, 'bakerformac.sh'), '511');
-        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'hyperkitrun.sh'), bakerForMacPath, 'hyperkitrun.sh');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'hyperkitrun.sh'), bakerForMacPath, 'hyperkitrun.sh', 'bcfd28980e8516c424a72197b45f9d38');
         await fs.chmod(path.join(bakerForMacPath, 'hyperkitrun.sh'), '511');
 
         let plistPath = path.join(bakerForMacPath, '9pfs.plist');
@@ -92,14 +93,16 @@ class Servers {
 
         // console.log('baker_rsa', await fs.readFile(path.join(configPath, 'baker_rsa'), 'utf8'));
 
-        await Utils.copyFileSync(path.join(configPath, 'baker_rsa'), bakerForMacPath, 'baker_rsa');
+        await Utils.copyFileSync(path.join(configPath, 'baker_rsa'), bakerForMacPath, 'baker_rsa', 'aeae0ca92a41dc4d69901537a9aec7d8');
         await fs.chmod(path.join(bakerForMacPath, 'baker_rsa'), '600');
 
         // download files if not available locally
-        if (!(await fs.pathExists(path.join(bakerForMacPath, 'kernel')))) {
+        let kernelPath = path.join(bakerForMacPath, 'kernel');
+        if (!(await fs.pathExists(kernelPath)) || (await md5File(kernelPath)) != '67d58c298334a8f79998176fd8f0618c') {
             await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/kernel', bakerForMacPath), 'Downloading BakerForMac kernel', spinnerDot);
         }
-        if (!(await fs.pathExists(path.join(bakerForMacPath, 'file.img.gz')))) {
+        let fsPath = path.join(bakerForMacPath, 'file.img.gz');
+        if (!(await fs.pathExists(fsPath))  || (await md5File(fsPath)) != '6f30965e32a6b7ef1ef8344306cf0da1') {
             await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.1/file.img.gz', bakerForMacPath), 'Downloading BakerForMac filesystem image', spinnerDot);
         }
 
