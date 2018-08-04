@@ -113,7 +113,7 @@ class Ssh {
                             })
                             .stderr.on('data', function(data) {
                                 console.log('STDERR: ' + data);
-                                reject();
+                                reject(data);
                             });
                     });
                 })

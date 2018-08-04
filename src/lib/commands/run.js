@@ -68,8 +68,11 @@ exports.handler = async function(argv) {
         }
 
         console.log(`Running ${cmdlet} in ${envName} 🍞`);
-        
-        provider.ssh(envName, cmd);
+
+        provider.ssh(envName, cmd, true).catch( function(err)
+        {
+            //Print.error(err);
+        });
 
     } catch (err) {
         Print.error(err);

@@ -17,20 +17,11 @@
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
       with_items:
-        - python-dev
-        - python-pip
-        - gcc
-        - python-setuptools
-        - git-core
-        - python-setuptools
+#        - python-dev
+        - python3-dev 
+        - python3-pip
         - debconf-utils
-        - python-mysqldb
       become: yes
-
-    # we're using the apt-get version instead.
-    # - name: Install the Python MySQLB module
-    #   pip: name=MySQL-python
-    #   become: yes
 
     # For 5.7, password is required during install. Normally, this is prompted by an interactive script.
     # But by populating the debconf database, we can setup a password that gets asked during install.
@@ -79,6 +70,12 @@
       service: name=mysql state=restarted enabled=true
       become: yes
 
+    # https://stackoverflow.com/questions/14087598/python-3-importerror-no-module-named-configparser
+    - name: Install the Python MySQLB module (needed for mysql_user)
+#      pip: name=MySQL-python
+      pip: name=mysqlclient
+      become: yes
+
     - name: update mysql root password for all root accounts
       mysql_user: name=root
                   password="{{ root_db_password }}"
@@ -94,14 +91,22 @@
       template: src=templates/my.cnf dest={{ ansible_env.HOME}}/.my.cnf mode=0600
 
     - name: update mysql root password for all root accounts on {{ inventory_hostname }}
-      mysql_user: name=root host={{ item }} password={{ root_db_password }} login_user=root login_password={{root_db_password}}
+      mysql_user: name=root host={{ item }} password={{ root_db_password }} priv=*.*:ALL login_user=root login_password={{root_db_password}}
       with_items:
-        - localhost
+#        - localhost
         # IPV6 localhost
         - ::1
         # IP address of server
         - "{{ inventory_hostname }}"
+        - '%'
 
+    # - name: update mysql root password for all root accounts on {{ inventory_hostname }}
+    #   mysql_user: 
+    #     name: root
+    #     host: '%' 
+    #     password: "{{ root_db_password }}"
+    #     login_user: root 
+    #     login_password: "{{root_db_password}}"
 
     - name: ensure anonymous users are not in the database
       mysql_user: name='' host={{ item }} state=absent

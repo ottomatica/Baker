@@ -105,19 +105,33 @@ class VirtualBoxProvider extends Provider {
     /**
      * It will ssh to the vagrant box
      * @param {String} name
-     * @param {String} cmd
+     * @param {String} cmdToRun
+     * @param {boolean} terminateProcessOnClose
      */
-    async ssh(name, cmdToRun) {
+    async ssh(name, cmdToRun, terminateProcessOnClose) {
         try {
             let info = await this.getSSHConfig(name);
             // hack
-            let key = path.join(require('os').tmpdir(), `${name}-key`);
-            fs.copyFileSync(info.private_key, key );
-            fs.chmod(key, "600");
+            //let key = path.join(require('os').tmpdir(), `${name}-key`);
+            //fs.copyFileSync(info.private_key, key );
+            //ßfs.chmod(key, "600");
 
-            let cmd = cmdToRun || "";
-
-            child_process.execSync(`ssh -i ${key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 "${cmd}"`, {stdio: ['inherit', 'inherit', 'ignore']});
+            if( !cmdToRun )
+            {
+                child_process.execSync(`ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1`, {stdio: ['inherit', 'inherit', 'ignore']});
+            }
+            else
+            {
+                let allocateTTY = "";
+                if( terminateProcessOnClose )
+                {
+                    cmdToRun = `shopt -s huponexit; ${cmdToRun}`;
+                    allocateTTY = '-tt';
+                }
+                let sshCmd = `ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 ${allocateTTY} "${cmdToRun}"`;
+                //console.log( sshCmd );
+                child_process.execSync(sshCmd, {stdio: ['inherit', 'inherit', 'inherit']});
+            }
         } catch(err) {
             throw err;
         }

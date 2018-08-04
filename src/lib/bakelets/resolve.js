@@ -22,6 +22,7 @@ module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, b
         {
             extra_vars = doc.vars;
         }
+        extra_vars.push( {BAKER_SHARE_DIR: `/${path.basename(bakerScriptPath)}` });
 
         if( doc.lang )
         {
