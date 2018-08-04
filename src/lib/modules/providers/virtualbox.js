@@ -128,7 +128,9 @@ class VirtualBoxProvider extends Provider {
                     cmdToRun = `shopt -s huponexit; ${cmdToRun}`;
                     allocateTTY = '-tt';
                 }
-                child_process.execSync(`ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 ${allocateTTY} ${cmdToRun}`, {stdio: ['inherit', 'inherit', 'inherit']});
+                let sshCmd = `ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 ${allocateTTY} "${cmdToRun}"`;
+                //console.log( sshCmd );
+                child_process.execSync(sshCmd, {stdio: ['inherit', 'inherit', 'inherit']});
             }
         } catch(err) {
             throw err;
