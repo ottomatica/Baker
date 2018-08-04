@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.baker.u9fs</string>
+	<key>Program</key>
+	<string>{{{exe}}}</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>{{{exe}}}</string>
+		<string>-l</string>
+		<string>/tmp/u9fs.log</string>
+		<string>-a</string>
+		<string>none</string>
+		<string>-u</string>
+		<string>{{{username}}}</string>
+		<string>-D</string>
+	</array>
+	<key>Sockets</key>
+	<dict>
+		<key>Listeners</key>
+		<dict>
+			<key>SockPathMode</key>
+            <integer>438</integer><!-- 0666 -->
+            <key>SockPathName</key>
+            <string>/Users/{{{username}}}/Library/Baker/sockets/bakershare.socket</string>
+		</dict>
+	</dict>
+	<key>inetdCompatibility</key>
+	<dict>
+		<key>Wait</key>
+		<false/>
+	</dict>
+</dict>
+</plist>

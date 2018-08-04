@@ -4,14 +4,14 @@ const conf          = require('../../lib/modules/configstore');
 const download      = require('download');
 const fs            = require('fs-extra');
 const mustache      = require('mustache');
+const os            = require('os');
 const path          = require('path');
 const print         = require('./print');
+const Spinner       = require('../modules/spinner');
+const spinnerDot    = conf.get('spinnerDot');
 const Ssh           = require('./ssh');
 const Utils         = require('./utils/utils');
 const vagrant       = Promise.promisifyAll(require('node-vagrant'));
-const yaml          = require('js-yaml');
-const Spinner       = require('../modules/spinner');
-const spinnerDot    = conf.get('spinnerDot');
 
 const vbox          =      require('node-virtualbox');
 const VirtualboxProvider = require('./providers/virtualbox');
@@ -76,10 +76,19 @@ class Servers {
         await fs.chmod(path.join(bakerForMacPath, 'vendor', 'hyperkit'), '511');
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'vpnkit.exe'), path.join(bakerForMacPath, 'vendor'), 'vpnkit.exe');
         await fs.chmod(path.join(bakerForMacPath, 'vendor', 'vpnkit.exe'), '511');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'u9fs'), path.join(bakerForMacPath, 'vendor'), 'u9fs');
+        await fs.chmod(path.join(bakerForMacPath, 'vendor', 'u9fs'), '511');
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'bakerformac.sh'), bakerForMacPath, 'bakerformac.sh');
         await fs.chmod(path.join(bakerForMacPath, 'bakerformac.sh'), '511');
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'hyperkitrun.sh'), bakerForMacPath, 'hyperkitrun.sh');
         await fs.chmod(path.join(bakerForMacPath, 'hyperkitrun.sh'), '511');
+
+        let plistPath = path.join(bakerForMacPath, '9pfs.plist');
+        if(fs.exists(plistPath)) {
+            let template = await fs.readFile(path.join(configPath, 'BakerForMac', '9pfs.plist.mustache'), 'utf8');
+            let plist = mustache.render(template, {username: os.userInfo().username, exe: path.join(bakerForMacPath, 'vendor', 'u9fs').toString()});
+            await fs.writeFile(plistPath, plist);
+        }
 
         // console.log('baker_rsa', await fs.readFile(path.join(configPath, 'baker_rsa'), 'utf8'));
 
@@ -91,7 +100,7 @@ class Servers {
             await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/kernel', bakerForMacPath), 'Downloading BakerForMac kernel', spinnerDot);
         }
         if (!(await fs.pathExists(path.join(bakerForMacPath, 'file.img.gz')))) {
-            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/file.img.gz', bakerForMacPath), 'Downloading BakerForMac filesystem image', spinnerDot);
+            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.1/file.img.gz', bakerForMacPath), 'Downloading BakerForMac filesystem image', spinnerDot);
         }
 
         // only start server if not running
