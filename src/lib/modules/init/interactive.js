@@ -123,6 +123,9 @@ class Interactive {
                         },
                         {
                             name: 'maven'
+                        },
+                        {
+                            name: 'jekyll'
                         }
                     ]
                 }
