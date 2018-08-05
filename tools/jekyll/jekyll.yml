@@ -1,0 +1,27 @@
+- hosts: all
+  tasks:
+
+    - name: Install basic utils and build envs.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - build-essential
+        - make
+        - ruby
+        - ruby-dev
+        - zlib1g-dev
+        - tree
+      become: yes
+
+    - name: install gem with proper $PATH
+      gem:
+        name: "{{item}}"
+        user_install: no
+      with_items:
+        - bundler
+        - jekyll
+      become: yes
+
+    - name: Install the gemfile
+      bundler:
+        state: present
+        gemfile: "{{BAKER_SHARE_DIR}}/Gemfile"
