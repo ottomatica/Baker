@@ -10,6 +10,7 @@ const Provider      =      require('./provider');
 const Spinner       =      require('../../modules/spinner');
 const spinnerDot    =      conf.get('spinnerDot');
 const Ssh           =      require('../ssh');
+const Utils         =      require('../utils/utils');
 const yaml          =      require('js-yaml');
 
 const vbox          =      require('node-virtualbox');
@@ -127,6 +128,18 @@ class RuncProvider extends Provider {
         let rootfsPath = `${bakerPath}/rootfs`;
         var cmd = `mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; mkdir -p ${rootfsPath}/${doc.name}; mount --bind /share${scriptPath} ${rootfsPath}/${doc.name}`;
         await Ssh.sshExec(cmd, ansibleSSHConfig, 60000, verbose);
+
+        await this.addToAnsibleHosts(doc.name, rootfsPath);
+
+        // prompt for passwords/vars
+        if( doc.vars )
+        {
+            await Utils.traverse(doc.vars);
+        }
+
+        // Installing stuff.
+        let resolveB = require('../../bakelets/resolve');
+        await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose);
     }
 
     static async retrieveSSHConfigByName(name) {
@@ -134,6 +147,15 @@ class RuncProvider extends Provider {
         return vmSSHConfigUser;
     }
 
+
+    /**
+     *
+     * @param {String} name
+     * @param {String} rootfsPath
+     */
+    async addToAnsibleHosts (name, rootfsPath){
+        return Ssh.sshExec(`echo "[chroots]\n${rootfsPath}\tansible_connection=chroot\tansible_user=root" > /home/vagrant/baker/${name}/baker_inventory`, bakerSSHConfig);
+    }
 }
 
 module.exports = RuncProvider;
