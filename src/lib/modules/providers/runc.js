@@ -100,9 +100,9 @@ class RuncProvider extends Provider {
 
     async sshChroot(name) {
         try {
-            let bakerPath = `/home/vagrant/baker/${name}`
-            let cmd = `cd ${bakerPath} && chroot ${bakerPath}/rootfs /bin/bash`;
-            child_process.execSync(`ssh -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -t "${cmd}"`,  {stdio: ['inherit', 'inherit', 'ignore']});
+            let rootfsPath = `/mnt/disk/${name}/rootfs`;
+            let cmd = `chroot ${rootfsPath} /bin/bash`;
+            child_process.execSync(`ssh -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -t "${cmd}"`,  {stdio: ['inherit', 'inherit', 'inherit']});
         } catch(err) {
             throw err;
         }
@@ -125,7 +125,7 @@ class RuncProvider extends Provider {
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
         let bakerPath = `/home/vagrant/baker/${doc.name}`
-        let rootfsPath = `${bakerPath}/rootfs`;
+        let rootfsPath = `/mnt/disk/${doc.name}/rootfs`;
         var cmd = `mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; mkdir -p ${rootfsPath}/${doc.name}; mount --bind /share${scriptPath} ${rootfsPath}/${doc.name}`;
         await Ssh.sshExec(cmd, ansibleSSHConfig, 60000, verbose);
 
