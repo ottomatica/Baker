@@ -132,7 +132,7 @@ class RuncProvider extends Provider {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
         let bakerPath = `/home/vagrant/baker/${doc.name}`
         let rootfsPath = `/mnt/disk/${doc.name}/rootfs`;
-        var cmd = `mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; mkdir -p ${rootfsPath}/${doc.name}; mount --bind /share${scriptPath} ${rootfsPath}/${doc.name}`;
+        var cmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; mkdir -p ${rootfsPath}/${doc.name}; mount --bind /share${scriptPath} ${rootfsPath}/${doc.name}`;
         await Ssh.sshExec(cmd, ansibleSSHConfig, 60000, verbose);
 
         await this.addToAnsibleHosts(doc.name, rootfsPath);
