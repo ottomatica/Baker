@@ -82,11 +82,12 @@ class RuncProvider extends Provider {
     }
 
     /**
-     * It will ssh to the vagrant box
      * @param {String} name
+     * @param {String} cmdToRun
+     * @param {boolean} terminateProcessOnClose
      */
-    async ssh(name) {
-        await this.sshChroot(name);
+    async ssh(name, cmdToRun, terminateProcessOnClose) {
+        await this.sshChroot(name, cmdToRun, terminateProcessOnClose);
     }
 
     async sshRunc (name) {
@@ -98,12 +99,17 @@ class RuncProvider extends Provider {
         }
     }
 
-    async sshChroot(name) {
+    async sshChroot(name, cmdToRun, terminateProcessOnClose) {
         try {
+            let cmd = null;
             let rootfsPath = `/mnt/disk/${name}/rootfs`;
-            let cmd = `chroot ${rootfsPath} /bin/bash`;
-            child_process.execSync(`ssh -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -t "${cmd}"`,  {stdio: ['inherit', 'inherit', 'inherit']});
-        } catch(err) {
+            if (!cmdToRun) {
+                cmd = `chroot ${rootfsPath} /bin/bash`;
+            } else {
+                cmd = `chroot ${rootfsPath} bash -C "${cmdToRun}"`;
+            }
+            child_process.execSync(`ssh -q -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -t "${cmd}"`, { stdio: ['inherit', 'inherit', 'inherit'] });
+        } catch (err) {
             throw err;
         }
     }
