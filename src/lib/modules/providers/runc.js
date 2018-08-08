@@ -1,5 +1,4 @@
 const Promise       =      require('bluebird');
-const _             =      require('underscore');
 const child_process =      Promise.promisifyAll(require('child_process'));
 const conf          =      require('../../modules/configstore');
 const download      =      require('download');
@@ -13,9 +12,7 @@ const Ssh           =      require('../ssh');
 const Utils         =      require('../utils/utils');
 const yaml          =      require('js-yaml');
 
-const vbox          =      require('node-virtualbox');
-const {boxes, bakeletsPath, remotesPath, configPath, privateKey, bakerSSHConfig} = require('../../../global-vars');
-
+const {boxes, bakeletsPath, remotesPath, privateKey, bakerSSHConfig} = require('../../../global-vars');
 
 class RuncProvider extends Provider {
     constructor() {
@@ -34,26 +31,32 @@ class RuncProvider extends Provider {
     }
 
     /**
-     * Starts a VM by name
-     * @param {String} VMName Name of the VM to be started
+     * Starts an environment by name -- not supported in this provider
+     * @param {String} name Name of the environment to be started
      * @param {boolean} verbose
      */
-    async start(VMName, verbose = false) {
+    async start(name, verbose = false) {
+        await Spinner.spinPromise(Promise.resolve(), 'Start command is not supported for persistent environments.', spinnerDot);
     }
 
     /**
-     * Shut down a VM by name
-     * @param {String} VMName Name of the VM to be halted
+     * Shut down an environment by name -- not supported in this provider
+     * @param {String} name Name of the VM to be halted
      * TODO: add force option
      */
-    async stop(VMName, force = false) {
+    async stop(name, force = false) {
+        await Spinner.spinPromise(Promise.resolve(), 'Stop command is not supported for persistent environments.', spinnerDot);
     }
 
     /**
-     * Destroy VM
-     * @param {String} VMName
+     * Delete an environment
+     * @param {String} name
      */
-    async delete(VMName) {
+    async delete(name) {
+        let bakerPath = `/mnt/disk/${name}`;
+        let rootfsPath = `${bakerPath}/rootfs`;
+        let cmd = `umount ${rootfsPath}/${path.basename(process.cwd())}/ ${rootfsPath}/proc ${rootfsPath}/dev/ ${rootfsPath}/sys && rm -rf ${bakerPath}`;
+        await Ssh.sshExec(cmd, bakerSSHConfig, 60000, true);
     }
 
     /**
@@ -72,13 +75,6 @@ class RuncProvider extends Provider {
             }
         });
         return {user: 'vagrant', port: port, host: machine, hostname: '127.0.0.1', private_key: privateKey};
-    }
-
-    /**
-     * Returns State of a VM
-     * @param {String} VMName
-     */
-    async getState(VMName) {
     }
 
     /**
@@ -130,7 +126,7 @@ class RuncProvider extends Provider {
         }
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
-        let bakerPath = `/home/vagrant/baker/${doc.name}`
+        let bakerPath = `/home/vagrant/baker/${doc.name}`;
         let rootfsPath = `/mnt/disk/${doc.name}/rootfs`;
         let mounts = `mount -t proc proc ${rootfsPath}/proc/; mount -t sysfs sys ${rootfsPath}/sys/; mount -o bind /dev ${rootfsPath}/dev/`
         var cmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; mkdir -p ${rootfsPath}/${path.basename(process.cwd())}; mount --bind /share${scriptPath} ${rootfsPath}/${path.basename(process.cwd())}; ${mounts}`;
@@ -139,8 +135,7 @@ class RuncProvider extends Provider {
         await this.addToAnsibleHosts(doc.name, rootfsPath);
 
         // prompt for passwords/vars
-        if( doc.vars )
-        {
+        if (doc.vars) {
             await Utils.traverse(doc.vars);
         }
 
@@ -152,22 +147,6 @@ class RuncProvider extends Provider {
     static async retrieveSSHConfigByName(name) {
         let vmSSHConfigUser = await this.getSSHConfig(name);
         return vmSSHConfigUser;
-    }
-
-    async delete(name) {
-        let bakerPath = `/mnt/disk/${name}`;
-        let rootfsPath = `${bakerPath}/rootfs`;
-        let cmd = `umount ${rootfsPath}/${path.basename(process.cwd())}/ ${rootfsPath}/proc ${rootfsPath}/dev/ ${rootfsPath}/sys && rm -rf ${bakerPath}`;
-        await Ssh.sshExec(cmd, bakerSSHConfig, 60000, true);
-    }
-
-    async start(name, verbose) {
-        await Spinner.spinPromise(Promise.resolve(), 'Start command is not supported for persistent environments.', spinnerDot);
-        return;
-    }
-
-    async stop(name) {
-        await Spinner.spinPromise(Promise.resolve(), 'Stop command is not supported for persistent environments.', spinnerDot);
     }
 
     /**
