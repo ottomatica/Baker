@@ -106,9 +106,10 @@ class RuncProvider extends Provider {
             if (!cmdToRun) {
                 cmd = `chroot ${rootfsPath} /bin/bash`;
             } else {
-                cmd = `chroot ${rootfsPath} bash -C "${cmdToRun}"`;
+                cmd = `chroot ${rootfsPath} bash -c "${cmdToRun}"`;
             }
-            child_process.execSync(`ssh -q -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -t '${cmd}'`, { stdio: ['inherit', 'inherit', 'inherit'] });
+            console.log(`Cmd ${cmd}`);
+            child_process.execSync(`ssh -q -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -tt '${cmd}'`, { stdio: ['inherit', 'inherit', 'inherit'] });
         } catch (err) {
             throw err;
         }
