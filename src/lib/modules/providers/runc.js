@@ -115,15 +115,15 @@ class RuncProvider extends Provider {
     }
 
     async bake(scriptPath, ansibleSSHConfig, verbose) {
-        await this.bakeChroot(scriptPath, ansibleSSHConfig, verbose);
+        await this.bakeChroot(scriptPath, verbose);
     }
 
-    async bakeRunc(scriptPath, ansibleSSHConfig, verbose) {
+    async bakeRunc(scriptPath, verbose) {
         var cmd = 'mkdir -p /mnt/disk/demo/rootfs; tar -xf /data/boxes/rootfs.tar -C /mnt/disk/demo/rootfs; cd /mnt/disk/demo && runc spec';
-        await Ssh.sshExec(cmd, ansibleSSHConfig, 60000, verbose);
+        await Ssh.sshExec(cmd, bakerSSHConfig, 60000, verbose);
     }
 
-    async bakeChroot(scriptPath, ansibleSSHConfig, verbose) {
+    async bakeChroot(scriptPath, verbose) {
         let boxesPath = path.join(boxes, 'boxes');
         if (! (await fs.exists(path.join(boxesPath, 'rootfs.tar')))) {
             await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.1/rootfs.tar', boxesPath), 'Downloading Ubuntu 16.04 rootfs', spinnerDot);
@@ -134,7 +134,7 @@ class RuncProvider extends Provider {
         let rootfsPath = `/mnt/disk/${doc.name}/rootfs`;
         let mounts = `mount -t proc proc ${rootfsPath}/proc/; mount -t sysfs sys ${rootfsPath}/sys/; mount -o bind /dev ${rootfsPath}/dev/`
         var cmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; mkdir -p ${rootfsPath}/${path.basename(process.cwd())}; mount --bind /share${scriptPath} ${rootfsPath}/${path.basename(process.cwd())}; ${mounts}`;
-        await Ssh.sshExec(cmd, ansibleSSHConfig, 60000, verbose);
+        await Ssh.sshExec(cmd, bakerSSHConfig, 60000, verbose);
 
         await this.addToAnsibleHosts(doc.name, rootfsPath);
 
@@ -154,12 +154,20 @@ class RuncProvider extends Provider {
         return vmSSHConfigUser;
     }
 
-
     async delete(name) {
         let bakerPath = `/mnt/disk/${name}`;
         let rootfsPath = `${bakerPath}/rootfs`;
         let cmd = `umount ${rootfsPath}/${path.basename(process.cwd())}/ ${rootfsPath}/proc ${rootfsPath}/dev/ ${rootfsPath}/sys && rm -rf ${bakerPath}`;
         await Ssh.sshExec(cmd, bakerSSHConfig, 60000, true);
+    }
+
+    async start(name, verbose) {
+        await Spinner.spinPromise(Promise.resolve(), 'Start command is not supported for persistent environments.', spinnerDot);
+        return;
+    }
+
+    async stop(name) {
+        await Spinner.spinPromise(Promise.resolve(), 'Stop command is not supported for persistent environments.', spinnerDot);
     }
 
     /**
