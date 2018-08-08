@@ -132,7 +132,8 @@ class RuncProvider extends Provider {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
         let bakerPath = `/home/vagrant/baker/${doc.name}`
         let rootfsPath = `/mnt/disk/${doc.name}/rootfs`;
-        var cmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; mkdir -p ${rootfsPath}/${doc.name}; mount --bind /share${scriptPath} ${rootfsPath}/${doc.name}`;
+        let mounts = `mount -t proc proc ${rootfsPath}/proc/; mount -t sysfs sys ${rootfsPath}/sys/; mount -o bind /dev ${rootfsPath}/dev/`
+        var cmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; mkdir -p ${rootfsPath}/${path.basename(process.cwd())}; mount --bind /share${scriptPath} ${rootfsPath}/${path.basename(process.cwd())}; ${mounts}`;
         await Ssh.sshExec(cmd, ansibleSSHConfig, 60000, verbose);
 
         await this.addToAnsibleHosts(doc.name, rootfsPath);
