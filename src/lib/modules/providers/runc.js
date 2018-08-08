@@ -108,7 +108,6 @@ class RuncProvider extends Provider {
             } else {
                 cmd = `chroot ${rootfsPath} bash -c "${cmdToRun}"`;
             }
-            console.log(`Cmd ${cmd}`);
             child_process.execSync(`ssh -q -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -tt '${cmd}'`, { stdio: ['inherit', 'inherit', 'inherit'] });
         } catch (err) {
             throw err;
@@ -155,6 +154,13 @@ class RuncProvider extends Provider {
         return vmSSHConfigUser;
     }
 
+
+    async delete(name) {
+        let bakerPath = `/mnt/disk/${name}`;
+        let rootfsPath = `${bakerPath}/rootfs`;
+        let cmd = `umount ${rootfsPath}/${path.basename(process.cwd())}/ ${rootfsPath}/proc ${rootfsPath}/dev/ ${rootfsPath}/sys ; rm -rf ${bakerPath}`;
+        await Ssh.sshExec(cmd, bakerSSHConfig, 60000, true);
+    }
 
     /**
      *
