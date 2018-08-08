@@ -74,15 +74,15 @@ class Servers {
 
         await fs.ensureDir(bakerForMacPath);
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'hyperkit'), path.join(bakerForMacPath, 'vendor'), 'hyperkit', '894b60e65a10ceaa343f8bd7562563b7');
-        await fs.chmod(path.join(bakerForMacPath, 'vendor', 'hyperkit'), '511');
+        await fs.chmod(path.join(bakerForMacPath, 'vendor', 'hyperkit'), '710');
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'vpnkit.exe'), path.join(bakerForMacPath, 'vendor'), 'vpnkit.exe', 'c415a968a9b51787f1505e24991726d5');
-        await fs.chmod(path.join(bakerForMacPath, 'vendor', 'vpnkit.exe'), '511');
+        await fs.chmod(path.join(bakerForMacPath, 'vendor', 'vpnkit.exe'), '710');
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'u9fs'), path.join(bakerForMacPath, 'vendor'), 'u9fs', 'e9189eb4f8e89e232534cffa3cc71856');
-        await fs.chmod(path.join(bakerForMacPath, 'vendor', 'u9fs'), '511');
+        await fs.chmod(path.join(bakerForMacPath, 'vendor', 'u9fs'), '710');
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'bakerformac.sh'), bakerForMacPath, 'bakerformac.sh', 'bbfbf38501c3bc198a4e98e923e4a521');
-        await fs.chmod(path.join(bakerForMacPath, 'bakerformac.sh'), '511');
+        await fs.chmod(path.join(bakerForMacPath, 'bakerformac.sh'), '710');
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'hyperkitrun.sh'), bakerForMacPath, 'hyperkitrun.sh', 'bcfd28980e8516c424a72197b45f9d38');
-        await fs.chmod(path.join(bakerForMacPath, 'hyperkitrun.sh'), '511');
+        await fs.chmod(path.join(bakerForMacPath, 'hyperkitrun.sh'), '710');
 
         let plistPath = path.join(bakerForMacPath, '9pfs.plist');
         if(fs.exists(plistPath)) {
