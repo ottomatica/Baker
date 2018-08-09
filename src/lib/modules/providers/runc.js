@@ -142,7 +142,8 @@ class RuncProvider extends Provider {
                             }, {
                                 source: '/dev',
                                 dest: `${rootfsPath}/dev`,
-                                type: 'tmpfs',
+                                type: 'bind',
+                                bind: true
                             }, {
                                 source: '/dev/pts',
                                 dest: `${rootfsPath}/dev/pts`,
