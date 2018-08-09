@@ -6,6 +6,7 @@ const fs            =      require('fs-extra');
 const os            =      require('os');
 const path          =      require('path');
 const Provider      =      require('./provider');
+const slash         =      require('slash');
 const Spinner       =      require('../../modules/spinner');
 const spinnerDot    =      conf.get('spinnerDot');
 const Ssh           =      require('../ssh');
@@ -150,7 +151,7 @@ class RuncProvider extends Provider {
                                 type: 'devpts',
                                 bind: false
                             }, {
-                                source: `/share${scriptPath}`,
+                                source: (os.platform() == "win32") ? `/share${slash(path.resolve(scriptPath).split(':')[1])}` : `/share${scriptPath}`,
                                 dest: `${rootfsPath}/${path.basename(process.cwd())}`,
                                 type: 'bind',
                                 bind: true
