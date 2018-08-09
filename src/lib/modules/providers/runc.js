@@ -55,7 +55,7 @@ class RuncProvider extends Provider {
     async delete(name) {
         let bakerPath = `/mnt/disk/${name}`;
         let rootfsPath = `${bakerPath}/rootfs`;
-        let cmd = `umount ${rootfsPath}/${path.basename(process.cwd())}/ ${rootfsPath}/proc ${rootfsPath}/dev/ ${rootfsPath}/sys && rm -rf ${bakerPath}`;
+        let cmd = `umount ${rootfsPath}/${path.basename(process.cwd())} ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
         await Ssh.sshExec(cmd, bakerSSHConfig, 60000, true);
     }
 
@@ -128,8 +128,38 @@ class RuncProvider extends Provider {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
         let bakerPath = `/home/vagrant/baker/${doc.name}`;
         let rootfsPath = `/mnt/disk/${doc.name}/rootfs`;
-        let mounts = `mount -t proc proc ${rootfsPath}/proc/; mount -t sysfs sys ${rootfsPath}/sys/; mount -o bind /dev ${rootfsPath}/dev/`
-        var cmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; mkdir -p ${rootfsPath}/${path.basename(process.cwd())}; mount --bind /share${scriptPath} ${rootfsPath}/${path.basename(process.cwd())}; ${mounts}`;
+
+        let mountPoints = [{
+                                source: '/proc',
+                                dest: `${rootfsPath}/proc`,
+                                type: 'proc',
+                                bind: false
+                            }, {
+                                source: '/sys',
+                                dest: `${rootfsPath}/sys`,
+                                type: 'sysfs',
+                                bind: false
+                            }, {
+                                source: '/dev',
+                                dest: `${rootfsPath}/dev`,
+                                type: 'tmpfs',
+                            }, {
+                                source: '/dev/pts',
+                                dest: `${rootfsPath}/dev/pts`,
+                                type: 'devpts',
+                                bind: false
+                            }, {
+                                source: `/share${scriptPath}`,
+                                dest: `${rootfsPath}/${path.basename(process.cwd())}`,
+                                type: 'bind',
+                                bind: true
+                            } ];
+        let mounts = '';
+        mountPoints.forEach(mountPoint => {
+            mounts += `if ! mount | grep "${mountPoint.dest}" > /dev/null; then mkdir -p ${mountPoint.dest}; mount -t ${mountPoint.type} ${mountPoint.bind ? '--bind' : ''} ${mountPoint.source} ${mountPoint.dest}; fi; `;
+        })
+
+        var cmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; ${mounts}`;
         await Ssh.sshExec(cmd, bakerSSHConfig, 60000, verbose);
 
         await this.addToAnsibleHosts(doc.name, rootfsPath);
