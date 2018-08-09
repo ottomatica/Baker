@@ -92,6 +92,7 @@ class Ssh {
     }
 
     static async sshExec (cmd, sshConfig, verbose) {
+        let buffer = "";
         return new Promise((resolve, reject) => {
             var c = new Client();
             c
@@ -103,13 +104,14 @@ class Ssh {
                         stream
                             .on('close', function(code, signal) {
                                 c.end();
-                                resolve();
+                                resolve(buffer);
                             })
                             .on('data', function(data) {
                                 if( verbose )
                                 {
                                     console.log('STDOUT: ' + data);
                                 }
+                                buffer += data;
                             })
                             .stderr.on('data', function(data) {
                                 console.log('STDERR: ' + data);

@@ -1,5 +1,6 @@
 const Promise       = require('bluebird');
 const Ssh           = require('../ssh');
+const _             = require('underscore');
 
 class Ansible {
 
@@ -30,7 +31,24 @@ class Ansible {
         //let extravars = yaml.dump(variables);
         if( verbose ) console.log( extravars );
         // return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && ansible all -m ping -i baker_inventory`, ansibleSSHConfig, verbose);
-        return Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd}; rm -f playbook.args.json`, ansibleSSHConfig, verbose);
+        let output = await Ssh.sshExec(`export ANSIBLE_HOST_KEY_CHECKING=false && cd /home/vagrant/baker/${doc.name} && echo '${extravars}' > playbook.args.json && ansible-playbook -e @playbook.args.json -i baker_inventory ${cmd} ; rm -f playbook.args.json`, ansibleSSHConfig, verbose);
+        // Can do in ansible 2.5 ...
+        // export ANSIBLE_STDOUT_CALLBACK=yaml &&
+
+        // Perform error checking...
+        let results = output.split('\n').filter( line => line.indexOf('ok=') >=0 && line.indexOf('failed=') >=0);
+        if( results.length > 0 )
+        {
+            let recapString = results[0];
+            if( !recapString.indexOf("failed=0") >= 0)
+            {
+                throw new Error(`A bakelet task failed, see output for details: \r\n ${output}`);
+            }
+        }
+        else
+        {
+            throw new Error(`Failed to run bakelet, see output for details: \r\n ${output}`);
+        }
     }
 
     static async runAnsibleAptInstall (doc, cmd, ansibleSSHConfig,verbose) {
