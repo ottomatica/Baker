@@ -38,13 +38,14 @@ class Servers {
             await fs.chmod(path.join(boxes, 'baker_rsa'), '600');
 
             // TODO: check if virtualbox is installed
+            let root = (os.platform() == "win32") ? `${process.cwd().split(path.sep)[0]}/` : "/";
             if((await provider.driver.list()).filter(e => e.name === 'baker-srv').length == 0) {
                 await vbox({
                     micro: true,
                     vmname: 'baker-srv',
                     mem: 1024,
                     ssh_port: bakerSSHConfig.port,
-                    syncs: [`/;/data`],
+                    syncs: [`${root};/data`],
                     disk: true,
                     verbose: true
                 });
