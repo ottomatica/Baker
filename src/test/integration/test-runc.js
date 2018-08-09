@@ -22,7 +22,7 @@ describe('baker should create runc baker container', function() {
         var child = child_process.exec('baker bake -v',
                                        {cwd: containerDir }, function(error, stdout, stderr) {
 
-            expect(stdout).to.not.include("failed");
+            expect(stdout).to.not.include("\"failed\": true");
             done();
         });
         child.stdout.pipe(process.stdout);
