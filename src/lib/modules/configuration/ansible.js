@@ -40,7 +40,7 @@ class Ansible {
         if( results.length > 0 )
         {
             let recapString = results[0];
-            if( !recapString.indexOf("failed=0") >= 0)
+            if( recapString.indexOf("failed=0") == -1)
             {
                 throw new Error(`A bakelet task failed, see output for details: \r\n ${output}`);
             }
