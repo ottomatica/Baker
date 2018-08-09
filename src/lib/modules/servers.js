@@ -44,11 +44,15 @@ class Servers {
                     vmname: 'baker-srv',
                     mem: 1024,
                     ssh_port: bakerSSHConfig.port,
-                    syncs: [`${boxes};/data`],
+                    syncs: [`/;/data`],
                     disk: true,
                     verbose: true
                 });
             }
+
+            // TODO: mounting /data / share
+            let mount = `if ! mount | grep "/share" > /dev/null; then mkdir -p /share; mount --bind /data /share; fi; `;
+            await Ssh.sshExec(mount, bakerSSHConfig, 60000, false);
         }
     }
 
