@@ -30,14 +30,14 @@ class Python extends Bakelet {
         // Check for a requirements.txt and then run pip install -r requirements.txt
         // TODO: Possible to allow a requirements: parameter in the python object.
         // Otherwise, we might just want it in the packages: pip: requirements: path
-        var localRequirementsPath = path.resolve(this.bakePath, "requirements.txt");
-        if( fs.existsSync(localRequirementsPath) )
-        {
-            var vmRequirementsPath = `/${path.basename(this.bakePath)}/requirements.txt`;
-            await Ansible.runAnsiblePipInstall(
-                {name: this.name}, vmRequirementsPath, this.ansibleSSHConfig, this.verbose
-            );
-        }
+        // var localRequirementsPath = path.resolve(this.bakePath, "requirements.txt");
+        // if( fs.existsSync(localRequirementsPath) )
+        // {
+        //     var vmRequirementsPath = `/${path.basename(this.bakePath)}/requirements.txt`;
+        //     await Ansible.runAnsiblePipInstall(
+        //         {name: this.name}, vmRequirementsPath, this.ansibleSSHConfig, this.verbose
+        //     );
+        // }
     }
 
 
