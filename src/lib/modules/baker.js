@@ -1,14 +1,14 @@
 const fs            = require('fs-extra');
 const path          = require('path');
-const Provider      = require('../modules/providers/provider');
 const yaml          = require('js-yaml');
 
-const VagrantProvider = require('./providers/vagrant');
+const Provider           = require('../modules/providers/provider');
+const VagrantProvider    = require('./providers/vagrant');
 const VirtualBoxProvider = require('./providers/virtualbox');
-const DockerProvider  = require('./providers/docker');
-const DO_Provider     = require('./providers/digitalocean');
-const RemoteProvider  = require('./providers/remote');
-const RuncProvider    = require('./providers/runc');
+const DockerProvider     = require('./providers/docker');
+const DO_Provider        = require('./providers/digitalocean');
+const RemoteProvider     = require('./providers/remote');
+const RuncProvider       = require('./providers/runc');
 
 // conf variables:
 // const spinnerDot = conf.get('spinnerDot');

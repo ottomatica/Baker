@@ -6,13 +6,9 @@ const print          = require('./print')
 const scp2           = require('scp2');
 
 class Ssh {
-    constructor() { }
+    constructor() {}
 
-    static async copyFilesForAnsibleServer (
-        bakerScriptPath,
-        doc,
-        ansibleSSHConfig
-    ) {
+    static async copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig) {
         return new Promise(async (resolve, reject) => {
             if (doc.bake && doc.bake.ansible && doc.bake.ansible.source) {
                 // Copying ansible script to ansible vm
@@ -63,7 +59,7 @@ class Ssh {
         });
     };
 
-    static async copyFromHostToVM (src, dest, destSSHConfig, chmod_=true) {
+    static async copyFromHostToVM(src, dest, destSSHConfig, chmod_ = true) {
         let Ssh = this;
         return new Promise((resolve, reject) => {
             scp2.scp(
@@ -75,13 +71,12 @@ class Ssh {
                     privateKey: fs.readFileSync(destSSHConfig.private_key, 'utf8'),
                     path: dest
                 },
-                async function(err) {
+                async function (err) {
                     if (err) {
                         print.error(`Failed to configure ssh keys: ${err}`);
                         reject();
-                    }
-                    else {
-                        if(chmod_) {
+                    } else {
+                        if (chmod_) {
                             await Ssh.chmod(dest, destSSHConfig)
                         }
                         resolve();
@@ -91,29 +86,28 @@ class Ssh {
         });
     }
 
-    static async sshExec (cmd, sshConfig, verbose) {
+    static async sshExec(cmd, sshConfig, verbose) {
         let buffer = "";
         return new Promise((resolve, reject) => {
             var c = new Client();
             c
-                .on('ready', function() {
-                    c.exec(cmd, function(err, stream) {
-                        if (err){
+                .on('ready', function () {
+                    c.exec(cmd, function (err, stream) {
+                        if (err) {
                             print.error(err);
                         }
                         stream
-                            .on('close', function(code, signal) {
+                            .on('close', function (code, signal) {
                                 c.end();
                                 resolve(buffer);
                             })
-                            .on('data', function(data) {
-                                if( verbose )
-                                {
+                            .on('data', function (data) {
+                                if (verbose) {
                                     console.log('STDOUT: ' + data);
                                 }
                                 buffer += data;
                             })
-                            .stderr.on('data', function(data) {
+                            .stderr.on('data', function (data) {
                                 console.log('STDERR: ' + data);
                                 reject(data);
                             });
@@ -136,7 +130,7 @@ class Ssh {
      * @param {String} key path to the key on server
      * @param {Object} sshConfig
      */
-    static async chmod (key, sshConfig) {
+    static async chmod(key, sshConfig) {
         // && eval "$(ssh-agent -s)" && ssh-add ${key}
         return this.sshExec(`chmod 600 ${key}`, sshConfig);
     }

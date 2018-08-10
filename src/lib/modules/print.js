@@ -1,17 +1,17 @@
-const chalk =require('chalk');
+const chalk = require('chalk');
 
 /**
  * printing cleaner and more uniform output messages
  */
 class Print {
-    constructor () { }
+    constructor() {}
 
     /**
      * Bold red
      * @param {String} msg
      * @param {Integer} indentationCount number of \t before print
      */
-    static error (msg, indentationCount = 0) {
+    static error(msg, indentationCount = 0) {
         console.log(
             chalk.bold.red(`${'\t'.repeat(indentationCount)}==> ${msg}`)
         );
@@ -22,7 +22,7 @@ class Print {
      * @param {String} msg
      * @param {Integer} indentationCount number of \t before print
      */
-    static warning (msg, indentationCount = 0) {
+    static warning(msg, indentationCount = 0) {
         console.log(chalk.yellow(`${'\t'.repeat(indentationCount)}==> ${msg}`));
     };
 
@@ -31,7 +31,7 @@ class Print {
      * @param {String} msg
      * @param {Integer} indentationCount number of \t before print
      */
-    static success (msg, indentationCount = 0) {
+    static success(msg, indentationCount = 0) {
         console.log(chalk.green(`${'\t'.repeat(indentationCount)}==> ${msg}`));
     };
 
@@ -40,7 +40,7 @@ class Print {
      * @param {String} msg
      * @param {Integer} indentationCount number of \t before print
      */
-    static info (msg, indentationCount = 0) {
+    static info(msg, indentationCount = 0) {
         console.log(`${'\t'.repeat(indentationCount)}==> ${msg}`);
     };
 
@@ -49,7 +49,7 @@ class Print {
      * @param {String} msg
      * @param {Integer} indentationCount number of \t before print
      */
-    static bold (msg, indentationCount = 0) {
+    static bold(msg, indentationCount = 0) {
         console.log(chalk.bold(`${'\t'.repeat(indentationCount)}==> ${msg}`));
     };
 }
