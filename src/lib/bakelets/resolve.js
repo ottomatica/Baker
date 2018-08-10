@@ -111,17 +111,16 @@ module.exports.resolveBakelet = async function(bakeletsPath, remotesPath, doc, b
     }
 }
 
-function isObject(obj)
-{
+function isObject(obj) {
     return obj === Object(obj) && Object.prototype.toString.call(obj) !== '[object Array]'
 }
 
 async function getSSHConfig(machine) {
     try {
         let sshConfig = await machine.sshConfigAsync();
-        if(sshConfig && sshConfig.length > 0){
+        if (sshConfig && sshConfig.length > 0) {
             return sshConfig[0];
-        } else{
+        } else {
             throw '';
         }
     } catch (err) {
@@ -164,18 +163,17 @@ function getBakeletInformation(bakelet, dir)
             }
         }
     }
-    return {mod: mod, version: version, bakeletName: bakeletName };
+    return { mod: mod, version: version, bakeletName: bakeletName };
 }
 
 
 
-async function resolveCustom(vmName, bakerScriptPath, remotesPath, bakeletPath, info, bakelet, extra_vars, verbose)
-{
+async function resolveCustom(vmName, bakerScriptPath, remotesPath, bakeletPath, info, bakelet, extra_vars, verbose) {
     let mod = info.mod;
     let version = info.version;
     let bakeletName = info.bakeletName;
 
-    if( verbose ) console.log("Found", bakeletName, version, extra_vars);
+    if (verbose) console.log("Found", bakeletName, version, extra_vars);
 
     let classFoo = require(mod)
 
@@ -191,18 +189,17 @@ async function resolveCustom(vmName, bakerScriptPath, remotesPath, bakeletPath, 
     j.setBakeletName(bakeletName);
     j.setBakeletPath(bakeletPath);
 
-    await Spinner.spinPromise(j.load(bakelet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
+    await Spinner.spinPromise(j.load(bakelet, extra_vars), `Preparing ${mod} scripts`, spinnerDot);
     await Spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);
 }
 
-async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra_vars, verbose)
-{
+async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra_vars, verbose) {
     let info = getBakeletInformation(bakelet, dir);
     let mod = info.mod;
     let version = info.version;
     let bakeletName = info.bakeletName;
 
-    if( verbose ) console.log("Found", bakeletName, version, extra_vars);
+    if (verbose) console.log("Found", bakeletName, version, extra_vars);
 
     let classFoo = require(mod)
 
@@ -217,6 +214,6 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra
     j.setVerbose(verbose);
     j.setBakeletName(bakeletName);
 
-    await Spinner.spinPromise(j.load(bakelet,extra_vars), `Preparing ${mod} scripts`, spinnerDot);
+    await Spinner.spinPromise(j.load(bakelet, extra_vars), `Preparing ${mod} scripts`, spinnerDot);
     await Spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);
 }

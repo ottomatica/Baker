@@ -21,8 +21,7 @@ const { configPath, boxes, bakeletsPath, remotesPath } = require('../../../globa
 
 class Cluster {
 
-    constructor() {
-    }
+    constructor() {}
 
     /**
      * Adds cluster to baker_inventory
@@ -53,24 +52,20 @@ class Cluster {
      * @param {String} name
      * @param {Object} sshConfig
      */
-    static async addIpToAnsibleHosts (ip, name, sshConfig){
+    static async addIpToAnsibleHosts(ip, name, sshConfig) {
         // TODO: check addToAnsibleHosts(), looks like that is doing the same thing too
         return Ssh.sshExec(`ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, sshConfig);
     }
 
-
-
-    static async cluster (ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
+    static async cluster(ansibleSSHConfig, ansibleVM, scriptPath, verbose) {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         // prompt for passwords
-        if( doc.vars )
-        {
+        if (doc.vars) {
             await Utils.traverse(doc.vars);
         }
 
-        let getClusterLength = function (baseName,cluster)
-        {
+        let getClusterLength = function (baseName, cluster) {
             // Default is 4.
             let name = baseName;
             let length = 4;
@@ -86,19 +81,18 @@ class Cluster {
                     break;
                 }
             }
-            return {nameProperty: name, length: length};
+            return { nameProperty: name, length: length };
         }
 
 
-        let cluster = {}
+        let cluster = {};
         let nodeDoc = {};
 
-        if( doc.cluster && doc.cluster.plain )
-        {
+        if (doc.cluster && doc.cluster.plain) {
             cluster.cluster = {};
             cluster.cluster.nodes = [];
 
-            let {nameProperty, length} = getClusterLength("nodes", doc.cluster.plain );
+            let { nameProperty, length } = getClusterLength("nodes", doc.cluster.plain );
             nodeDoc = doc.cluster.plain[nameProperty];
             nodeDoc.name = doc.name;
 
@@ -106,8 +100,7 @@ class Cluster {
             let baseIp = doc.cluster.plain[nameProperty].ip || '192.168.20.2';
             let Addr = netaddr.Addr;
 
-            for( var i = 0; i < length; i++ )
-            {
+            for (var i = 0; i < length; i++) {
                 // Create a copy from yaml
                 let instance = Object.assign({}, doc.cluster.plain[nameProperty]);
                 instance.name = `${doc.name.replace(/-/g,'')}${parseInt(i)+1}`;
@@ -119,8 +112,7 @@ class Cluster {
                 instance.memory = instance.memory || 1024;
                 instance.cpus   = instance.cpus || 1;
 
-
-                cluster.cluster.nodes.push( instance );
+                cluster.cluster.nodes.push(instance);
             }
         }
 
@@ -153,27 +145,22 @@ class Cluster {
 
             let machine = vagrant.create({ cwd: dir });
 
-            machine.on('up-progress', function(data) {
+            machine.on('up-progress', function (data) {
                 //console.log(machine, progress, rate, remaining);
-                if( verbose ) print.info(data);
+                if (verbose) print.info(data);
             });
 
             await spinner.spinPromise(machine.upAsync(), `Provisioning cluster in VirtualBox`, spinnerDot);
-
         }
-
-
 
         let nodeList = [];
         //_.pluck(cluster.cluster.nodes, "ip");
-        for( var i = 0; i < cluster.cluster.nodes.length; i++ )
-        {
+        for (var i = 0; i < cluster.cluster.nodes.length; i++) {
             let node = cluster.cluster.nodes[i];
             let vmSSHConfig = await provider.getSSHConfig(node.name);
 
             let ip = node.ip;
-            if( doc.provider && doc.provider === "digitalocean" )
-            {
+            if (doc.provider && doc.provider === "digitalocean") {
                 ip = vmSSHConfig.hostname;
             }
 
@@ -190,13 +177,12 @@ class Cluster {
             await provider.setKnownHosts(ip, ansibleSSHConfig);
             await this.addIpToAnsibleHosts(ip, node.name, ansibleSSHConfig);
 
-            console.log( `${nodeList[i].ip} ${nodeList[i].user} ${vmSSHConfig.private_key}`);
+            console.log(`${nodeList[i].ip} ${nodeList[i].user} ${vmSSHConfig.private_key}`);
         }
-        if( doc.provider && doc.provider === "digitalocean" )
-        {
+
+        if (doc.provider && doc.provider === "digitalocean") {
             await this.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig, true);
-        }
-        else{
+        } else {
             await this.addClusterToBakerInventory(nodeList, doc.name, ansibleSSHConfig, false);
         }
 

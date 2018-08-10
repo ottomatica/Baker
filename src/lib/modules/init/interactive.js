@@ -19,7 +19,7 @@ class Interactive {
         let Baker = this;
         // TODO: Find a better approach to do this
         try{
-            if(await fs.pathExists(await path.resolve(path.resolve(process.cwd(), 'baker.yml'))))
+            if (await fs.pathExists(await path.resolve(path.resolve(process.cwd(), 'baker.yml'))))
                 await spinner.spinPromise(Promise.reject(), `A baker.yml already exists in current directory!`, spinnerDot);
         } catch (err) { return; }
 
@@ -139,7 +139,7 @@ class Interactive {
         let baker2Template = await fs.readFile(path.join(configPath, './baker2Template.yml.mustache'), 'utf8');
         let bakerYML = mustache.render(baker2Template, vmResponse);
         let cwd = path.resolve(process.cwd());
-        await fs.writeFile(path.resolve(cwd, 'baker.yml'), bakerYML, {encoding:'utf8'});
+        await fs.writeFile(path.resolve(cwd, 'baker.yml'), bakerYML, { encoding: 'utf8' });
         return;
     }
 }
