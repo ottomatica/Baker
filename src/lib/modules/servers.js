@@ -14,21 +14,21 @@ const Ssh           = require('./ssh');
 const Utils         = require('./utils/utils');
 const vagrant       = Promise.promisifyAll(require('node-vagrant'));
 
-const vbox          =      require('node-virtualbox');
+const vbox               = require('node-virtualbox');
 const VirtualboxProvider = require('./providers/virtualbox');
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
 
-const { configPath, ansible, boxes, bakerForMacPath, bakerSSHConfig } = require('../../global-vars');
+const { configPath, boxes, bakerForMacPath, bakerSSHConfig } = require('../../global-vars');
 
 class Servers {
     constructor() {}
 
-    static async installBakerServer(forceVirtualBox=false) {
+    static async installBakerServer(forceVirtualBox = false) {
         if (require('os').platform() === 'darwin' && !forceVirtualBox) {
             await this.setupBakerForMac();
         } else {
-            if(require('os').platform() === 'darwin')
+            if (require('os').platform() === 'darwin')
                 console.log('=> Using virtualbox as hypervisor for Baker VM.')
 
             const provider = new VirtualboxProvider();
@@ -39,7 +39,7 @@ class Servers {
 
             // TODO: check if virtualbox is installed
             let root = (os.platform() == "win32") ? `${process.cwd().split(path.sep)[0]}/` : "/";
-            if((await provider.driver.list()).filter(e => e.name === 'baker-srv').length == 0) {
+            if ((await provider.driver.list()).filter(e => e.name === 'baker-srv').length == 0) {
                 await vbox({
                     micro: true,
                     vmname: 'baker-srv',
@@ -65,7 +65,7 @@ class Servers {
      * @param {String} name
      * @param {Object} sshConfig
      */
-    static async addToAnsibleHosts (ip, name, ansibleSSHConfig, vmSSHConfig, usePython3){
+    static async addToAnsibleHosts(ip, name, ansibleSSHConfig, vmSSHConfig, usePython3) {
         let pythonPath = usePython3 ? '/usr/bin/python3' : '/usr/bin/python';
         // TODO: Consider also specifying ansible_connection=${} to support containers etc.
         // TODO: Callers of this can be refactored to into two methods, below:
@@ -126,8 +126,8 @@ class Servers {
      * @param {String} custom name of the VM to be used as Docker host.
      *                          if undefined, usinig default Docker host.
      */
-    static async prepareDockerVM(custom){
-        if(!custom) {
+    static async prepareDockerVM(custom) {
+        if (!custom) {
             const dockerHostName = 'docker-srv';
             const dockerHostPath = path.join(boxes, dockerHostName);
 
@@ -141,14 +141,14 @@ class Servers {
 
             // always update vagrantfile
             let template = await fs.readFile(path.join(configPath, './dockerHost/DockerVM.mustache'), 'utf8');
-            let vagrantfile = mustache.render(template, {dockerHostName});
+            let vagrantfile = mustache.render(template, { dockerHostName });
             await fs.writeFile(path.join(dockerHostPath, 'Vagrantfile'), vagrantfile);
 
             let status;
-            try{
-                await VagrantProvider.getState('docker-srv')
+            try {
+                await VagrantProvider.getState('docker-srv');
                 status = await VagrantProvider.getState('docker-srv');
-            } catch(err){
+            } catch (err) {
                 if (err == 'Cannot find machine: docker-srv') {
                     // Install baker-srv
                     await Utils._ensureDir(boxes);
@@ -166,8 +166,8 @@ class Servers {
             let machine = vagrant.create({ cwd: dockerHostPath });
             try {
                 // TODO: Add a force reload option
-                if(status != 'running'){
-                    machine.on('up-progress', function(data) {
+                if (status != 'running') {
+                    machine.on('up-progress', function (data) {
                         print.info(data);
                     });
                     await machine.upAsync();
