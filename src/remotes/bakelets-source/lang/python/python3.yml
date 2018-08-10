@@ -32,4 +32,15 @@
     - name: Upgrade pip
       pip:
         name: pip
+        executable: pip3
         extra_args: --upgrade
+
+    - stat: path="{{BAKER_SHARE_DIR}}/requirements.txt"
+      register: file_exists
+   
+    - name: Install the project requirements
+      pip:
+        state: present
+        executable: pip3
+        requirements: "{{BAKER_SHARE_DIR}}/requirements.txt"
+      when: file_exists.stat.exists == True

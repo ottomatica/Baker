@@ -17,7 +17,30 @@
         - python-pip
         - python-setuptools
 
+    - name: Set python as default python using alternatives
+      alternatives:
+        name: python
+        link: /usr/bin/python
+        path: /usr/bin/python2
+
+    - name: Set pip as default pip using alternatives
+      alternatives:
+        name: pip
+        link: /usr/bin/pip
+        path: /usr/bin/pip2
+
     - name: Upgrade pip
       pip:
         name: pip
+        executable: pip
         extra_args: --upgrade
+
+    - stat: path="{{BAKER_SHARE_DIR}}/requirements.txt"
+      register: file_exists
+   
+    - name: Install the project requirements
+      pip:
+        state: present
+        executable: pip
+        requirements: "{{BAKER_SHARE_DIR}}/requirements.txt"
+      when: file_exists.stat.exists == True
