@@ -100,10 +100,12 @@ class RuncProvider extends Provider {
         try {
             let cmd = null;
             let rootfsPath = `/mnt/disk/${name}/rootfs`;
+            let env = `PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin \
+            PS1="baker: $"`;
             if (!cmdToRun) {
-                cmd = `chroot ${rootfsPath} /bin/bash`;
+                cmd = `${env} chroot ${rootfsPath} /bin/bash`;
             } else {
-                cmd = `chroot ${rootfsPath} bash -c "${cmdToRun}"`;
+                cmd = `${env} chroot ${rootfsPath} bash -c "${cmdToRun}"`;
             }
             // Handling platform quoting style
             if( os.platform() == 'win32' )
