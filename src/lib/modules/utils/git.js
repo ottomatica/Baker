@@ -1,5 +1,5 @@
-const git           = require('simple-git');
-const path          = require('path');
+const git  = require('simple-git');
+const path = require('path');
 
 class Git {
     constructor() {}

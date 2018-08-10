@@ -1,4 +1,4 @@
-const Promise       = require('bluebird');
+const Promise   = require('bluebird');
 const drivelist = Promise.promisifyAll(require('drivelist'));
 const fs        = require('fs-extra');
 const hasbin    = require('hasbin');
@@ -7,8 +7,8 @@ const print     = require('./print');
 const validator = require('validator');
 const yaml      = require('js-yaml');
 
-class Validator{
-    constructor () { }
+class Validator {
+    constructor() {}
 
     static async validateDependencies () {
         let platform = process.platform;

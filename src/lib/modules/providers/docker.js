@@ -31,22 +31,21 @@ class Docker_Provider extends Provider {
         this.docker = new Docker(dockerHost);
     }
 
-    async removeContainers()
-    {
+    async removeContainers() {
         let self = this;
-        return new Promise( async function (resolve, reject)
-        {
-            let containers = await self.docker.listContainers({all: true});
-            for( let containerInfo of containers )
-            {
-                if( containerInfo.State === 'running' )
-                {
+        return new Promise(async function (resolve, reject) {
+            let containers = await self.docker.listContainers({
+                all: true
+            });
+
+            for (let containerInfo of containers) {
+                if (containerInfo.State === 'running') {
                     await self.docker.getContainer(containerInfo.Id).stop();
                 }
                 await self.docker.getContainer(containerInfo.Id).remove();
                 //console.log( containerInfo );
             };
-            resolve()
+            resolve();
         });
     }
 
@@ -54,8 +53,7 @@ class Docker_Provider extends Provider {
         console.log(await this.docker.listImages());
     }
 
-    async pull(imageName)
-    {
+    async pull(imageName) {
         let self = this;
         //console.log( `pulling ${imageName}`);
         process.stdout.write(`pulling ${imageName} `);
@@ -79,8 +77,7 @@ class Docker_Provider extends Provider {
         return data.NetworkSettings.IPAddress;
     }
 
-    async run(image, cmd, name)
-    {
+    async run(image, cmd, name) {
         await this.docker.createContainer({
             name: name,
             Image: image,
@@ -88,10 +85,10 @@ class Docker_Provider extends Provider {
             AttachStdout: true,
             AttachStderr: true,
             Tty: true,
-            Cmd: Array.isArray(cmd) ? cmd: [cmd],
+            Cmd: Array.isArray(cmd) ? cmd : [cmd],
             OpenStdin: false,
             StdinOnce: false,
-        }).then(function(container) {
+        }).then(function (container) {
             return container.start();
         });
     }
@@ -105,7 +102,7 @@ class Docker_Provider extends Provider {
      * @param {string} volume source path to be mounted (will be mounted @ /{base_name})
      * @returns container
      */
-    async init (image, cmds, name, ip, volume, ports) {
+    async init(image, cmds, name, ip, volume, ports) {
 
         let source = slash(path.join(`/home/vagrant/host_root`, volume.split(":").pop()));
         let dest = `/${path.basename(volume)}`
@@ -146,7 +143,7 @@ class Docker_Provider extends Provider {
      * starts a container
      * @param {Container} container container to be started
      */
-    async startContainer (container) {
+    async startContainer(container) {
         return await container.start();
     }
 
@@ -154,9 +151,9 @@ class Docker_Provider extends Provider {
      * starts a container by name
      * @param {String} containerName name of container to be stopped
      */
-    async start (containerName) {
+    async start(containerName) {
         let container = await this.getContainerByName(containerName);
-        if(container)
+        if (container)
             return await this.startContainer(container);
         else
             throw `container doesn't exist: ${containerName}`;
@@ -166,7 +163,7 @@ class Docker_Provider extends Provider {
      * private: stops a container
      * @param {Container} container container to be stopped
      */
-    async _stopContainer (container) {
+    async _stopContainer(container) {
         return await container.stop();
     }
 
@@ -174,9 +171,9 @@ class Docker_Provider extends Provider {
      * stops a container by name
      * @param {String} containerName name of container to be stopped
      */
-    async stop (containerName) {
+    async stop(containerName) {
         let container = await this.getContainerByName(containerName);
-        if(container)
+        if (container)
             return await this._stopContainer(container);
         else
             throw `container doesn't exist: ${containerName}`;
@@ -187,7 +184,7 @@ class Docker_Provider extends Provider {
      * @param {Container} container container to be removed
      */
     async _deleteContainer(container) {
-        return await container.remove({force: true});
+        return await container.remove({ force: true });
     }
 
     /**
@@ -196,11 +193,10 @@ class Docker_Provider extends Provider {
      */
     async delete(containerName) {
         let container = await this.getContainerByName(containerName);
-        if(container){
+        if (container) {
             await this._deleteContainer(container);
             Utils.removeFromIndex(containerName);
-        }
-        else
+        } else
             throw `container doesn't exist: ${containerName}`;
     }
 
@@ -257,7 +253,7 @@ class Docker_Provider extends Provider {
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
 
         let image;
-        if(doc.container)
+        if (doc.container)
             image = doc.container.image || 'ubuntu:latest'
         else {
             print.error('To use Docker commands, you need to add `container` specifiction in your baker.yml');
@@ -273,21 +269,21 @@ class Docker_Provider extends Provider {
         // }
         try {
             let sameNameContainer = await this.info(doc.name);
-            if(sameNameContainer.state == 'stopped')
+            if (sameNameContainer.state == 'stopped')
                 await this.delete(doc.name);
             else
-                throw  `the container name ${doc.name} is already in use by another running container.`
+                throw `the container name ${doc.name} is already in use by another running container.`
 
         } catch (error) {
-            if(error != `container doesn't exist: ${doc.name}`)
+            if (error != `container doesn't exist: ${doc.name}`)
                 throw error;
         }
 
         let exposedPorts = [];
-        if( doc.container.ports ) {
+        if (doc.container.ports) {
             // ports: '8000, 9000,  1000:3000'
             let ports = doc.container.ports.toString().trim().split(/\s*,\s*/g);
-            for( var port of ports  ) {
+            for (var port of ports) {
                 let p = port.trim().split(/\s*:\s*/g);
                 let guest = p[0];
                 // ignoring host port for now. only exposing the guest port
@@ -303,7 +299,7 @@ class Docker_Provider extends Provider {
         await this.addToAnsibleHostsDocker(doc.name, bakerSSHConfig, 'root')
 
         // prompt for passwords
-        if( doc.vars ) {
+        if (doc.vars) {
             await Utils.traverse(doc.vars);
         }
 
@@ -334,7 +330,7 @@ class Docker_Provider extends Provider {
     async getContainerByName(containerName) {
         let existingContainers = await this.info();
         let sameNameContainer = existingContainers.filter(c => c.name == containerName)[0];
-        if(sameNameContainer)
+        if (sameNameContainer)
             return this.docker.getContainer(sameNameContainer.id);
         else
             return undefined;
@@ -344,9 +340,9 @@ class Docker_Provider extends Provider {
      * Helper function to get info for all containers
      * Note: This should not be called directly, instead call this.info()
      */
-    async _getOveralInfo () {
+    async _getOveralInfo() {
         let self = this;
-        let containers = await this.docker.listContainers({all: true});
+        let containers = await this.docker.listContainers({ all: true });
         let info = [];
         for (let i = 0; i < containers.length; i++) {
             let containerInfo = await self._getContainerInfo(await self.getContainer(containers[i].Id));
@@ -361,7 +357,7 @@ class Docker_Provider extends Provider {
      * Note: This should not be called directly, instead call this.info()
      * @param {Docker.Container} container
      */
-    async _getContainerInfo (container) {
+    async _getContainerInfo(container) {
         let inspect = await container.inspect();
         return {
             id: inspect.Id,
@@ -377,18 +373,16 @@ class Docker_Provider extends Provider {
      *
      * @param {String} containerName
      */
-    async info(containerName=undefined) {
-        if(containerName){
+    async info(containerName = undefined) {
+        if (containerName) {
             let container = await this.getContainerByName(containerName);
-            if(container){
+            if (container) {
                 let containerInfo = await this._getContainerInfo(container);
                 containerInfo.name = containerName; // TODO: can we get the name from inspect?
                 return containerInfo;
-            }
-            else
+            } else
                 throw `container doesn't exist: ${containerName}`;
-        }
-        else
+        } else
             return this._getOveralInfo();
     }
 
@@ -400,11 +394,9 @@ class Docker_Provider extends Provider {
         return this.docker.getContainer(nameOrId);
     }
 
-    async exec(name, cmd)
-    {
+    async exec(name, cmd) {
         let self = this;
-        return new Promise(function(resolve,reject)
-        {
+        return new Promise(function (resolve, reject) {
             var options = {
                 Cmd: ['bash', '-c', cmd],
                 //Cmd: ['bash', '-c', 'echo test $VAR'],
@@ -416,18 +408,18 @@ class Docker_Provider extends Provider {
             var logStream = new stream.PassThrough();
 
             var output = "";
-            logStream.on('data', function(chunk){
-            //console.log(chunk.toString('utf8'));
+            logStream.on('data', function (chunk) {
+                //console.log(chunk.toString('utf8'));
                 output += chunk.toString('utf8');
             });
 
-            container.exec(options, function(err, exec) {
+            container.exec(options, function (err, exec) {
                 if (err) return;
-                exec.start(function(err, stream) {
+                exec.start(function (err, stream) {
                     if (err) return;
 
                     container.modem.demuxStream(stream, logStream, logStream);
-                    stream.on('end', function(){
+                    stream.on('end', function () {
                         logStream.destroy();
                         resolve(output);
                     });
@@ -449,7 +441,7 @@ class Docker_Provider extends Provider {
      * @param {String} name
      * @param {Object} sshConfig
      */
-    async addToAnsibleHostsDocker (name, ansibleSSHConfig, user){
+    async addToAnsibleHostsDocker(name, ansibleSSHConfig, user) {
         // TODO: Consider also specifying ansible_connection=${} to support containers etc.
         // TODO: Callers of this can be refactored to into two methods, below:
         // return Ssh.sshExec(`mkdir -p /home/vagrant/baker/${name}/ && echo "${name}\tansible_connection=docker\tansible_user=${user}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i /home/vagrant/baker/${name}/baker_inventory -m lineinfile -a 'dest=/etc/environments line="DOCKER_HOST=tcp://192.168.252.251:2375"'`, ansibleSSHConfig);
@@ -460,8 +452,7 @@ class Docker_Provider extends Provider {
 
 module.exports = Docker_Provider;
 
-let foo = async function ()
-{
+let foo = async function () {
     let dockerProvider = new Docker_Provider({host: '192.168.252.251', port: '2375', protocol: 'http'});
     // await dockerProvider.pull('python:2-alpine');
     // await dockerProvider.removeContainers();
@@ -479,9 +470,6 @@ let foo = async function ()
 
     // console.log(await dockerProvider.info(await dockerProvider.getContainer('97f5f03c47b7')));
     console.log(await dockerProvider.info());
-
-
 };
-
 
 // foo();
