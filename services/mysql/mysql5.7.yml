@@ -53,14 +53,14 @@
 
     # Install mysql
       #dpkg_options="force-confnew"
-    # - name: Install mysql components
-    #   apt: pkg={{ item }} state=latest allow_unauthenticated=yes update_cache=true cache_valid_time=86400
-    #   with_items:
-    #     - mysql-server
-    #     - mysql-client
-    #     - libmysqlclient-dev
-    #     - python3-mysqldb
-    #   become: yes
+    - name: Install mysql components
+      apt: pkg={{ item }} state=latest allow_unauthenticated=yes update_cache=true cache_valid_time=86400
+      with_items:
+        - mysql-server
+        - mysql-client
+        - libmysqlclient-dev
+        - python3-mysqldb
+      become: yes
 
     - name: Copy my.cnf settings
       template: src=templates/mysql.cfg dest=/etc/mysql/mysql.conf.d/mysqld.cnf
@@ -82,6 +82,7 @@
 
     - name: For chroot, start a service manually since systemd will perform NOP.
       shell: /etc/init.d/mysql start
+      become: yes
 
     - name: update mysql root password for all root accounts
       mysql_user: name=root
