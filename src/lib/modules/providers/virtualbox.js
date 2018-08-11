@@ -118,7 +118,7 @@ class VirtualBoxProvider extends Provider {
 
             if( !cmdToRun )
             {
-                child_process.execSync(`ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1`, {stdio: ['inherit', 'inherit', 'ignore']});
+                child_process.execSync(`ssh -q -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1`, {stdio: ['inherit', 'inherit', 'ignore']});
             }
             else
             {
@@ -128,7 +128,7 @@ class VirtualBoxProvider extends Provider {
                     cmdToRun = `shopt -s huponexit; ${cmdToRun}`;
                     allocateTTY = '-tt';
                 }
-                let sshCmd = `ssh -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 ${allocateTTY} "${cmdToRun}"`;
+                let sshCmd = `ssh -q -i ${info.private_key} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p ${info.port} ${info.user}@127.0.0.1 ${allocateTTY} "${cmdToRun}"`;
                 //console.log( sshCmd );
                 child_process.execSync(sshCmd, {stdio: ['inherit', 'inherit', 'inherit']});
             }
