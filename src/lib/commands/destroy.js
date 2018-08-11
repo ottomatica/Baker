@@ -17,14 +17,31 @@ exports.builder = (yargs) => {
     //         describe: 'Name of the environment to be destroyed',
     //         type: 'string'
     //     });
+    yargs.options(
+        {
+            usePersistent: {
+                describe: `Override environment type to use persistent`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
+            },
+            useVM: {
+                describe: `Override environment type to use vm`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
+            }
+        }
+    );
+
 }
 
 exports.handler = async function(argv) {
-    let { envName } = argv;
+    let { envName, usePersistent, useVM } = argv;
 
     try {
         let bakePath = process.cwd();
-        const {envName, BakerObj} = await Baker.chooseProvider(bakePath);
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath, usePersistent, useVM);
 
         await Spinner.spinPromise(BakerObj.delete(envName), `Destroying VM: ${envName}`, spinnerDot);
     } catch (err) {

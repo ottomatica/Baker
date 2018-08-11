@@ -142,6 +142,12 @@ class VirtualBoxProvider extends Provider {
 
         let dir = path.join(boxes, doc.name);
 
+        // Allow override of vm from persistent
+        if( doc.persistent )
+        {
+            doc.vm = doc.persistent;
+        }
+
         // handle prompts for vm settings.
         if( doc.vm )
         {

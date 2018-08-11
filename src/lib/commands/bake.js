@@ -61,13 +61,25 @@ exports.builder = (yargs) => {
                 hidden: true, // just for debugging for now
                 demand: false,
                 type: 'boolean'
+            },
+            usePersistent: {
+                describe: `Override environment type to use persistent`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
+            },
+            useVM: {
+                describe: `Override environment type to use vm`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
             }
         }
     );
 };
 
 exports.handler = async function(argv) {
-    const { local, repo, box, remote, remote_key, remote_user, verbose, forceVirtualBox } = argv;
+    const { local, repo, box, remote, remote_key, remote_user, verbose, forceVirtualBox, usePersistent, useVM  } = argv;
 
     try{
         let ansibleVM;
@@ -94,7 +106,7 @@ exports.handler = async function(argv) {
             }
         }
 
-        const {provider, BakerObj} = await Baker.chooseProvider(bakePath);
+        const {provider, BakerObj} = await Baker.chooseProvider(bakePath, usePersistent, useVM);
 
         if(box)
             await provider.bakeBox(bakerSSHConfig, ansibleVM, bakePath, verbose);

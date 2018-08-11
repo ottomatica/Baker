@@ -18,14 +18,31 @@ exports.builder = (yargs) => {
     //         describe: 'Name of the Baker VM',
     //         type: 'string'
     //     });
+
+    yargs.options(
+        {
+            usePersistent: {
+                describe: `Override environment type to use persistent`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
+            },
+            useVM: {
+                describe: `Override environment type to use vm`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
+            }
+        }
+    );
 }
 
 exports.handler = async function(argv) {
-    // let { envName } = argv;
+    let { usePersistent, useVM } = argv;
 
     try {
         let bakePath = process.cwd();
-        const {envName, BakerObj} = await Baker.chooseProvider(bakePath);
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath, usePersistent, useVM);
 
         await Spinner.spinPromise(BakerObj.ssh(envName), `SSHing to ${envName}`, spinnerDot);
     } catch (err) {

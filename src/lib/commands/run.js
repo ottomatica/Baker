@@ -19,6 +19,18 @@ exports.builder = (yargs) => {
         .example(`$0 run cmdlet`, `Run the cmdlet in the baker environment`)
     yargs.options(
         {
+            usePersistent: {
+                describe: `Override environment type to use persistent`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
+            },
+            useVM: {
+                describe: `Override environment type to use vm`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
+            }
         }
     );
 
@@ -30,12 +42,12 @@ exports.builder = (yargs) => {
 };
 
 exports.handler = async function(argv) {
-    const { cmdlet } = argv;
+    const { cmdlet, usePersistent, useVM } = argv;
 
     try{
 
         let bakePath = process.cwd();
-        const {envName, provider, BakerObj} = await Baker.chooseProvider(bakePath);
+        const {envName, provider, BakerObj} = await Baker.chooseProvider(bakePath, usePersistent, useVM);
 
 
         let cmd = "";

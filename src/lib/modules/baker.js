@@ -63,7 +63,7 @@ class Baker {
      * Helper function for commands to automatically create the right provider object.
      * @param {String} bakePath path to the baker.yml file
      */
-    static async chooseProvider(bakePath){
+    static async chooseProvider(bakePath, usePersistent, useVM){
         let doc = yaml.safeLoad(await fs.readFile(path.join(bakePath, 'baker.yml'), 'utf8'));
         let envName = doc.name;
         let envType = doc.container ? 'container' : doc.vm || doc.vagrant ? 'vm' : doc.remote ? 'remote' : doc.persistent ? 'persistent' : 'other';
@@ -88,6 +88,17 @@ class Baker {
         }
         else
             console.error('This command only supports VM and container environments');
+
+        // Override ...for debugging... testing
+        if( usePersistent )
+        {
+            provider = new RuncProvider();
+        }
+        if( useVM )
+        {
+            provider = new VirtualBoxProvider();
+        }
+
 
         let BakerObj = new Baker(provider);
 
