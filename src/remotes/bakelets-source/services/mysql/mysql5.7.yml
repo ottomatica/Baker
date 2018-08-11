@@ -1,5 +1,5 @@
 ---
-- hosts: all 
+- hosts: all
   vars:
     - root_db_password: "{{mysql_password}}"
 
@@ -9,7 +9,7 @@
       become: yes
 
     # Download mysql debian package
-    - name: Add mysql apt-config debian 
+    - name: Add mysql apt-config debian
       apt: deb=http://dev.mysql.com/get/mysql-apt-config_0.8.1-1_all.deb update-cache=yes cache_valid_time=86400
       become: yes
 
@@ -17,16 +17,15 @@
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
       with_items:
-#        - python-dev
-        - python3-dev 
-        - python3-pip
+        - python-dev
+        - python-pip
         - debconf-utils
       become: yes
 
     # For 5.7, password is required during install. Normally, this is prompted by an interactive script.
     # But by populating the debconf database, we can setup a password that gets asked during install.
     - name: Mysql | Set root password
-      shell: echo mysql-server mysql-server/root_password password {{root_db_password}} | debconf-set-selections  
+      shell: echo mysql-server mysql-server/root_password password {{root_db_password}} | debconf-set-selections
       become: yes
 
     - name: Mysql | Set root repassword
@@ -54,27 +53,35 @@
 
     # Install mysql
       #dpkg_options="force-confnew"
-    - name: Install mysql components
-      apt: pkg={{ item }} state=latest force=yes update_cache=true cache_valid_time=86400       
-      with_items:
-        - mysql-server
-        - mysql-client
-        - libmysqlclient-dev
-      become: yes   
+    # - name: Install mysql components
+    #   apt: pkg={{ item }} state=latest allow_unauthenticated=yes update_cache=true cache_valid_time=86400
+    #   with_items:
+    #     - mysql-server
+    #     - mysql-client
+    #     - libmysqlclient-dev
+    #     - python3-mysqldb
+    #   become: yes
 
     - name: Copy my.cnf settings
       template: src=templates/mysql.cfg dest=/etc/mysql/mysql.conf.d/mysqld.cnf
+      become: yes
+
+    # https://stackoverflow.com/questions/14087598/python-3-importerror-no-module-named-configparser
+#     - name: Install the Python MySQLB module (needed for mysql_user)
+# #     pip: name=MySQL-python
+#       pip: name=mysqlclient executable=pip3
+#       become: yes
+
+    - name: Install the Python MySQLB module
+      pip: name=MySQL-python executable=pip
       become: yes
 
     - name: ensure mysql is running and starts on boot
       service: name=mysql state=restarted enabled=true
       become: yes
 
-    # https://stackoverflow.com/questions/14087598/python-3-importerror-no-module-named-configparser
-    - name: Install the Python MySQLB module (needed for mysql_user)
-#      pip: name=MySQL-python
-      pip: name=mysqlclient
-      become: yes
+    - name: For chroot, start a service manually since systemd will perform NOP.
+      shell: /etc/init.d/mysql start
 
     - name: update mysql root password for all root accounts
       mysql_user: name=root
@@ -101,11 +108,11 @@
         - '%'
 
     # - name: update mysql root password for all root accounts on {{ inventory_hostname }}
-    #   mysql_user: 
+    #   mysql_user:
     #     name: root
-    #     host: '%' 
+    #     host: '%'
     #     password: "{{ root_db_password }}"
-    #     login_user: root 
+    #     login_user: root
     #     login_password: "{{root_db_password}}"
 
     - name: ensure anonymous users are not in the database
