@@ -33,11 +33,16 @@ class VirtualBoxProvider extends Provider {
 
     async list() {
         try {
-            // let VMs = await vagrant.globalStatusAsync();
             let VMs = await this.driver.list();
-            // Only showing baker VMs
+            let table = [];
             // VMs = VMs.filter(VM => VM.cwd.includes('.baker/'));
-            console.table('\nBaker vms: ', VMs);
+            for( let vm of VMs)
+            {
+                let state = await this.getState(vm.name);
+                table.push( {name: vm.name, state: state} );
+            }
+
+            console.table('\nBaker vms: ', table);
         } catch (err) {
             throw err
         }
