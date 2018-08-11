@@ -61,6 +61,12 @@ class Ssh {
 
     static async copyFromHostToVM(src, dest, destSSHConfig, chmod_ = true) {
         let Ssh = this;
+
+        if( !fs.existsSync(src) )
+        {
+            throw new Error(`Path cannot be found on your machine: ${src}`);
+        }
+
         return new Promise((resolve, reject) => {
             scp2.scp(
                 src,

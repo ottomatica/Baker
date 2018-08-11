@@ -195,6 +195,7 @@ class RuncProvider extends Provider {
         await Ssh.sshExec(addHostsCmd, bakerSSHConfig, 60000, verbose);
 
         await this.addToAnsibleHosts(doc.name, rootfsPath);
+        await this.mkTemplatesDir(doc, bakerSSHConfig);
 
         // prompt for passwords/vars
         if (doc.vars) {
