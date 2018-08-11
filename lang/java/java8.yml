@@ -3,6 +3,9 @@
   become: yes
 
   tasks: 
+    - name: Add public key of ppa.launchpand.net
+      command: apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C2518248EEA14886
+  
     - name: add repo for java 8
       apt_repository: repo='ppa:webupd8team/java' state=present
   
