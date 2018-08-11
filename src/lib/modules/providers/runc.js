@@ -29,6 +29,19 @@ class RuncProvider extends Provider {
     }
 
     async list() {
+
+        let cmd = `du -sh /mnt/disk/* | grep -v 'lost+found' `;
+        let output = await Ssh.sshExec(cmd, bakerSSHConfig, false);
+        let table = [];
+        for (let line of output.split('\n') )
+        {
+            if( line )
+            {
+                let [size, location] = line.split('\t');
+                table.push( {container: location.replace("/mnt/disk/",""), size: size});
+            }
+        }
+        console.table("Baker containers:", table);
     }
 
     /**

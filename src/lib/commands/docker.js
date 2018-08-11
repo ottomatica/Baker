@@ -68,6 +68,7 @@ exports.handler = async function(argv) {
             break;
 
         case 'list':
+            // TODO: Broken
             await BakerObj.list();
             break;
 

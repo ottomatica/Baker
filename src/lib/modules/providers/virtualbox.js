@@ -37,7 +37,7 @@ class VirtualBoxProvider extends Provider {
             let VMs = await this.driver.list();
             // Only showing baker VMs
             // VMs = VMs.filter(VM => VM.cwd.includes('.baker/'));
-            console.table('\nBaker status: ', VMs);
+            console.table('\nBaker vms: ', VMs);
         } catch (err) {
             throw err
         }

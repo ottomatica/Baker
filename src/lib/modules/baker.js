@@ -44,8 +44,9 @@ class Baker {
         await this.provider.bake(scriptPath, ansibleSSHConfig, verbose);
     }
 
-    async list() {
-        await this.provider.list();
+    static async list() {
+        await new VirtualBoxProvider().list();
+        await new RuncProvider().list();
     }
 
     async images(){
