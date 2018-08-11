@@ -69,7 +69,7 @@ class RuncProvider extends Provider {
     async delete(name) {
         let bakerPath = `/mnt/disk/${name}`;
         let rootfsPath = `${bakerPath}/rootfs`;
-        let cmd = `umount ${rootfsPath}/${path.basename(process.cwd())} ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
+        let cmd = `umount -f ${rootfsPath}/${path.basename(process.cwd())} ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
         await Ssh.sshExec(cmd, bakerSSHConfig, 60000, true);
     }
 
@@ -193,6 +193,9 @@ class RuncProvider extends Provider {
 
         var addHostsCmd = `echo "127.0.0.1 localhost loopback" >> ${rootfsPath}/etc/hosts`;
         await Ssh.sshExec(addHostsCmd, bakerSSHConfig, 60000, verbose);
+
+        // make connection within chroot so we can turn off /sbin/initctl
+        await this.ssh(doc.name, `dpkg-divert --add --rename --local /sbin/initctl`, false );
 
         await this.addToAnsibleHosts(doc.name, rootfsPath);
         await this.mkTemplatesDir(doc, bakerSSHConfig);
