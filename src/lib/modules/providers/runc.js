@@ -60,7 +60,7 @@ class RuncProvider extends Provider {
     async stop(name) {
         let bakerPath = `/mnt/disk/${name}`;
 
-        let stopAllProcess = `lsof | grep ${bakerPath} | cut -f1 | sort -nu | xargs kill -9`;
+        let stopAllProcess = `lsof | grep ${bakerPath} | cut -f1 | sort -nu | xargs --no-run-if-empty kill -9`;
         await Ssh.sshExec(stopAllProcess, bakerSSHConfig, true);
     }
 
@@ -72,8 +72,7 @@ class RuncProvider extends Provider {
         let bakerPath = `/mnt/disk/${name}`;
         let rootfsPath = `${bakerPath}/rootfs`;
 
-        let stopAllProcess = `lsof | grep ${bakerPath} | cut -f1 | sort -nu | xargs kill -9`;
-        await Ssh.sshExec(stopAllProcess, bakerSSHConfig, true);
+        await this.stop(name);
 
         let cmd = `umount -f ${rootfsPath}/${path.basename(process.cwd())} ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
         await Ssh.sshExec(cmd, bakerSSHConfig, true);

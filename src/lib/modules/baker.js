@@ -1,6 +1,7 @@
 const fs            = require('fs-extra');
 const path          = require('path');
 const yaml          = require('js-yaml');
+const os            = require('os');
 
 const Provider           = require('../modules/providers/provider');
 const VagrantProvider    = require('./providers/vagrant');
@@ -104,6 +105,47 @@ class Baker {
         let BakerObj = new Baker(provider);
 
         return {envName, provider, BakerObj};
+    }
+
+    // TODO this shows we need a better handle on how we interact with our control servers.
+    async exposePorts(bakePath, verbose)
+    {
+        let doc = yaml.safeLoad(await fs.readFile(bakePath, 'utf8'));
+
+        let portsRoot = doc.vm ? doc.vm.ports : doc.persistent ? doc.persistent.ports : null;
+        if( !portsRoot )
+            return;
+
+        // ports: '8000, 9000,  1000:3000'
+        let ports = portsRoot.toString().trim().split(/\s*,\s*/g);
+        if( this.provider instanceof VirtualBoxProvider )
+        {
+            const VBoxProvider = require('node-virtualbox/lib/VBoxProvider');
+            let driver = new VBoxProvider();
+            for( var port of ports  )
+            {
+                await driver.expose(doc.name, port, verbose);
+            }
+        }
+        else if( this.provider instanceof RuncProvider )
+        {
+            if( os.platform() == 'win32' )
+            {
+                const VBoxProvider = require('node-virtualbox/lib/VBoxProvider');
+                let driver = new VBoxProvider();
+
+                // Do vbox stuff on server
+                for( var port of ports  )
+                {
+                    await driver.expose("baker-srv", port, verbose);
+                }
+            }
+            else
+            {
+                // Do hyperkit stuff on server.
+                // Launch ssh command with internal expose port
+            }
+        }
     }
 
     static async getCWDBakerYML(){
