@@ -132,6 +132,7 @@ class Ssh {
                     c.exec(cmd, options, function (err, stream) {
                         if (err) {
                             console.error(err);
+                            reject(err);
                         }
                         stream
                             .on('close', function (code, signal) {
@@ -150,6 +151,21 @@ class Ssh {
                                 reject(data);
                             });
                     });
+                }).on('error', function(err) 
+                {
+                    if( err.message.indexOf('ECONNREFUSED') > 0 )
+                    {
+                        // Give vm 5 more seconds to get ready
+                        console.log(`Waiting 5 seconds for ${sshConfig.hostname}:${sshConfig.port} to be ready`);
+                        setTimeout(async function()
+                        {
+                            resolve( await Ssh.sshExec(cmd, sshConfig, timeout, verbose, options) );
+                        }, 5000);
+                    }
+                    else
+                    {
+                        reject(err);
+                    }
                 })
                 .connect({
                     host: sshConfig.hostname,
