@@ -69,8 +69,12 @@ class RuncProvider extends Provider {
     async delete(name) {
         let bakerPath = `/mnt/disk/${name}`;
         let rootfsPath = `${bakerPath}/rootfs`;
+
+        let stopAllProcess = `lsof | grep ${bakerPath} | cut -f1 | sort -nu | xargs kill -9`;
+        await Ssh.sshExec(stopAllProcess, bakerSSHConfig, true);
+
         let cmd = `umount -f ${rootfsPath}/${path.basename(process.cwd())} ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
-        await Ssh.sshExec(cmd, bakerSSHConfig, 60000, true);
+        await Ssh.sshExec(cmd, bakerSSHConfig, true);
     }
 
     /**
