@@ -54,12 +54,14 @@ class RuncProvider extends Provider {
     }
 
     /**
-     * Shut down an environment by name -- not supported in this provider
+     * Shut down an environment by name -- (stops all processes in chroot)
      * @param {String} name Name of the VM to be halted
-     * TODO: add force option
      */
-    async stop(name, force = false) {
-        await Spinner.spinPromise(Promise.resolve(), 'Stop command is not supported for persistent environments.', spinnerDot);
+    async stop(name) {
+        let bakerPath = `/mnt/disk/${name}`;
+
+        let stopAllProcess = `lsof | grep ${bakerPath} | cut -f1 | sort -nu | xargs kill -9`;
+        await Ssh.sshExec(stopAllProcess, bakerSSHConfig, true);
     }
 
     /**
