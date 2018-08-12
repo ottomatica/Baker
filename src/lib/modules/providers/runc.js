@@ -74,7 +74,14 @@ class RuncProvider extends Provider {
 
         await this.stop(name);
 
-        let cmd = `umount -f ${rootfsPath}/${path.basename(process.cwd())} ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
+        // Stop all forwards...
+
+        // Most important, umount share
+        let umountShare = `umount ${rootfsPath}/${path.basename(process.cwd())}`;
+        await Ssh.sshExec(umountShare, bakerSSHConfig, 20000, true)
+            .catch( e => {throw e});
+
+        let cmd = `umount -f ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
         await Ssh.sshExec(cmd, bakerSSHConfig, 20000, true);
     }
 
