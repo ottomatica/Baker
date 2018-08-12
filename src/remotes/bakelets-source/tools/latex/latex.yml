@@ -14,10 +14,15 @@
       - latexmk
 
   tasks:
+
+    - stat: path=/usr/bin/pdflatex
+      register: file_exists
+
     - name: install latex packages
       apt: pkg="{{item}}" state="present"
       with_items: "{{package_names}}"
       become: yes
+      when: file_exists.stat.exists == False
 
     - name: install basics
       apt: pkg="{{item}}" state="present"
@@ -37,4 +42,5 @@
     - name: install pygments
       pip:
         name: pygments
+        executable: pip2
       become: yes
