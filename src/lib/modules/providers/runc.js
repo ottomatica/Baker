@@ -193,12 +193,8 @@ class RuncProvider extends Provider {
             mounts += `if ! mount | grep "${mountPoint.dest}" > /dev/null; then mkdir -p ${mountPoint.dest}; mount -t ${mountPoint.type} ${mountPoint.bind ? '--bind' : ''} ${mountPoint.source} ${mountPoint.dest}; fi; `;
         })
 
-        console.log('hithere')
-
         var prepareCmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; ${mounts}`;
         await Ssh.sshExec(prepareCmd, bakerSSHConfig, 60000, verbose);
-
-        console.log('hithere2')
 
         var addHostsCmd = `echo "127.0.0.1 localhost loopback" >> ${rootfsPath}/etc/hosts`;
         await Ssh.sshExec(addHostsCmd, bakerSSHConfig, 60000, verbose);
