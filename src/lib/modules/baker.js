@@ -165,7 +165,7 @@ class Baker {
                         console.log( `Expose port ${host}:${guest} - Exit code: ${code}` );
                     }
                 }
-                throw new Error("debugging.");
+                // throw new Error("debugging.");
             }
         }
     }
