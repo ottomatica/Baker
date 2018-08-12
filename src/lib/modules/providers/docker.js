@@ -239,7 +239,7 @@ class Docker_Provider extends Provider {
     }
 
     async runDockerBootstrap(sshConfig, containerName) {
-        return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i ./${containerName}/baker_inventory dockerBootstrap.yml`, sshConfig, true);
+        return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i ./${containerName}/baker_inventory dockerBootstrap.yml`, sshConfig, 20000, true);
     }
 
     async _startContainer(scriptPath) {

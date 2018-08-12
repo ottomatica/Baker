@@ -225,7 +225,7 @@ class VirtualBoxProvider extends Provider {
             await Utils.traverse(doc.vars);
         }
 
-        await Spinner.spinPromise(Ssh.sshExec(`sudo apt-get update`, sshConfig, false), `Running apt-get update on VM`, spinnerDot);
+        await Spinner.spinPromise(Ssh.sshExec(`sudo apt-get update`, sshConfig, 20000, false), `Running apt-get update on VM`, spinnerDot);
 
         // Installing stuff.
         let resolveB = require('../../bakelets/resolve');

@@ -122,7 +122,7 @@ class Servers {
 
     // TODO: Temp: refactor to be able to use the docker bakelet instead
     static async installDocker(sshConfig) {
-        return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," installDocker.yml -c local`, sshConfig, false);
+        return Ssh.sshExec(`cd /home/vagrant/baker/ && ansible-playbook -i "localhost," installDocker.yml -c local`, sshConfig, 20000, false);
     }
 
     /**

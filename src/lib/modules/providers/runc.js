@@ -31,7 +31,7 @@ class RuncProvider extends Provider {
     async list() {
 
         let cmd = `du -sh /mnt/disk/* | grep -v 'lost+found' `;
-        let output = await Ssh.sshExec(cmd, bakerSSHConfig, false);
+        let output = await Ssh.sshExec(cmd, bakerSSHConfig, 20000, false);
         let table = [];
         for (let line of output.split('\n') )
         {
@@ -61,7 +61,7 @@ class RuncProvider extends Provider {
         let bakerPath = `/mnt/disk/${name}`;
 
         let stopAllProcess = `lsof | grep ${bakerPath} | cut -f1 | sort -nu | xargs --no-run-if-empty kill -9`;
-        await Ssh.sshExec(stopAllProcess, bakerSSHConfig, true);
+        await Ssh.sshExec(stopAllProcess, bakerSSHConfig, 20000, true);
     }
 
     /**
@@ -75,7 +75,7 @@ class RuncProvider extends Provider {
         await this.stop(name);
 
         let cmd = `umount -f ${rootfsPath}/${path.basename(process.cwd())} ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
-        await Ssh.sshExec(cmd, bakerSSHConfig, true);
+        await Ssh.sshExec(cmd, bakerSSHConfig, 20000, true);
     }
 
     /**
@@ -193,15 +193,19 @@ class RuncProvider extends Provider {
             mounts += `if ! mount | grep "${mountPoint.dest}" > /dev/null; then mkdir -p ${mountPoint.dest}; mount -t ${mountPoint.type} ${mountPoint.bind ? '--bind' : ''} ${mountPoint.source} ${mountPoint.dest}; fi; `;
         })
 
+        console.log('hithere')
+
         var prepareCmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; ${mounts}`;
         await Ssh.sshExec(prepareCmd, bakerSSHConfig, 60000, verbose);
+
+        console.log('hithere2')
 
         var addHostsCmd = `echo "127.0.0.1 localhost loopback" >> ${rootfsPath}/etc/hosts`;
         await Ssh.sshExec(addHostsCmd, bakerSSHConfig, 60000, verbose);
 
         // make real /dev/null
         var makeDevNull = `rm -f ${rootfsPath}/dev/null && mknod -m 666 ${rootfsPath}/dev/null c 1 3`;
-        await Ssh.sshExec(makeDevNull, bakerSSHConfig, verbose);
+        await Ssh.sshExec(makeDevNull, bakerSSHConfig, 60000, verbose);
 
         // make connection within chroot so we can turn off /sbin/initctl
         await this.ssh(doc.name, `dpkg-divert --add --rename --local /sbin/initctl`, false );

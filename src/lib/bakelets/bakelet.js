@@ -46,7 +46,7 @@ class Bakelet
 
     async exec(cmd) {
         // Run cmd on remote server
-        await Ssh.sshExec(cmd, this.ansibleSSHConfig, this.verbose);
+        await Ssh.sshExec(cmd, this.ansibleSSHConfig, 20000, this.verbose);
     }
 }
 

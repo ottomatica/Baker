@@ -151,7 +151,7 @@ class Baker {
                     let guest = a[0];
                     let host  = a[1] || a[0]; // if undefined use same as guest port for host port.
                     let cmd = `nohup /usr/bin/vpnkit-expose-port -proto tcp -host-ip 0.0.0.0 -host-port ${host} -container-ip 127.0.0.1 -container-port ${guest} -no-local-ip -i &`
-                    await Ssh.sshExec(cmd, bakerSSHConfig, verbose);
+                    await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose);
                 }
             }
         }

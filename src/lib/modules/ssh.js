@@ -92,7 +92,7 @@ class Ssh {
         });
     }
 
-    static async sshExec(cmd, sshConfig, verbose) {
+    static async sshExec(cmd, sshConfig, timeout=20000, verbose) {
         let buffer = "";
         return new Promise((resolve, reject) => {
             var c = new Client();
@@ -100,7 +100,7 @@ class Ssh {
                 .on('ready', function () {
                     c.exec(cmd, function (err, stream) {
                         if (err) {
-                            print.error(err);
+                            console.error(err);
                         }
                         stream
                             .on('close', function (code, signal) {
@@ -123,7 +123,8 @@ class Ssh {
                     host: sshConfig.hostname,
                     port: sshConfig.port,
                     username: sshConfig.user,
-                    privateKey: fs.readFileSync(sshConfig.private_key)
+                    privateKey: fs.readFileSync(sshConfig.private_key),
+                    readyTimeout: timeout
                 });
         });
     }
