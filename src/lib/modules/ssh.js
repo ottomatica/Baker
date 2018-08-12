@@ -92,7 +92,7 @@ class Ssh {
         });
     }
 
-    static async sshExec(cmd, sshConfig, timeout=20000, verbose) {
+    static async sshExec(cmd, sshConfig, timeout=20000, verbose=false) {
         let buffer = "";
         return new Promise((resolve, reject) => {
             var c = new Client();
