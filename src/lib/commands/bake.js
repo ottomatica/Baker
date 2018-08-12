@@ -107,8 +107,6 @@ exports.handler = async function(argv) {
         }
 
         const {provider, BakerObj} = await Baker.chooseProvider(bakePath, usePersistent, useVM);
-        // Handle exposure of ports on server if persistent
-        await BakerObj.exposePorts(path.join(bakePath, 'baker.yml'), verbose);
 
         if(box)
             await provider.bakeBox(bakerSSHConfig, ansibleVM, bakePath, verbose);
@@ -116,6 +114,10 @@ exports.handler = async function(argv) {
             await BakerObj.bakeRemote(bakerSSHConfig, remote, remote_key, remote_user, bakePath, verbose);
         else{
             await Servers.installBakerServer(forceVirtualBox);
+
+            // Handle exposure of ports on server if persistent
+            await BakerObj.exposePorts(path.join(bakePath, 'baker.yml'), verbose);
+
             await BakerObj.bake(bakePath, bakerSSHConfig, verbose);
         }
 
