@@ -199,6 +199,10 @@ class RuncProvider extends Provider {
         var addHostsCmd = `echo "127.0.0.1 localhost loopback" >> ${rootfsPath}/etc/hosts`;
         await Ssh.sshExec(addHostsCmd, bakerSSHConfig, 60000, verbose);
 
+        // make real /dev/null
+        var makeDevNull = `rm -f ${rootfsPath}/dev/null && mknod -m 666 ${rootfsPath}/dev/null c 1 3`;
+        await Ssh.sshExec(makeDevNull, bakerSSHConfig, verbose);
+
         // make connection within chroot so we can turn off /sbin/initctl
         await this.ssh(doc.name, `dpkg-divert --add --rename --local /sbin/initctl`, false );
 

@@ -3,7 +3,8 @@ const path          = require('path');
 const yaml          = require('js-yaml');
 const os            = require('os');
 
-const Provider           = require('../modules/providers/provider');
+const Ssh           =      require('./ssh');
+const Provider           = require('./providers/provider');
 const VagrantProvider    = require('./providers/vagrant');
 const VirtualBoxProvider = require('./providers/virtualbox');
 const DockerProvider     = require('./providers/docker');
@@ -11,10 +12,11 @@ const DO_Provider        = require('./providers/digitalocean');
 const RemoteProvider     = require('./providers/remote');
 const RuncProvider       = require('./providers/runc');
 
+
 // conf variables:
 // const spinnerDot = conf.get('spinnerDot');
 
-const { configPath } = require('../../global-vars');
+const { configPath, bakerSSHConfig } = require('../../global-vars');
 
 class Baker {
     /**
@@ -142,8 +144,15 @@ class Baker {
             }
             else
             {
-                // Do hyperkit stuff on server.
-                // Launch ssh command with internal expose port
+                // Launch ssh command with internal expose port command
+                for( var port of ports  )
+                {
+                    let a = port.trim().split(/\s*:\s*/g);
+                    let guest = a[0];
+                    let host  = a[1] || a[0]; // if undefined use same as guest port for host port.
+                    let cmd = `nohup /usr/bin/vpnkit-expose-port -proto tcp -host-ip 0.0.0.0 -host-port ${host} -container-ip 127.0.0.1 -container-port ${guest} -no-local-ip -i &`
+                    await Ssh.sshExec(cmd, bakerSSHConfig, verbose);
+                }
             }
         }
     }
