@@ -67,7 +67,8 @@
   "pkg": {
     "assets": [
       "config/**",
-      "remotes"
+      "remotes",
+      "src/node_modules/node-virtualbox/config/**"
     ],
     "scripts": "lib/**"
   },
