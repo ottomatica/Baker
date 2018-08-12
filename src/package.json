@@ -68,7 +68,7 @@
     "assets": [
       "config/**",
       "remotes",
-      "src/node_modules/node-virtualbox/config/**"
+      "node_modules/node-virtualbox/config/**"
     ],
     "scripts": "lib/**"
   },
