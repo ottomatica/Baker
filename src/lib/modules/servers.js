@@ -55,6 +55,10 @@ class Servers {
             let mount = `if ! mount | grep "/share" > /dev/null; then mkdir -p /share; mount --bind /data /share; fi; `;
             await Ssh.sshExec(mount, bakerSSHConfig, 60000, false);
         }
+
+        // add swap
+        let swap = `if [ ! -f /mnt/disk/2GB.swap ] ; then fallocate -l 2G /mnt/disk/2GB.swap && mkswap /mnt/disk/2GB.swap; fi; if ! cat /proc/swaps | grep "2GB.swap"; then swapon /mnt/disk/2GB.swap; fi;`;
+        await Ssh.sshExec(swap, bakerSSHConfig, 60000, false);
     }
 
     // also in provider.vagrant
