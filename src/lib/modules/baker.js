@@ -150,9 +150,22 @@ class Baker {
                     let a = port.trim().split(/\s*:\s*/g);
                     let guest = a[0];
                     let host  = a[1] || a[0]; // if undefined use same as guest port for host port.
-                    let cmd = `nohup /usr/bin/vpnkit-expose-port -proto tcp -host-ip 0.0.0.0 -host-port ${host} -container-ip 127.0.0.1 -container-port ${guest} -no-local-ip -i &`
-                    await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose);
+                    let cmd = `nohup /usr/bin/vpnkit-expose-port -proto tcp -host-ip 0.0.0.0 -host-port ${host} -container-ip 127.0.0.1 -container-port ${guest} -no-local-ip -i > /dev/null 2>&1 &`
+                    // Simple command for debugging:
+                    //let cmd = `nohup yes `;
+                    let code = await Ssh.sshExecBackground(cmd, bakerSSHConfig, verbose);
+                    if( verbose )
+                    {
+                        // If port is already exposed, then will gracefully fail
+                        // Baker# /usr/bin/vpnkit-expose-port -proto tcp -host-ip 0.0.0.0 -host-port 8080 -container-ip 127.0.0.1 -container-port 8080 -no-local-ip -i
+                        // 2018/08/12 18:03:48 exposePort tcp:0.0.0.0:8080:tcp:127.0.0.1:8080
+                        // 2018/08/12 18:03:48 Failed to mkdir /port/tcp:0.0.0.0:8080:tcp:127.0.0.1:8080: &os.PathError{Op:"mkdir", Path:"/port/tcp:0.0.0.0:8080:tcp:127.0.0.1:8080", Err:0x11}
+                        // 2018/08/12 18:03:48 Failed to set up proxymkdir /port/tcp:0.0.0.0:8080:tcp:127.0.0.1:8080: file exists
+                        // Exit Code 1: 
+                        console.log( `Expose port ${host}:${guest} - Exit code: ${code}` );
+                    }
                 }
+                throw new Error("debugging.");
             }
         }
     }

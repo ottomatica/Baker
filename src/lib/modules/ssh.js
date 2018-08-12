@@ -92,19 +92,51 @@ class Ssh {
         });
     }
 
-    static async sshExec(cmd, sshConfig, timeout=20000, verbose=false) {
+    static async sshExecBackground(cmd, sshConfig, verbose)
+    {
+        return new Promise((resolve, reject) => 
+        {
+            const client = new Client();
+            client.on("ready", () => {
+                client.exec(cmd, function (err, stream){
+                    console.log(`Issued ${cmd}`);
+                    stream.on('close', function (code, signal) 
+                    {
+                        setTimeout(function(){
+                            client.end();
+                            resolve(code);
+                        }, 500);
+                    })
+                    .on('data', function (data) {
+                    })
+                    .stderr.on('data', function(data)
+                    {
+                        reject(data);
+                    });
+                });
+            }).connect({
+                host: sshConfig.hostname,
+                port: sshConfig.port,
+                username: sshConfig.user,
+                privateKey: fs.readFileSync(sshConfig.private_key),
+            });
+        });
+    }
+
+    static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
         let buffer = "";
         return new Promise((resolve, reject) => {
             var c = new Client();
             c
                 .on('ready', function () {
-                    c.exec(cmd, function (err, stream) {
+                    c.exec(cmd, options, function (err, stream) {
                         if (err) {
                             console.error(err);
                         }
                         stream
                             .on('close', function (code, signal) {
                                 c.end();
+                                console.log(code, signal);
                                 resolve(buffer);
                             })
                             .on('data', function (data) {
