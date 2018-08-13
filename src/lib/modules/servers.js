@@ -109,11 +109,11 @@ class Servers {
         // download files if not available locally
         let kernelPath = path.join(bakerForMacPath, 'kernel');
         if (!(await fs.pathExists(kernelPath)) || (await md5File(kernelPath)) != '67d58c298334a8f79998176fd8f0618c') {
-            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.0/kernel', bakerForMacPath), 'Downloading BakerForMac kernel', spinnerDot);
+            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/latest-dev/kernel', bakerForMacPath), 'Downloading BakerForMac kernel', spinnerDot);
         }
         let fsPath = path.join(bakerForMacPath, 'file.img.gz');
-        if (!(await fs.pathExists(fsPath))  || (await md5File(fsPath)) != '6f30965e32a6b7ef1ef8344306cf0da1') {
-            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.1/file.img.gz', bakerForMacPath), 'Downloading BakerForMac filesystem image', spinnerDot);
+        if (!(await fs.pathExists(fsPath))  || (await md5File(fsPath)) != '512fe418f0b71ddfb3d7354a2a611db6') {
+            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/latest-dev/file.img.gz', bakerForMacPath), 'Downloading BakerForMac filesystem image', spinnerDot);
         }
 
         // only start server if not running
