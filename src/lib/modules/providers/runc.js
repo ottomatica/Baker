@@ -38,7 +38,8 @@ class RuncProvider extends Provider {
             if( line )
             {
                 let [size, location] = line.split('\t');
-                table.push( {container: location.replace("/mnt/disk/",""), size: size});
+                if(!location.includes('GB.swap'))
+                    table.push( {container: location.replace("/mnt/disk/",""), size: size});
             }
         }
         console.table("Baker containers:", table);
