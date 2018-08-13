@@ -191,7 +191,7 @@ class RuncProvider extends Provider {
                                 bind: false
                             }, {
                                 source: (os.platform() == "win32") ? `/share${slash(path.resolve(scriptPath).split(':')[1])}` : `/share${scriptPath}`,
-                                dest: `${rootfsPath}/${path.basename(process.cwd())}`,
+                                dest: `${rootfsPath}/${path.basename(scriptPath)}`,
                                 type: 'bind',
                                 bind: true
                             } ];
