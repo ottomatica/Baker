@@ -56,9 +56,10 @@ class Servers {
             await Ssh.sshExec(mount, bakerSSHConfig, 60000, false);
         }
 
-        // add swap
-        let swap = `if [ ! -f /mnt/disk/2GB.swap ] ; then fallocate -l 2G /mnt/disk/2GB.swap && mkswap /mnt/disk/2GB.swap; fi; if ! cat /proc/swaps | grep "2GB.swap"; then swapon /mnt/disk/2GB.swap; fi;`;
-        await Ssh.sshExec(swap, bakerSSHConfig, 60000, false);
+        // add swap (swappiness = 40)
+        let swap = `if [ ! -f /mnt/disk/2GB.swap ] ; then fallocate -l 2G /mnt/disk/2GB.swap && mkswap /mnt/disk/2GB.swap; fi; if ! cat /proc/swaps | grep "2GB.swap"; then mkdir -p /mnt/etc/ && touch /mnt/etc/fstab && echo -e "/mnt/disk/2GB.swap  none  swap  sw 0  0" >> /mnt/etc/fstab; swapon /mnt/disk/2GB.swap; fi;`;
+        let swappiness = `sysctl -w vm.swappiness=40 ; if ! cat /etc/sysctl.conf | grep "vm.swappiness"; then echo "vm.swappiness=40" >> /etc/sysctl.conf; else sed -i "s/^vm.swappiness=.*/vm.swappiness=40/" /etc/sysctl.conf; fi;`;
+        await Ssh.sshExec(swap + swappiness, bakerSSHConfig, 60000, false);
     }
 
     // also in provider.vagrant
