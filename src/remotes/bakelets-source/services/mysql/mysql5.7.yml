@@ -51,6 +51,15 @@
         vtype: password
       become: yes
 
+    # https://bugs.mysql.com/bug.php?id=85029
+    - name: Update mysql key
+      command: apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
+      become: yes
+
+    # Test to see if we should skip next step (optimization for rebaking)
+    - stat: path=/usr/bin/mysql
+      register: file_exists
+
     # Install mysql
       #dpkg_options="force-confnew"
     - name: Install mysql components
@@ -61,6 +70,7 @@
         - libmysqlclient-dev
         - python3-mysqldb
       become: yes
+      when: file_exists.stat.exists == False
 
     - name: Copy my.cnf settings
       template: src=templates/mysql.cfg dest=/etc/mysql/mysql.conf.d/mysqld.cnf
