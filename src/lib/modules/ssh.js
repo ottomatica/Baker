@@ -4,9 +4,16 @@ const fs             = require('fs')
 const path           = require('path');
 const print          = require('./print')
 const scp2           = require('scp2');
+const child_process  = require('child_process');
 
 class Ssh {
     constructor() {}
+
+
+    static nativeSSH_Session(sshConfig)
+    {
+        child_process.execSync(`ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}"`, {stdio: ['inherit', 'inherit', 'inherit']});
+    }
 
     static async copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig) {
         return new Promise(async (resolve, reject) => {
