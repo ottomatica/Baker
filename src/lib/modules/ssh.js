@@ -94,13 +94,13 @@ class Ssh {
 
     static async sshExecBackground(cmd, sshConfig, verbose)
     {
-        return new Promise((resolve, reject) => 
+        return new Promise((resolve, reject) =>
         {
             const client = new Client();
             client.on("ready", () => {
                 client.exec(cmd, function (err, stream){
                     console.log(`Issued ${cmd}`);
-                    stream.on('close', function (code, signal) 
+                    stream.on('close', function (code, signal)
                     {
                         setTimeout(function(){
                             client.end();
@@ -137,7 +137,7 @@ class Ssh {
                         stream
                             .on('close', function (code, signal) {
                                 c.end();
-                                console.log(code, signal);
+                                // console.log(code, signal);
                                 resolve(buffer);
                             })
                             .on('data', function (data) {
@@ -151,7 +151,7 @@ class Ssh {
                                 reject(data);
                             });
                     });
-                }).on('error', function(err) 
+                }).on('error', function(err)
                 {
                     if( err.message.indexOf('ECONNREFUSED') > 0 )
                     {
