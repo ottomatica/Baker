@@ -115,10 +115,11 @@ exports.handler = async function(argv) {
         else{
             await Servers.installBakerServer(forceVirtualBox);
 
+            await BakerObj.bake(bakePath, bakerSSHConfig, verbose);
+
             // Handle exposure of ports on server if persistent
             await BakerObj.exposePorts(path.join(bakePath, 'baker.yml'), verbose);
 
-            await BakerObj.bake(bakePath, bakerSSHConfig, verbose);
         }
 
     } catch (err) {

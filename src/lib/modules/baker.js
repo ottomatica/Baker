@@ -122,12 +122,13 @@ class Baker {
         let ports = portsRoot.toString().trim().split(/\s*,\s*/g);
         if( this.provider instanceof VirtualBoxProvider )
         {
-            const VBoxProvider = require('node-virtualbox/lib/VBoxProvider');
-            let driver = new VBoxProvider();
-            for( var port of ports  )
-            {
-                await driver.expose(doc.name, port, verbose);
-            }
+            // const VBoxProvider = require('node-virtualbox/lib/VBoxProvider');
+            // let driver = new VBoxProvider();
+            // for( var port of ports  )
+            // {
+            //     await driver.expose(doc.name, port, verbose);
+            // }
+            // This is already handled in bake();
         }
         else if( this.provider instanceof RuncProvider )
         {
