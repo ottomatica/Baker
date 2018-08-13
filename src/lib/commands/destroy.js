@@ -3,6 +3,7 @@ const conf           = require('../../lib/modules/configstore');
 const Print          = require('../modules/print');
 const Spinner        = require('../modules/spinner');
 const spinnerDot     = conf.get('spinnerDot');
+const Servers        = require('../modules/servers');
 
 exports.command = ['delete [VMName]', 'destroy [VMName]'];
 exports.desc = `remove a VM and it's associated files`;
@@ -30,6 +31,12 @@ exports.builder = (yargs) => {
                 hidden: true, // just for debugging for now
                 demand: false,
                 type: 'boolean'
+            },
+            forceVirtualBox: {
+                describe: `Force using virtualbox instead of xhyve VM on Mac (no effect on Windows/Linux)`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
             }
         }
     );
@@ -37,11 +44,14 @@ exports.builder = (yargs) => {
 }
 
 exports.handler = async function(argv) {
-    let { envName, usePersistent, useVM } = argv;
+    let { envName, usePersistent, useVM, forceVirtualBox } = argv;
 
     try {
         let bakePath = process.cwd();
         const {envName, BakerObj} = await Baker.chooseProvider(bakePath, usePersistent, useVM);
+
+        // ensure baker server is running
+        await Servers.installBakerServer(forceVirtualBox);
 
         await Spinner.spinPromise(BakerObj.delete(envName), `Destroying VM: ${envName}`, spinnerDot);
     } catch (err) {
