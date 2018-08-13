@@ -36,3 +36,9 @@ mv macos/bin/baker-${BAKER_RELEASE}.pkg macos/bin/baker-latest.pkg
 
 SHA=$(shasum -a 256 macos/bin/baker-macos-latest.tar.gz | awk '{printf $1}')
 echo "Update homebrew shaw: $SHA";
+
+echo "You are not done, yet"
+echo "You need to upload the .tar.gz, .pkg, and .deb on github."
+echo "Then you need to switch to a windows machine and run 'grunt'"
+echo "Then you need to rename win/bin/baker-setup.exe to baker-windows-latest.exe and upload too"
+echo "Finally, you need to update the sha in ottomatica/homebrew"
