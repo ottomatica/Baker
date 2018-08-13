@@ -77,11 +77,39 @@ class RuncProvider extends Provider {
         // Stop all forwards...
 
         // Most important, umount share
-        let umountShare = `umount ${rootfsPath}/${path.basename(process.cwd())}`;
+        let umountShare = `if mount | grep "${rootfsPath}/${path.basename(process.cwd())}" > /dev/null; then umount ${rootfsPath}/${path.basename(process.cwd())}; fi;`;
         await Ssh.sshExec(umountShare, bakerSSHConfig, 20000, true)
             .catch( e => {throw e});
 
-        let cmd = `umount -f ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
+
+        // TODO: move this outside
+        let mountPoints = [{
+                source: '/proc',
+                dest: `${rootfsPath}/proc`,
+                type: 'proc',
+                bind: false
+            }, {
+                source: '/sys',
+                dest: `${rootfsPath}/sys`,
+                type: 'sysfs',
+                bind: false
+            }, {
+                source: '/dev/pts',
+                dest: `${rootfsPath}/dev/pts`,
+                type: 'devpts',
+                bind: false
+            }, {
+                source: '/dev',
+                dest: `${rootfsPath}/dev`,
+                type: 'bind',
+                bind: true
+            }];
+        let cmd = '';
+        mountPoints.forEach(mountPoint => {
+            cmd += `if mount | grep "${mountPoint.dest}" > /dev/null; then umount -f ${mountPoint.dest}; fi;`;
+        })
+        cmd += `rm -rf ${bakerPath}`;
+        // let cmd = `umount -f ${rootfsPath}/proc ${rootfsPath}/dev/pts ${rootfsPath}/dev ${rootfsPath}/sys && rm -rf ${bakerPath}`;
         await Ssh.sshExec(cmd, bakerSSHConfig, 20000, true);
     }
 
