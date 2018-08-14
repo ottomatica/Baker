@@ -191,7 +191,7 @@ class RuncProvider extends Provider {
     async bakeChroot(scriptPath, verbose) {
         let boxesPath = path.join(boxes, 'boxes');
         if (! (await fs.exists(path.join(boxesPath, 'rootfs.tar')))) {
-            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/0.6.1/rootfs.tar', boxesPath), 'Downloading Ubuntu 16.04 rootfs', spinnerDot);
+            await Spinner.spinPromise(download('https://github.com/ottomatica/baker-release/releases/download/latest-dev/rootfs.tar', boxesPath), 'Downloading Ubuntu 16.04 rootfs', spinnerDot);
         }
 
         let doc = yaml.safeLoad(await fs.readFile(path.join(scriptPath, 'baker.yml'), 'utf8'));
