@@ -16,7 +16,7 @@ describe('baker should create runc baker container', function() {
     it('should make baker container', function(done) {
 
         fs.mkdirpSync(containerDir);
-        fs.copyFileSync('test/resources/persistent/baker.yml', `${containerDir}/baker.yml`);
+        fs.copyFileSync('test/resources/container/baker.yml', `${containerDir}/baker.yml`);
 
         // echo value for prompt input for password.
         var child = child_process.exec('baker bake -v',
