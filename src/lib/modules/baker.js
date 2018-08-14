@@ -67,18 +67,18 @@ class Baker {
      * Helper function for commands to automatically create the right provider object.
      * @param {String} bakePath path to the baker.yml file
      */
-    static async chooseProvider(bakePath, usePersistent, useVM){
+    static async chooseProvider(bakePath, useContainer, useVM){
         let doc = yaml.safeLoad(await fs.readFile(path.join(bakePath, 'baker.yml'), 'utf8'));
         let envName = doc.name;
-        let envType = doc.container ? 'container' : doc.vm || doc.vagrant ? 'vm' : doc.remote ? 'remote' : doc.persistent ? 'persistent' : 'other';
+        let envType = doc.container || doc.persistent ? 'container' : doc.vm || doc.vagrant ? 'vm' : doc.remote ? 'remote' : 'other';
 
         let provider = null;
-        if(envType === 'container')
-            provider = new DockerProvider({host: '192.168.252.251', port: '2375', protocol: 'http'});
-        else if(envType === 'vm')
+        // if(envType === 'container')
+        //     provider = new DockerProvider({host: '192.168.252.251', port: '2375', protocol: 'http'});
+        if(envType === 'vm')
             //provider = new VagrantProvider();
             provider = new VirtualBoxProvider();
-        else if(envType === 'persistent')
+        else if(envType === 'container')
         {
             provider = new RuncProvider();
         }
@@ -94,7 +94,7 @@ class Baker {
             console.error('This command only supports VM and container environments');
 
         // Override ...for debugging... testing
-        if( usePersistent )
+        if( useContainer )
         {
             provider = new RuncProvider();
         }
@@ -114,7 +114,7 @@ class Baker {
     {
         let doc = yaml.safeLoad(await fs.readFile(bakePath, 'utf8'));
 
-        let portsRoot = doc.vm ? doc.vm.ports : doc.persistent ? doc.persistent.ports : null;
+        let portsRoot = doc.vm ? doc.vm.ports : doc.container ? doc.container.ports : doc.persistent ? doc.persistent.ports : null;
         if( !portsRoot )
             return;
 
@@ -162,7 +162,7 @@ class Baker {
                         // 2018/08/12 18:03:48 exposePort tcp:0.0.0.0:8080:tcp:127.0.0.1:8080
                         // 2018/08/12 18:03:48 Failed to mkdir /port/tcp:0.0.0.0:8080:tcp:127.0.0.1:8080: &os.PathError{Op:"mkdir", Path:"/port/tcp:0.0.0.0:8080:tcp:127.0.0.1:8080", Err:0x11}
                         // 2018/08/12 18:03:48 Failed to set up proxymkdir /port/tcp:0.0.0.0:8080:tcp:127.0.0.1:8080: file exists
-                        // Exit Code 1: 
+                        // Exit Code 1:
                         console.log( `Expose port ${host}:${guest} - Exit code: ${code}` );
                     }
                 }

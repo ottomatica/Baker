@@ -20,8 +20,8 @@ exports.builder = (yargs) => {
     //     });
     yargs.options(
         {
-            usePersistent: {
-                describe: `Override environment type to use persistent`,
+            useContainer: {
+                describe: `Override environment type to use container`,
                 hidden: true, // just for debugging for now
                 demand: false,
                 type: 'boolean'
@@ -44,11 +44,11 @@ exports.builder = (yargs) => {
 }
 
 exports.handler = async function(argv) {
-    let { envName, usePersistent, useVM, forceVirtualBox } = argv;
+    let { envName, useContainer, useVM, forceVirtualBox } = argv;
 
     try {
         let bakePath = process.cwd();
-        const {envName, BakerObj} = await Baker.chooseProvider(bakePath, usePersistent, useVM);
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath, useContainer, useVM);
 
         // ensure baker server is running
         await Servers.installBakerServer(forceVirtualBox);

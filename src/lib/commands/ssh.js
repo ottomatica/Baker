@@ -21,8 +21,8 @@ exports.builder = (yargs) => {
 
     yargs.options(
         {
-            usePersistent: {
-                describe: `Override environment type to use persistent`,
+            useContainer: {
+                describe: `Override environment type to use container`,
                 hidden: true, // just for debugging for now
                 demand: false,
                 type: 'boolean'
@@ -38,11 +38,11 @@ exports.builder = (yargs) => {
 }
 
 exports.handler = async function(argv) {
-    let { usePersistent, useVM } = argv;
+    let { useContainer, useVM } = argv;
 
     try {
         let bakePath = process.cwd();
-        const {envName, BakerObj} = await Baker.chooseProvider(bakePath, usePersistent, useVM);
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath, useContainer, useVM);
 
         await Spinner.spinPromise(BakerObj.ssh(envName), `SSHing to ${envName}`, spinnerDot);
     } catch (err) {

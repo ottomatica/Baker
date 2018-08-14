@@ -51,7 +51,7 @@ class RuncProvider extends Provider {
      * @param {boolean} verbose
      */
     async start(name, verbose = false) {
-        await Spinner.spinPromise(Promise.resolve(), 'Start command is not supported for persistent environments.', spinnerDot);
+        await Spinner.spinPromise(Promise.resolve(), 'Start command is not supported for container environments.', spinnerDot);
     }
 
     /**

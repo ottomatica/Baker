@@ -62,8 +62,8 @@ exports.builder = (yargs) => {
                 demand: false,
                 type: 'boolean'
             },
-            usePersistent: {
-                describe: `Override environment type to use persistent`,
+            useContainer: {
+                describe: `Override environment type to use container`,
                 hidden: true, // just for debugging for now
                 demand: false,
                 type: 'boolean'
@@ -79,7 +79,7 @@ exports.builder = (yargs) => {
 };
 
 exports.handler = async function(argv) {
-    const { local, repo, box, remote, remote_key, remote_user, verbose, forceVirtualBox, usePersistent, useVM  } = argv;
+    const { local, repo, box, remote, remote_key, remote_user, verbose, forceVirtualBox, useContainer, useVM  } = argv;
 
     try{
         let ansibleVM;
@@ -106,7 +106,7 @@ exports.handler = async function(argv) {
             }
         }
 
-        const {provider, BakerObj} = await Baker.chooseProvider(bakePath, usePersistent, useVM);
+        const {provider, BakerObj} = await Baker.chooseProvider(bakePath, useContainer, useVM);
 
         if(box)
             await provider.bakeBox(bakerSSHConfig, ansibleVM, bakePath, verbose);
@@ -117,7 +117,7 @@ exports.handler = async function(argv) {
 
             await BakerObj.bake(bakePath, bakerSSHConfig, verbose);
 
-            // Handle exposure of ports on server if persistent
+            // Handle exposure of ports on server if container
             await BakerObj.exposePorts(path.join(bakePath, 'baker.yml'), verbose);
 
         }
