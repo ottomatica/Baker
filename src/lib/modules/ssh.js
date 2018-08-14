@@ -1,10 +1,11 @@
+const Promise        = require('bluebird');
+const child_process  = Promise.promisifyAll(require('child_process'));
 const { configPath } = require('../../global-vars');
 const Client         = require('ssh2').Client;
 const fs             = require('fs')
 const path           = require('path');
 const print          = require('./print')
 const scp2           = require('scp2');
-const child_process  = require('child_process');
 
 class Ssh {
     constructor() {}
@@ -131,6 +132,18 @@ class Ssh {
     }
 
     static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
+        try {
+            await this._nativeSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={});
+        } catch (err) {
+            try {
+                await this._JSSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={});
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    }
+
+    static async _JSSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
         let buffer = "";
         return new Promise((resolve, reject) => {
             var c = new Client();
@@ -182,6 +195,15 @@ class Ssh {
                     readyTimeout: timeout
                 });
         });
+    }
+
+    static async _nativeSSHExec(cmd, sshConfig, timeout = 20000, verbose = false, options = {}) {
+        let output = verbose ? 'inherit' : 'ignore';
+
+        let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no -o ConnectTimeout=${Math.floor(timeout/1000)} -o 'ConnectionAttempts 60' "${sshConfig.user}"@"${sshConfig.hostname}" '${cmd}'`;
+        // TODO: how can we ensure this failure is because server is not up yet?
+        // prepareSSHCommand = `until ${prepareSSHCommand} ; do echo 'Waiting 5 seconds for ${sshConfig.hostname}:${sshConfig.port} to be ready'; sleep 5; done;`
+        await child_process.execAsync(prepareSSHCommand, { stdio: [output, output, output] });
     }
 
     /**
