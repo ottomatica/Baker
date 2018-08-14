@@ -100,6 +100,67 @@ class Ssh {
         });
     }
 
+    static async ssh_shell(sshConfig, timeout=20000, verbose=false, options={}) {
+        return new Promise((resolve, reject) => {
+            var conn = new Client();
+            conn.on('ready', function ()
+            {
+                conn.shell(function (err, stream)
+                {
+                    if (err) throw err;
+                    stream.on('close', function() {
+                        console.log('Exiting...');
+                        conn.end();
+                    }).on('data', function(data) {
+                    }).stderr.on('data', function(data) {
+                    });
+
+                    // Redirect input/from our process into stream;
+                    process.stdin.setRawMode(true);
+                    process.stdin.pipe(stream);
+
+                    // Pipe stdout/stderr into our process
+                    stream.pipe(process.stdout);
+                    stream.stderr.pipe(process.stderr);
+                    stream.setWindow(process.stdout.rows, process.stdout.columns);
+
+                    process.stdout.on('resize', () => {
+                        stream.setWindow(process.stdout.rows, process.stdout.columns);
+                    });
+
+                    // Retrieve keypress listeners
+                    // const listeners = process.stdin.listeners('keypress');
+                    // Remove those listeners
+                    //process.stdin.removeAllListeners('keypress');
+
+                    stream.on('close', () => {
+                        // Release stdin
+                        process.stdin.setRawMode(false);
+                        process.stdin.unpipe(stream);
+                        if (!options.preserveStdin) {
+                            process.stdin.unref();
+                        }
+                        // Restore listeners
+                        //listeners.forEach(listener => process.stdin.addListener('keypress', listener));
+                        // End connection
+                        conn.end();
+                        resolve();
+                    });
+                });
+            }).on('error', function(err)
+            {
+                reject(err);
+            })
+            .connect({
+                host: sshConfig.hostname,
+                port: sshConfig.port,
+                username: sshConfig.user,
+                privateKey: fs.readFileSync(sshConfig.private_key),
+                readyTimeout: timeout
+            });
+        });
+    }
+
     static async sshExecBackground(cmd, sshConfig, verbose)
     {
         return new Promise((resolve, reject) =>
