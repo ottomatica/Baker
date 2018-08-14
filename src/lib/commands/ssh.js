@@ -23,13 +23,11 @@ exports.builder = (yargs) => {
         {
             useContainer: {
                 describe: `Override environment type to use container`,
-                hidden: true, // just for debugging for now
                 demand: false,
                 type: 'boolean'
             },
             useVM: {
                 describe: `Override environment type to use vm`,
-                hidden: true, // just for debugging for now
                 demand: false,
                 type: 'boolean'
             }
