@@ -1,8 +1,11 @@
+const conf           = require('../modules/configstore');
+const spinnerDot     = conf.get('spinnerDot');
 const Baker          = require('../modules/baker');
 const Git            = require('../modules/utils/git');
 const path           = require('path');
 const Print          = require('../modules/print');
 const Servers        = require('../modules/servers');
+const Spinner        = require('../modules/spinner');
 
 const  { bakerSSHConfig } = require('../../global-vars');
 
@@ -113,7 +116,7 @@ exports.handler = async function(argv) {
         else{
             await Servers.installBakerServer(forceVirtualBox);
 
-            await BakerObj.bake(bakePath, bakerSSHConfig, verbose);
+            await Spinner.spinPromise(BakerObj.bake(bakePath, bakerSSHConfig, verbose), `Baking`, spinnerDot);
 
             // Handle exposure of ports on server if container
             await BakerObj.exposePorts(path.join(bakePath, 'baker.yml'), verbose);
