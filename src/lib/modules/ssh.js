@@ -159,37 +159,6 @@ class Ssh {
         });
     }
 
-    static async sshExecBackground(cmd, sshConfig, verbose)
-    {
-        return new Promise((resolve, reject) =>
-        {
-            const client = new Client();
-            client.on("ready", () => {
-                client.exec(cmd, function (err, stream){
-                    console.log(`Issued ${cmd}`);
-                    stream.on('close', function (code, signal)
-                    {
-                        setTimeout(function(){
-                            client.end();
-                            resolve(code);
-                        }, 500);
-                    })
-                    .on('data', function (data) {
-                    })
-                    .stderr.on('data', function(data)
-                    {
-                        reject(data);
-                    });
-                });
-            }).connect({
-                host: sshConfig.hostname,
-                port: sshConfig.port,
-                username: sshConfig.user,
-                privateKey: fs.readFileSync(sshConfig.private_key),
-            });
-        });
-    }
-
     static async _JSSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
         let buffer = "";
         return new Promise((resolve, reject) => {
@@ -197,6 +166,14 @@ class Ssh {
             c
                 .on('ready', function () {
                     c.exec(cmd, options, function (err, stream) {
+
+                        // If we receive a termination of our main process, we need to close stream and process.
+                        process.on( 'SIGINT', function() {
+                            console.log( "\Shutting down from SIGINT (Crtl-C)" )
+                            stream.signal('INT');
+                            process.exit( )
+                        });
+
                         if (err) {
                             console.error(err);
                             reject(err);
@@ -248,13 +225,46 @@ class Ssh {
 
     static async _nativeSSHExec(cmd, sshConfig, timeout = 20000, verbose = false, options = {}) {
         //let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no -o ConnectTimeout=${Math.floor(timeout/1000)} -o ConnectionAttempts=60 "${sshConfig.user}"@"${sshConfig.hostname}" ${cmd}`;
-        let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}" ${cmd}`;
+
+        let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}" -tt ${cmd}`;
 
         console.log( prepareSSHCommand );
         let output = child_process.execSync(prepareSSHCommand, {
             stdio: ['inherit', 'inherit', 'inherit']
         });
         return output;
+    }
+
+    // Specialized function to handle sending background tasks to baker vm.
+    static async sshExecBackground(cmd, sshConfig, verbose)
+    {
+        return new Promise((resolve, reject) =>
+        {
+            const client = new Client();
+            client.on("ready", () => {
+                client.exec(cmd, function (err, stream){
+                    console.log(`Issued ${cmd}`);
+                    stream.on('close', function (code, signal)
+                    {
+                        setTimeout(function(){
+                            client.end();
+                            resolve(code);
+                        }, 500);
+                    })
+                    .on('data', function (data) {
+                    })
+                    .stderr.on('data', function(data)
+                    {
+                        reject(data);
+                    });
+                });
+            }).connect({
+                host: sshConfig.hostname,
+                port: sshConfig.port,
+                username: sshConfig.user,
+                privateKey: fs.readFileSync(sshConfig.private_key),
+            });
+        });
     }
 
     static async copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig) {

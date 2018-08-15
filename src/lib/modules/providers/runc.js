@@ -141,11 +141,20 @@ class RuncProvider extends Provider {
         await this.sshChroot(name, cmdToRun, terminateProcessOnClose);
     }
 
-    async sshRunc (name) {
+    async sshChroot(name, cmdToRun, terminateProcessOnClose) {
         try {
-            let cmd = 'cd /mnt/disk/demo && runc run --no-pivot instance-0';
-            child_process.execSync(`ssh -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -t "${cmd}"`,  {stdio: ['inherit', 'inherit', 'ignore']});
-        } catch(err) {
+            let cmd = this.prepareSSHCmd(name, cmdToRun, terminateProcessOnClose);
+            // console.log(cmd);
+            if( !cmdToRun )
+            {
+                await Ssh.SSH_Session(bakerSSHConfig, cmd);
+            }
+            else
+            {
+                // console.log('execute');
+                await Ssh.sshExec(cmd, bakerSSHConfig, 20000, true, {pty:true});
+            }
+        } catch (err) {
             throw err;
         }
     }
@@ -169,10 +178,6 @@ class RuncProvider extends Provider {
                 cmd = `stty -echo\necho "stty echo;. ~/.bashrc; export PS1='\\u@${name}:$ '" > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc; exit\n`;
             }
         } else {
-            if( !Ssh.useNative && terminateProcessOnClose )
-            {
-                cmdToRun = `shopt -s huponexit; ${cmdToRun}`;
-            }
             cmd = `${env} chroot ${rootfsPath} /bin/bash -c "${cmdToRun}"`;
         }
 
@@ -182,23 +187,6 @@ class RuncProvider extends Provider {
         return cmd;
     }
 
-    async sshChroot(name, cmdToRun, terminateProcessOnClose) {
-        try {
-            let cmd = this.prepareSSHCmd(name, cmdToRun, terminateProcessOnClose);
-            // console.log(cmd);
-            if( !cmdToRun )
-            {
-                await Ssh.SSH_Session(bakerSSHConfig, cmd);
-            }
-            else
-            {
-                // console.log('execute');
-                await Ssh.sshExec(cmd, bakerSSHConfig);
-            }
-        } catch (err) {
-            throw err;
-        }
-    }
 
     async bake(scriptPath, ansibleSSHConfig, verbose) {
         await this.bakeChroot(scriptPath, verbose);
@@ -279,6 +267,16 @@ class RuncProvider extends Provider {
     static async retrieveSSHConfigByName(name) {
         let vmSSHConfigUser = await this.getSSHConfig(name);
         return vmSSHConfigUser;
+    }
+
+    // Demo/test...
+    async sshRunc (name) {
+        try {
+            let cmd = 'cd /mnt/disk/demo && runc run --no-pivot instance-0';
+            child_process.execSync(`ssh -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -t "${cmd}"`,  {stdio: ['inherit', 'inherit', 'ignore']});
+        } catch(err) {
+            throw err;
+        }
     }
 
     /**

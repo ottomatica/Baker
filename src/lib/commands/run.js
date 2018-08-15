@@ -81,7 +81,11 @@ exports.handler = async function(argv) {
 
         await provider.ssh(envName, cmd, true).catch( function(err)
         {
-            Print.error(err);
+            // Ignore errors caused by manual termination of ssh.
+            if( err.message.indexOf("Command failed: ssh -q") != 0 )
+            {
+                Print.error(err);
+            }
         });
 
     } catch (err) {
