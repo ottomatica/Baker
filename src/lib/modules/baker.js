@@ -140,7 +140,15 @@ class Baker {
                 // Do vbox stuff on server
                 for( var port of ports  )
                 {
-                    await driver.expose("baker-srv", port, verbose);
+                    await driver.expose("baker-srv", port, verbose).catch( e => function()
+                    {
+                        if( e.message.indexOf("already exists") != -1 ) console.log(e)
+                    });
+                    // Vbox will fail if port is already created
+                    // Error: Error: Command failed: "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" controlvm baker-srv natpf1 "8000,tcp,,8000,,8000"
+                    // VBoxManage.exe: error: A NAT rule for this host port and this host IP already exists
+                    // VBoxManage.exe: error: Details: code E_INVALIDARG (0x80070057), component NATEngineWrap, interface INATEngine, callee IUnknown
+                    // VBoxManage.exe: error: Context: "AddRedirect(Bstr(strName).raw(), proto, Bstr(strHostIp).raw(), RTStrToUInt16(strHostPort), Bstr(strGuestIp).raw(), RTStrToUInt16(strGuestPort))" at line 952 of file VBoxManageControlVM.cpp
                 }
             }
             else

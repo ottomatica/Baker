@@ -62,7 +62,7 @@ class RuncProvider extends Provider {
         let bakerPath = `/mnt/disk/${name}`;
 
         let stopAllProcess = `lsof | grep ${bakerPath} | cut -f1 | sort -nu | xargs --no-run-if-empty kill -9`;
-        await Ssh.sshExec(Ssh.quoteCmd(stopAllProcess), bakerSSHConfig, 20000, true);
+        await Ssh.sshExec(stopAllProcess, bakerSSHConfig, 20000, true);
     }
 
     /**
@@ -180,8 +180,6 @@ class RuncProvider extends Provider {
         } else {
             cmd = `${env} chroot ${rootfsPath} /bin/bash -c "${cmdToRun}"`;
         }
-
-        cmd = Ssh.quoteCmd(cmd);
 
         console.log(`Running: ${cmd}`);
         return cmd;

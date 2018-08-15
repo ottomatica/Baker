@@ -43,21 +43,25 @@ class Ssh {
     // Handle quoting of the entire command passed to ssh
     static quoteCmd(cmd)
     {
-        // Handling platform quoting style
-        if( os.platform() == 'win32' )
+        if (!cmd) return cmd;
+
+        if( Ssh.useNative )
         {
-            // tripple quote for windows => These mean we want to keep these quotes for execution inside the environment.
-            cmd = cmd.replace(/["]/g, '"""');
-            if( Ssh.useNative )
+            // Handling platform quoting style
+            if( os.platform() == 'win32' )
             {
+                // Newlines can be troublesome --especially in middle of multi-line string.
+                // This is assuming a newline in a multiline string since we tend to use these in echoes.
+                cmd = cmd.replace(/[\n]/g, '"^\n"');
+
+                // tripple quote for windows => These mean we want to keep these quotes for execution inside the environment.
+                cmd = cmd.replace(/["]/g, '"""');
+                // quote whole thing.
                 cmd = `"${cmd}"`;
             }
-        }
-        else
-        {
-            // surround all of cmd with '' in bash when native
-            if( Ssh.useNative )
+            else
             {
+                // surround all of cmd with '' in bash when native
                 cmd = `'${cmd}'`;
             }
         }
@@ -65,11 +69,11 @@ class Ssh {
     }
 
     static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
-        await sshExecMethod(cmd, sshConfig, timeout, verbose, options);
+        return await sshExecMethod(Ssh.quoteCmd(cmd), sshConfig, timeout, verbose, options);
     }
 
     static async SSH_Session(sshConfig, cmd, timeout=20000){
-        await sshSessionMethod(sshConfig, cmd, timeout);
+        return await sshSessionMethod(sshConfig, Ssh.quoteCmd(cmd), timeout);
     }
 
     static _nativeSSH_Session(sshConfig, cmd, timeout)
@@ -77,11 +81,11 @@ class Ssh {
         let sshCmd = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}"`;
         if( cmd )
         {
-            child_process.execSync(`${sshCmd} -tt ${cmd}`, {stdio: ['inherit', 'inherit', 'inherit']});
+            return child_process.execSync(`${sshCmd} -tt ${cmd}`, {stdio: ['inherit', 'inherit', 'inherit']});
         }
         else
         {
-            child_process.execSync(sshCmd, {stdio: ['inherit', 'inherit', 'inherit']});
+            return child_process.execSync(sshCmd, {stdio: ['inherit', 'inherit', 'inherit']});
         }
     }
 
@@ -187,13 +191,19 @@ class Ssh {
                             .on('data', function (data) {
                                 if (verbose) {
                                     //console.log('STDOUT: ' + data);
-                                    process.stdout.write( data );
+                                    if( verbose )
+                                    {
+                                        process.stdout.write( data );
+                                    }
                                 }
                                 buffer += data;
                             })
                             .stderr.on('data', function (data) {
                                 //console.log('STDERR: ' + data);
-                                process.stderr.write( data );
+                                if( verbose )
+                                {
+                                    process.stderr.write( data );
+                                }
                                 // reject(data);
                             });
                     });
@@ -228,11 +238,24 @@ class Ssh {
 
         let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}" -tt ${cmd}`;
 
-        console.log( prepareSSHCommand );
-        let output = child_process.execSync(prepareSSHCommand, {
-            stdio: ['inherit', 'inherit', 'inherit']
+
+        if( process.env.BAKER_DEBUG )
+        {
+            console.log( `DEBUG: ${prepareSSHCommand}` );
+        }
+
+        return new Promise(function( resolve, reject )
+        {
+            let child = child_process.exec(prepareSSHCommand, function(error, stdout, stderr)
+            {
+                resolve(stdout);
+            });
+            if( verbose )
+            {
+                child.stdout.pipe(process.stdout);
+                child.stderr.pipe(process.stderr);
+            }
         });
-        return output;
     }
 
     // Specialized function to handle sending background tasks to baker vm.
