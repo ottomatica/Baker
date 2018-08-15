@@ -52,7 +52,7 @@ class Ssh {
         if( Ssh.useNative )
         {
             // Handling platform quoting style
-            if( os.platform() == 'win32' && sshExecMethod == Ssh._nativeSSHExec)
+            if( os.platform() == 'win32' )
             {
                 // Newlines can be troublesome --especially in middle of multi-line string.
                 // This is assuming a newline in a multiline string since we tend to use these in echoes.
@@ -69,13 +69,15 @@ class Ssh {
                 // cmd = cmd.replace(/[;]/g, '^;');
                 // cmd = cmd.replace(/&&/g, '^&&');
 
+                // For when powershell is used...in sshExec
                 // quote whole thing.
-                cmd = `@'\n"${cmd}"\n'@\n`;
+                // cmd = `@'\n${cmd}\n'@\n`;
+                cmd = `"${cmd}"`;
             }
             else if( os.platform() != 'win32' )
             {
                 // surround all of cmd with '' in bash when native
-                // https://unix.stackexchange.com/questions/30903/how-to-escape-quotes-in-shell                
+                // https://unix.stackexchange.com/questions/30903/how-to-escape-quotes-in-shell
                 cmd = cmd.replace(/[']/g, "\\'");
                 cmd = `$'${cmd}'`;
             }
@@ -86,16 +88,17 @@ class Ssh {
     static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}, quote=true) {
         if( quote )
         {
-            cmd = Ssh.quoteCmd(cmd);
+        //     cmd = Ssh.quoteCmd(cmd);
         }
+
         return await sshExecMethod(cmd, sshConfig, timeout, verbose, options);
     }
 
     static async SSH_Session(sshConfig, cmd, timeout=20000, quote=true){
-        if( quote )
-        {
-            cmd = Ssh.quoteCmd(cmd);
-        }
+        // if( quote )
+        // {
+             cmd = Ssh.quoteCmd(cmd);
+        // }
         return await sshSessionMethod(sshConfig, cmd, timeout);
     }
 
@@ -108,15 +111,17 @@ class Ssh {
             if( process.env.BAKER_DEBUG )
             {
                 console.log( `DEBUG: ${sshCmd} -tt ${cmd}` );
-            }    
+            }
+
             return child_process.execSync(`${sshCmd} -tt ${cmd}`, {stdio: ['inherit', 'inherit', 'inherit']});
+
         }
         else
         {
             if( process.env.BAKER_DEBUG )
             {
                 console.log( `DEBUG: ${sshCmd}` );
-            }    
+            }
 
             return child_process.execSync(sshCmd, {stdio: ['inherit', 'inherit', 'inherit']});
         }
@@ -204,12 +209,15 @@ class Ssh {
                 .on('ready', function () {
                     c.exec(cmd, options, function (err, stream) {
 
-                        // If we receive a termination of our main process, we need to close stream and process.
-                        process.on( 'SIGINT', function() {
-                            console.log( "\Shutting down from SIGINT (Crtl-C)" )
+                        function handleClose()
+                        {
+                            console.log( "\nShutting down from SIGINT (Crtl-C)" )
                             stream.signal('INT');
                             process.exit( )
-                        });
+                        }
+
+                        // If we receive a termination of our main process, we need to close stream and process.
+                        process.on( 'SIGINT',);
 
                         if (err) {
                             console.error(err);
@@ -219,6 +227,7 @@ class Ssh {
                             .on('close', function (code, signal) {
                                 c.end();
                                 // console.log(code, signal);
+                                process.removeListener('SIGINT', handleClose);
                                 resolve(buffer);
                             })
                             .on('data', function (data) {

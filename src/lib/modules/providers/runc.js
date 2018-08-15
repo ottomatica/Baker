@@ -143,6 +143,15 @@ class RuncProvider extends Provider {
 
     async sshChroot(name, cmdToRun, terminateProcessOnClose, verbose) {
         try {
+
+            let rootfsPath = `/mnt/disk/${name}/rootfs`;
+            let env = `PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin`;
+            if( Ssh.useNative )
+            {
+                let writeProfile = `echo '. ~/.bashrc; export PS1="\\u@${name}:# "' > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc`;
+                await Ssh.sshExec(writeProfile, bakerSSHConfig, 20000, verbose, {pty:true},false);
+            }
+
             let cmd = this.prepareSSHCmd(name, cmdToRun, terminateProcessOnClose);
             // console.log(cmd);
             if( !cmdToRun )
@@ -167,7 +176,7 @@ class RuncProvider extends Provider {
         {
             if( Ssh.useNative )
             {
-                cmd = `echo '. ~/.bashrc; export PS1="\\u@${name}:# "' > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc`;
+                cmd = `${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc`;
             }
             else
             {
