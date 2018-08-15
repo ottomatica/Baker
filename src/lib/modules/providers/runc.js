@@ -146,21 +146,23 @@ class RuncProvider extends Provider {
 
             let rootfsPath = `/mnt/disk/${name}/rootfs`;
             let env = `PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin`;
+            // quotes do not survive well in windows unless using execution in powershell, which is not fully tested.
+            // So we will transport this part first via ssh2
             if( Ssh.useNative )
             {
                 let writeProfile = `echo '. ~/.bashrc; export PS1="\\u@${name}:# "' > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc`;
-                await Ssh.sshExec(writeProfile, bakerSSHConfig, 20000, verbose, {pty:true},false);
+                await Ssh.sshExec(writeProfile, bakerSSHConfig, 20000, verbose, {pty:true});
             }
 
             let cmd = this.prepareSSHCmd(name, cmdToRun, terminateProcessOnClose);
             // console.log(cmd);
             if( !cmdToRun )
             {
-                await Ssh.SSH_Session(bakerSSHConfig, cmd, 20000, true);
+                await Ssh.SSH_Session(bakerSSHConfig, cmd, 20000);
             }
             else
             {
-                await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose, {pty:true},false);
+                await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose, {pty:true});
             }
         } catch (err) {
             throw err;

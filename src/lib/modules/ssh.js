@@ -49,56 +49,55 @@ class Ssh {
     {
         if (!cmd) return cmd;
 
-        if( Ssh.useNative )
+        // Handling platform quoting style
+        if( os.platform() == 'win32' )
         {
-            // Handling platform quoting style
-            if( os.platform() == 'win32' )
+            // Newlines can be troublesome --especially in middle of multi-line string.
+            // This is assuming a newline in a multiline string since we tend to use these in echoes.
+            //cmd = cmd.replace(/[\n]/g, '^\n');
+            if( cmd.indexOf('\n') > 0 )
             {
-                // Newlines can be troublesome --especially in middle of multi-line string.
-                // This is assuming a newline in a multiline string since we tend to use these in echoes.
-                //cmd = cmd.replace(/[\n]/g, '^\n');
-                if( cmd.indexOf('\n') > 0 )
-                {
-                    console.log(cmd);
-                    throw new Error('Newlines are not supported with native ssh command execution!');
-                }
-
-                // tripple quote for windows => These mean we want to keep these quotes for execution inside the environment.
-                // cmd = cmd.replace(/["]/g, '`"');
-                // cmd = cmd.replace(/["]/g, '^"');
-                // cmd = cmd.replace(/[;]/g, '^;');
-                // cmd = cmd.replace(/&&/g, '^&&');
-
-                // For when powershell is used...in sshExec
-                // quote whole thing.
-                // cmd = `@'\n${cmd}\n'@\n`;
-                cmd = `"${cmd}"`;
+                console.log(cmd);
+                throw new Error('Newlines are not supported with native ssh command execution!');
             }
-            else if( os.platform() != 'win32' )
-            {
-                // surround all of cmd with '' in bash when native
-                // https://unix.stackexchange.com/questions/30903/how-to-escape-quotes-in-shell
-                cmd = cmd.replace(/[']/g, "\\'");
-                cmd = `$'${cmd}'`;
-            }
+
+            // tripple quote for windows => These mean we want to keep these quotes for execution inside the environment.
+            // cmd = cmd.replace(/["]/g, '`"');
+            // cmd = cmd.replace(/["]/g, '^"');
+            // cmd = cmd.replace(/[;]/g, '^;');
+            // cmd = cmd.replace(/&&/g, '^&&');
+
+            // For when powershell is used...in sshExec
+            // quote whole thing.
+            // cmd = `@'\n${cmd}\n'@\n`;
+            cmd = `"${cmd}"`;
+        }
+        else if( os.platform() != 'win32' )
+        {
+            // surround all of cmd with '' in bash when native
+            // https://unix.stackexchange.com/questions/30903/how-to-escape-quotes-in-shell
+            cmd = cmd.replace(/[']/g, "\\'");
+            cmd = `$'${cmd}'`;
         }
         return cmd;
     }
 
-    static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}, quote=true) {
-        if( quote )
+    static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
+
+        if( sshExecMethod == this._nativeSSHExec )
         {
-        //     cmd = Ssh.quoteCmd(cmd);
+            cmd = Ssh.quoteCmd(cmd);
         }
 
         return await sshExecMethod(cmd, sshConfig, timeout, verbose, options);
     }
 
-    static async SSH_Session(sshConfig, cmd, timeout=20000, quote=true){
-        // if( quote )
-        // {
-             cmd = Ssh.quoteCmd(cmd);
-        // }
+    static async SSH_Session(sshConfig, cmd, timeout=20000){
+
+        if( sshExecMethod == this._nativeSSH_Session )
+        {
+            cmd = Ssh.quoteCmd(cmd);
+        }
         return await sshSessionMethod(sshConfig, cmd, timeout);
     }
 
@@ -217,7 +216,7 @@ class Ssh {
                         }
 
                         // If we receive a termination of our main process, we need to close stream and process.
-                        process.on( 'SIGINT',);
+                        process.on( 'SIGINT', handleClose);
 
                         if (err) {
                             console.error(err);
