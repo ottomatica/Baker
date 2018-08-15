@@ -151,7 +151,6 @@ class RuncProvider extends Provider {
             }
             else
             {
-                // console.log('execute');
                 await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose, {pty:true});
             }
         } catch (err) {

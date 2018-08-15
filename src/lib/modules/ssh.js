@@ -72,7 +72,7 @@ class Ssh {
                 // quote whole thing.
                 cmd = `@'\n"${cmd}"\n'@\n`;
             }
-            else
+            else if( os.platform() != 'win32' && sshExecMethod == Ssh._nativeSSHExec)
             {
                 // surround all of cmd with '' in bash when native
                 // https://unix.stackexchange.com/questions/30903/how-to-escape-quotes-in-shell                
@@ -94,12 +94,22 @@ class Ssh {
     static _nativeSSH_Session(sshConfig, cmd, timeout)
     {
         let sshCmd = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}"`;
+
         if( cmd )
         {
+            if( process.env.BAKER_DEBUG )
+            {
+                console.log( `DEBUG: ${sshCmd} -tt ${cmd}` );
+            }    
             return child_process.execSync(`${sshCmd} -tt ${cmd}`, {stdio: ['inherit', 'inherit', 'inherit']});
         }
         else
         {
+            if( process.env.BAKER_DEBUG )
+            {
+                console.log( `DEBUG: ${sshCmd}` );
+            }    
+
             return child_process.execSync(sshCmd, {stdio: ['inherit', 'inherit', 'inherit']});
         }
     }
