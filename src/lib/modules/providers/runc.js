@@ -168,7 +168,7 @@ class RuncProvider extends Provider {
         {
             if( Ssh.useNative )
             {
-                cmd = `echo '. ~/.bashrc; export PS1="\\u@${name}:$ "' > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc`;
+                cmd = `echo '. ~/.bashrc; export PS1="\\u@${name}:# "' > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc`;
             }
             else
             {
