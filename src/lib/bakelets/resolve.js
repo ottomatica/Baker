@@ -189,8 +189,8 @@ async function resolveCustom(vmName, bakerScriptPath, remotesPath, bakeletPath, 
     j.setBakeletName(bakeletName);
     j.setBakeletPath(bakeletPath);
 
-    await Spinner.spinPromise(j.load(bakelet, extra_vars), `Preparing ${mod} scripts`, spinnerDot);
-    await Spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);
+    await Spinner.spinPromise(j.load(bakelet, extra_vars), `Preparing ${bakeletName}`, spinnerDot);
+    await Spinner.spinPromise(j.install(), `Installing ${bakeletName}`, spinnerDot);
 }
 
 async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra_vars, verbose) {
@@ -214,6 +214,6 @@ async function resolve(vmName, bakerScriptPath, remotesPath, dir, bakelet, extra
     j.setVerbose(verbose);
     j.setBakeletName(bakeletName);
 
-    await Spinner.spinPromise(j.load(bakelet, extra_vars), `Preparing ${mod} scripts`, spinnerDot);
-    await Spinner.spinPromise(j.install(), `Installing ${mod}`, spinnerDot);
+    await Spinner.spinPromise(j.load(bakelet, extra_vars), `Preparing ${bakeletName}`, spinnerDot);
+    await Spinner.spinPromise(j.install(), `Installing ${bakeletName}`, spinnerDot);
 }

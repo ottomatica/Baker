@@ -33,7 +33,6 @@ class Ansible {
         // export ANSIBLE_STDOUT_CALLBACK=yaml &&
 
         // Perform error checking...
-        console.log(output);
         let results = output.split('\n').filter(line => line.indexOf('ok=') >= 0 && line.indexOf('failed=') >= 0);
         if (results.length > 0) {
             let recapString = results[0];
