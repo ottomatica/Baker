@@ -62,7 +62,7 @@ class RuncProvider extends Provider {
         let bakerPath = `/mnt/disk/${name}`;
 
         let stopAllProcess = `lsof | grep ${bakerPath} | cut -f1 | sort -nu | xargs --no-run-if-empty kill -9`;
-        await Ssh.sshExec(stopAllProcess, bakerSSHConfig, 20000, true);
+        await Ssh.sshExec(Ssh.quoteCmd(stopAllProcess), bakerSSHConfig, 20000, true);
     }
 
     /**
@@ -150,30 +150,51 @@ class RuncProvider extends Provider {
         }
     }
 
+    prepareSSHCmd (name, cmdToRun,terminateProcessOnClose)
+    {
+        let cmd = null;
+        let rootfsPath = `/mnt/disk/${name}/rootfs`;
+        let env = `PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin`;
+        if (!cmdToRun)
+        {
+            if( Ssh.useNative )
+            {
+                cmd = `echo '. ~/.bashrc; export PS1="\\u@${name}:$ "' > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc`;
+            }
+            else
+            {
+                // When not using native ssh, we need to write commands directly to stream provided by ssh2.
+                // This means we want to hide some magic from user -- also, we want to make sure to escape process
+                // when this one ends, so user doesn't have to double exit.
+                cmd = `stty -echo\necho "stty echo;. ~/.bashrc; export PS1='\\u@${name}:$ '" > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc; exit\n`;
+            }
+        } else {
+            if( !Ssh.useNative && terminateProcessOnClose )
+            {
+                cmdToRun = `shopt -s huponexit; ${cmdToRun}`;
+            }
+            cmd = `${env} chroot ${rootfsPath} /bin/bash -c "${cmdToRun}"`;
+        }
+
+        cmd = Ssh.quoteCmd(cmd);
+
+        console.log(`Running: ${cmd}`);
+        return cmd;
+    }
+
     async sshChroot(name, cmdToRun, terminateProcessOnClose) {
         try {
-            let cmd = null;
-            let rootfsPath = `/mnt/disk/${name}/rootfs`;
-            let env = `PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin \
-            PS1="baker: $"`;
-            if (!cmdToRun) {
-                cmd = `stty -echo\necho "stty echo; . ~/.bashrc" > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc; exit\n`;
-            } else {
-                cmd = `stty -echo\necho "stty echo; . ~/.bashrc" > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc -c "${cmdToRun}"; exit\n`;
-            }
-            // Handling platform quoting style
-            if( os.platform() == 'win32' )
+            let cmd = this.prepareSSHCmd(name, cmdToRun, terminateProcessOnClose);
+            // console.log(cmd);
+            if( !cmdToRun )
             {
-                // tripple quote for windows
-                cmd = cmd.replace(/["]/g, '"""');
+                await Ssh.SSH_Session(bakerSSHConfig, cmd);
             }
-            // else
-            // {
-            //     // surround all of cmd with '' in bash
-            //     cmd = `'${cmd}'`;
-            // }
-
-            Ssh.SSH_Session(bakerSSHConfig, cmd);
+            else
+            {
+                // console.log('execute');
+                await Ssh.sshExec(cmd, bakerSSHConfig);
+            }
         } catch (err) {
             throw err;
         }

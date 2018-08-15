@@ -34,7 +34,7 @@ exports.handler = async function(argv) {
         switch( cmdlet )
         {
             case "ssh":
-                Ssh.nativeSSH_Session(bakerSSHConfig);
+                Ssh.SSH_Session(bakerSSHConfig);
                 break;
             case "repair":
                 if( !name )

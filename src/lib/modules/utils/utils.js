@@ -1,11 +1,12 @@
-const path            = require('path');
-const Promise         = require('bluebird');
-const ping            = require('ping')
-const prompt          = require('prompt');
-const md5File         = require('md5-file/promise')
-const fs              = require('fs-extra');
-const _               = require('underscore');
+const path             = require('path');
+const Promise          = require('bluebird');
+const ping             = require('ping')
+const prompt           = require('prompt');
+const md5File          = require('md5-file/promise')
+const fs               = require('fs-extra');
+const _                = require('underscore');
 const { envIndexPath } = require('../../../global-vars');
+const hasbin           = require('hasbin');
 
 class Utils {
     constructor() {}
@@ -54,6 +55,17 @@ class Utils {
                 }
                 //prompt.stop();
                 resolve(result[propertyName]);
+            });
+        });
+    }
+
+    static async hasbin(bin)
+    {
+        return new Promise(function(resolve, reject)
+        {
+            hasbin(bin, function(result )
+            {
+                resolve(result);
             });
         });
     }

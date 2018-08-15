@@ -4,117 +4,88 @@ const execAsync      = promisify(child_process.exec);
 const { configPath } = require('../../global-vars');
 const Client         = require('ssh2').Client;
 const fs             = require('fs')
+const os             = require('os');
 const path           = require('path');
 const print          = require('./print')
 const scp2           = require('scp2');
+const util           = require('./utils/utils');
+
+let sshSessionMethod = null;
+let sshExecMethod    = null;
+let useNative        = true;
 
 class Ssh {
     constructor() {}
 
-
-    static nativeSSH_Session(sshConfig, cmd)
+    static selectDefaults()
     {
-        cmd = cmd ? `'${cmd}'` : '';
-        child_process.execSync(`ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}" -tt ${cmd}`, {stdio: ['inherit', 'inherit', 'inherit']});
-    }
+        useNative = util.hasbin('ssh');
 
-    static async copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig) {
-        return new Promise(async (resolve, reject) => {
-            if (doc.bake && doc.bake.ansible && doc.bake.ansible.source) {
-                // Copying ansible script to ansible vm
-                if (bakerScriptPath != undefined) {
-                    await this.copyFromHostToVM(
-                        path.resolve(bakerScriptPath, doc.bake.ansible.source),
-                        `/home/vagrant/baker/${doc.name}`,
-                        ansibleSSHConfig,
-                        false
-                    );
-                }
-            }
-
-            // TODO: Temp: refactor to be able to use the bakelet instead
-            await this.copyFromHostToVM(
-                path.resolve(configPath, './common/installDocker.yml'),
-                `/home/vagrant/baker/installDocker.yml`,
-                ansibleSSHConfig,
-                false
-            );
-
-            await this.copyFromHostToVM(
-                path.resolve(configPath, './common/dockerBootstrap.yml'),
-                `/home/vagrant/baker/dockerBootstrap.yml`,
-                ansibleSSHConfig,
-                false
-            );
-
-            // Copy common ansible scripts files
-            await this.copyFromHostToVM(
-                path.resolve(configPath, './common/registerhost.yml'),
-                `/home/vagrant/baker/registerhost.yml`,
-                ansibleSSHConfig,
-                false
-            );
-
-            await this.copyFromHostToVM(
-                path.resolve(
-                    configPath,
-                    './common/CheckoutFromVault.yml'
-                ),
-                `/home/vagrant/baker/CheckoutFromVault.yml`,
-                ansibleSSHConfig,
-                false
-            );
-
-            resolve();
-        });
-    };
-
-    static async copyFromHostToVM(src, dest, destSSHConfig, chmod_ = true) {
-        let Ssh = this;
-
-        if( !fs.existsSync(src) )
+        // Override
+        if( process.env.BAKER_SSH && process.env.BAKER_SSH == 'nodejs' )
         {
-            throw new Error(`Path cannot be found on your machine: ${src}`);
+            useNative = false;
         }
 
-        return new Promise((resolve, reject) => {
-            scp2.scp(
-                src,
-                {
-                    host: '127.0.0.1',
-                    port: destSSHConfig.port,
-                    username: destSSHConfig.user,
-                    privateKey: fs.readFileSync(destSSHConfig.private_key, 'utf8'),
-                    path: dest
-                },
-                async function (err) {
-                    if (err) {
-                        print.error(`Failed to configure ssh keys: ${err}`);
-                        reject();
-                    } else {
-                        if (chmod_) {
-                            await Ssh.chmod(dest, destSSHConfig)
-                        }
-                        resolve();
-                    }
-                }
-            );
-        });
+        // Select methods to use
+        if( useNative )
+        {
+            sshExecMethod    = Ssh._nativeSSHExec;
+            sshSessionMethod = Ssh._nativeSSH_Session;
+        }
+        else
+        {
+            sshExecMethod    = Ssh._JSSSHExec;
+            sshSessionMethod = Ssh._jsSSH_Session;
+        }
+    }
+
+    // Handle quoting of the entire command passed to ssh
+    static quoteCmd(cmd)
+    {
+        // Handling platform quoting style
+        if( os.platform() == 'win32' )
+        {
+            // tripple quote for windows => These mean we want to keep these quotes for execution inside the environment.
+            cmd = cmd.replace(/["]/g, '"""');
+            if( Ssh.useNative )
+            {
+                cmd = `"${cmd}"`;
+            }
+        }
+        else
+        {
+            // surround all of cmd with '' in bash when native
+            if( Ssh.useNative )
+            {
+                cmd = `'${cmd}'`;
+            }
+        }
+        return cmd;
+    }
+
+    static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
+        await sshExecMethod(cmd, sshConfig, timeout, verbose, options);
     }
 
     static async SSH_Session(sshConfig, cmd, timeout=20000){
-        try {
-            await this.nativeSSH_Session(sshConfig, cmd);
-        } catch (err) {
-            try {
-                await this.jsSSH_Session(sshConfig, cmd, timeout);
-            } catch (err) {
-                console.error(err);
-            }
+        await sshSessionMethod(sshConfig, cmd, timeout);
+    }
+
+    static _nativeSSH_Session(sshConfig, cmd, timeout)
+    {
+        let sshCmd = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}"`;
+        if( cmd )
+        {
+            child_process.execSync(`${sshCmd} -tt ${cmd}`, {stdio: ['inherit', 'inherit', 'inherit']});
+        }
+        else
+        {
+            child_process.execSync(sshCmd, {stdio: ['inherit', 'inherit', 'inherit']});
         }
     }
 
-    static async jsSSH_Session(sshConfig, cmd, timeout=20000, options={}) {
+    static async _jsSSH_Session(sshConfig, cmd, timeout=20000, options={}) {
         return new Promise((resolve, reject) => {
             var conn = new Client();
             conn.on('ready', function () {
@@ -219,18 +190,6 @@ class Ssh {
         });
     }
 
-    static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
-        try {
-            return await this._nativeSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={});
-        } catch (err) {
-            try {
-                return await this._JSSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={});
-            } catch (err) {
-                console.error(err);
-            }
-        }
-    }
-
     static async _JSSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
         let buffer = "";
         return new Promise((resolve, reject) => {
@@ -250,13 +209,15 @@ class Ssh {
                             })
                             .on('data', function (data) {
                                 if (verbose) {
-                                    console.log('STDOUT: ' + data);
+                                    //console.log('STDOUT: ' + data);
+                                    process.stdout.write( data );
                                 }
                                 buffer += data;
                             })
                             .stderr.on('data', function (data) {
-                                console.log('STDERR: ' + data);
-                                reject(data);
+                                //console.log('STDERR: ' + data);
+                                process.stderr.write( data );
+                                // reject(data);
                             });
                     });
                 }).on('error', function(err)
@@ -286,17 +247,98 @@ class Ssh {
     }
 
     static async _nativeSSHExec(cmd, sshConfig, timeout = 20000, verbose = false, options = {}) {
-        let output = verbose ? 'inherit' : 'ignore';
+        //let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no -o ConnectTimeout=${Math.floor(timeout/1000)} -o ConnectionAttempts=60 "${sshConfig.user}"@"${sshConfig.hostname}" ${cmd}`;
+        let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}" ${cmd}`;
 
-        let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no -o ConnectTimeout=${Math.floor(timeout/1000)} -o 'ConnectionAttempts 60' "${sshConfig.user}"@"${sshConfig.hostname}" '${cmd}'`;
-        // TODO: how can we ensure this failure is because server is not up yet?
-        // prepareSSHCommand = `until ${prepareSSHCommand} ; do echo 'Waiting 5 seconds for ${sshConfig.hostname}:${sshConfig.port} to be ready'; sleep 5; done;`
-        let output = await execAsync(prepareSSHCommand);
-        if(verbose){
-            if(output.stdout) console.log(output.stdout);
-            if(output.stderr) console.log(output.stderr);
+        console.log( prepareSSHCommand );
+        let output = child_process.execSync(prepareSSHCommand, {
+            stdio: ['inherit', 'inherit', 'inherit']
+        });
+        return output;
+    }
+
+    static async copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig) {
+        return new Promise(async (resolve, reject) => {
+            if (doc.bake && doc.bake.ansible && doc.bake.ansible.source) {
+                // Copying ansible script to ansible vm
+                if (bakerScriptPath != undefined) {
+                    await this.copyFromHostToVM(
+                        path.resolve(bakerScriptPath, doc.bake.ansible.source),
+                        `/home/vagrant/baker/${doc.name}`,
+                        ansibleSSHConfig,
+                        false
+                    );
+                }
+            }
+
+            // TODO: Temp: refactor to be able to use the bakelet instead
+            await this.copyFromHostToVM(
+                path.resolve(configPath, './common/installDocker.yml'),
+                `/home/vagrant/baker/installDocker.yml`,
+                ansibleSSHConfig,
+                false
+            );
+
+            await this.copyFromHostToVM(
+                path.resolve(configPath, './common/dockerBootstrap.yml'),
+                `/home/vagrant/baker/dockerBootstrap.yml`,
+                ansibleSSHConfig,
+                false
+            );
+
+            // Copy common ansible scripts files
+            await this.copyFromHostToVM(
+                path.resolve(configPath, './common/registerhost.yml'),
+                `/home/vagrant/baker/registerhost.yml`,
+                ansibleSSHConfig,
+                false
+            );
+
+            await this.copyFromHostToVM(
+                path.resolve(
+                    configPath,
+                    './common/CheckoutFromVault.yml'
+                ),
+                `/home/vagrant/baker/CheckoutFromVault.yml`,
+                ansibleSSHConfig,
+                false
+            );
+
+            resolve();
+        });
+    };
+
+    static async copyFromHostToVM(src, dest, destSSHConfig, chmod_ = true) {
+        let Ssh = this;
+
+        if( !fs.existsSync(src) )
+        {
+            throw new Error(`Path cannot be found on your machine: ${src}`);
         }
-        return output.stdout;
+
+        return new Promise((resolve, reject) => {
+            scp2.scp(
+                src,
+                {
+                    host: '127.0.0.1',
+                    port: destSSHConfig.port,
+                    username: destSSHConfig.user,
+                    privateKey: fs.readFileSync(destSSHConfig.private_key, 'utf8'),
+                    path: dest
+                },
+                async function (err) {
+                    if (err) {
+                        print.error(`Failed to configure ssh keys: ${err}`);
+                        reject();
+                    } else {
+                        if (chmod_) {
+                            await Ssh.chmod(dest, destSSHConfig)
+                        }
+                        resolve();
+                    }
+                }
+            );
+        });
     }
 
     /**
@@ -312,5 +354,9 @@ class Ssh {
         return this.sshExec(`chmod 600 ${key}`, sshConfig);
     }
 }
+
+
+Ssh.selectDefaults();
+Ssh.useNative = useNative;
 
 module.exports = Ssh;

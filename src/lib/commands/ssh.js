@@ -42,7 +42,9 @@ exports.handler = async function(argv) {
         let bakePath = process.cwd();
         const {envName, BakerObj} = await Baker.chooseProvider(bakePath, useContainer, useVM);
 
-        await Spinner.spinPromise(BakerObj.ssh(envName), `SSHing to ${envName}`, spinnerDot);
+        await BakerObj.ssh(envName);
+
+        //await Spinner.spinPromise(BakerObj.ssh(envName), `SSHing to ${envName}`, spinnerDot);
     } catch (err) {
         Print.error(err);
     }
