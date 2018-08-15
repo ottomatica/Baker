@@ -49,10 +49,10 @@ class Ssh {
     {
         if (!cmd) return cmd;
 
-        if( Ssh.useNative && sshExecMethod == Ssh._nativeSSHExec)
+        if( Ssh.useNative )
         {
             // Handling platform quoting style
-            if( os.platform() == 'win32' )
+            if( os.platform() == 'win32' && sshExecMethod == Ssh._nativeSSHExec)
             {
                 // Newlines can be troublesome --especially in middle of multi-line string.
                 // This is assuming a newline in a multiline string since we tend to use these in echoes.
@@ -75,7 +75,9 @@ class Ssh {
             else
             {
                 // surround all of cmd with '' in bash when native
-                cmd = `'${cmd}'`;
+                // https://unix.stackexchange.com/questions/30903/how-to-escape-quotes-in-shell                
+                cmd = cmd.replace(/[']/g, "\\'");
+                cmd = `$'${cmd}'`;
             }
         }
         return cmd;
