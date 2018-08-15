@@ -157,9 +157,9 @@ class RuncProvider extends Provider {
             let env = `PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin \
             PS1="baker: $"`;
             if (!cmdToRun) {
-                cmd = `${env} chroot ${rootfsPath} /bin/bash`;
+                cmd = `stty -echo\necho "stty echo; . ~/.bashrc" > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc; exit\n`;
             } else {
-                cmd = `${env} chroot ${rootfsPath} bash -c "${cmdToRun}"`;
+                cmd = `stty -echo\necho "stty echo; . ~/.bashrc" > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc && ${env} chroot ${rootfsPath} /bin/bash --init-file /root/.baker.rc -c "${cmdToRun}"; exit\n`;
             }
             // Handling platform quoting style
             if( os.platform() == 'win32' )
@@ -167,13 +167,13 @@ class RuncProvider extends Provider {
                 // tripple quote for windows
                 cmd = cmd.replace(/["]/g, '"""');
             }
-            else
-            {
-                // surround all of cmd with '' in bash
-                cmd = `'${cmd}'`;
-            }
+            // else
+            // {
+            //     // surround all of cmd with '' in bash
+            //     cmd = `'${cmd}'`;
+            // }
 
-            child_process.execSync(`ssh -q -i ${privateKey} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -p 6022 root@127.0.0.1 -tt ${cmd}`, { stdio: ['inherit', 'inherit', 'inherit'] });
+            Ssh.SSH_Session(bakerSSHConfig, cmd);
         } catch (err) {
             throw err;
         }

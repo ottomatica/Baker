@@ -1,5 +1,6 @@
-const Promise        = require('bluebird');
-const child_process  = Promise.promisifyAll(require('child_process'));
+const { promisify }  = require('util');
+let child_process    = require('child_process');
+const execAsync      = promisify(child_process.exec);
 const { configPath } = require('../../global-vars');
 const Client         = require('ssh2').Client;
 const fs             = require('fs')
@@ -11,9 +12,10 @@ class Ssh {
     constructor() {}
 
 
-    static nativeSSH_Session(sshConfig)
+    static nativeSSH_Session(sshConfig, cmd)
     {
-        child_process.execSync(`ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}"`, {stdio: ['inherit', 'inherit', 'inherit']});
+        cmd = cmd ? `'${cmd}'` : '';
+        child_process.execSync(`ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}" -tt ${cmd}`, {stdio: ['inherit', 'inherit', 'inherit']});
     }
 
     static async copyFilesForAnsibleServer(bakerScriptPath, doc, ansibleSSHConfig) {
@@ -100,11 +102,23 @@ class Ssh {
         });
     }
 
-    static async ssh_shell(sshConfig, timeout=20000, verbose=false, options={}) {
+    static async SSH_Session(sshConfig, cmd, timeout=20000){
+        try {
+            await this.nativeSSH_Session(sshConfig, cmd);
+        } catch (err) {
+            try {
+                await this.jsSSH_Session(sshConfig, cmd, timeout);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    }
+
+    static async jsSSH_Session(sshConfig, cmd, timeout=20000, options={}) {
         return new Promise((resolve, reject) => {
             var conn = new Client();
-            conn.on('ready', function ()
-            {
+            conn.on('ready', function () {
+                let clearedTermGarabge = false;
                 conn.shell(function (err, stream)
                 {
                     if (err) throw err;
@@ -112,8 +126,21 @@ class Ssh {
                         console.log('Exiting...');
                         conn.end();
                     }).on('data', function(data) {
+                        if( !clearedTermGarabge && data == ';' ) {
+                            // Some process is sending this output which makes its way into bash input prompt
+                            // "^[[15;43R^[[15;51R";
+                            // This seems related to terminal info codes (size of columns, etc.)
+                            // https://invisible-island.net/ncurses/terminfo.src.html
+                            // \x15 sends Ctrl-U which will clear the line of any input.
+                            stream.stdin.write('\x15');
+                            // We only need to do this once.
+                            clearedTermGarabge = true;
+                        }
                     }).stderr.on('data', function(data) {
+                        console.log('STDERR: ' + data);
                     });
+
+                    if(cmd) stream.stdin.write(cmd);
 
                     // Redirect input/from our process into stream;
                     process.stdin.setRawMode(true);
@@ -194,10 +221,10 @@ class Ssh {
 
     static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
         try {
-            await this._nativeSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={});
+            return await this._nativeSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={});
         } catch (err) {
             try {
-                await this._JSSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={});
+                return await this._JSSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={});
             } catch (err) {
                 console.error(err);
             }
@@ -264,7 +291,12 @@ class Ssh {
         let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no -o ConnectTimeout=${Math.floor(timeout/1000)} -o 'ConnectionAttempts 60' "${sshConfig.user}"@"${sshConfig.hostname}" '${cmd}'`;
         // TODO: how can we ensure this failure is because server is not up yet?
         // prepareSSHCommand = `until ${prepareSSHCommand} ; do echo 'Waiting 5 seconds for ${sshConfig.hostname}:${sshConfig.port} to be ready'; sleep 5; done;`
-        await child_process.execAsync(prepareSSHCommand, { stdio: [output, output, output] });
+        let output = await execAsync(prepareSSHCommand);
+        if(verbose){
+            if(output.stdout) console.log(output.stdout);
+            if(output.stderr) console.log(output.stderr);
+        }
+        return output.stdout;
     }
 
     /**
