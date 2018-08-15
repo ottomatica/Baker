@@ -116,7 +116,7 @@ exports.handler = async function(argv) {
         else{
             await Servers.installBakerServer(forceVirtualBox);
 
-            await Spinner.spinPromise(BakerObj.bake(bakePath, bakerSSHConfig, verbose), `Baking`, spinnerDot);
+            await BakerObj.bake(bakePath, bakerSSHConfig, verbose);
 
             // Handle exposure of ports on server if container
             await BakerObj.exposePorts(path.join(bakePath, 'baker.yml'), verbose);
