@@ -248,7 +248,7 @@ class Ssh {
         {
             let child = child_process.exec(prepareSSHCommand, function(error, stdout, stderr)
             {
-                resolve(stdout);
+                resolve(stdout.replace(/[\r]/g,''));
             });
             if( verbose )
             {

@@ -64,7 +64,7 @@ class VirtualBoxProvider extends Provider {
      * TODO: add force option
      */
     async stop(VMName, force = false) {
-        await vbox({stopCmd: true, vmname: VMName, syncs: [], verbose: true});
+        await vbox({stopCmd: true, vmname: VMName, syncs: [], verbose: false}).catch( e => e);
     }
 
     /**
@@ -77,7 +77,7 @@ class VirtualBoxProvider extends Provider {
         {
             await this.stop(VMName);
         }
-        await vbox({deleteCmd: true, vmname: VMName, syncs: [], verbose: true});
+        await vbox({deleteCmd: true, vmname: VMName, syncs: [], verbose: false}).catch( e => e);
     }
 
     /**
