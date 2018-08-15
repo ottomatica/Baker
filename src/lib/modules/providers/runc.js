@@ -294,7 +294,7 @@ class RuncProvider extends Provider {
      * @param {String} rootfsPath
      */
     async addToAnsibleHosts (name, rootfsPath){
-        return Ssh.sshExec(`echo "[chroots]\n${rootfsPath}\tansible_connection=chroot\tansible_user=root" > /home/vagrant/baker/${name}/baker_inventory`, bakerSSHConfig);
+        return Ssh.sshExec(`echo "[chroots]" > /home/vagrant/baker/${name}/baker_inventory && echo "${rootfsPath}\tansible_connection=chroot\tansible_user=root" >> /home/vagrant/baker/${name}/baker_inventory`, bakerSSHConfig);
     }
 }
 

@@ -116,14 +116,12 @@ class VirtualBoxProvider extends Provider {
     async ssh(name, cmdToRun, terminateProcessOnClose) {
         try {
             let info = await this.getSSHConfig(name);
-            // hack
-            //let key = path.join(require('os').tmpdir(), `${name}-key`);
-            //fs.copyFileSync(info.private_key, key );
-            //ßfs.chmod(key, "600");
+
+            console.log(info);
 
             if( !cmdToRun )
             {
-                Ssh.SSH_Session(info);
+                await Ssh.SSH_Session(info);
             }
             else
             {
@@ -133,7 +131,7 @@ class VirtualBoxProvider extends Provider {
                     cmdToRun = `shopt -s huponexit; ${cmdToRun}`;
                     allocateTTY = '-tt';
                 }
-                Ssh.sshExec(cmdToRun, info);
+                await Ssh.sshExec(cmdToRun, info);
             }
         } catch(err) {
             throw err;
@@ -246,7 +244,7 @@ class VirtualBoxProvider extends Provider {
      */
     async addToAnsibleHosts (ip, name, ansibleSSHConfig, vmSSHConfig, usePython3){
         let pythonPath = usePython3 ? '/usr/bin/python3' : '/usr/bin/python';
-        return Ssh.sshExec(`echo "[${name}]\n${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}\tansible_python_interpreter=${pythonPath}" > /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
+        return Ssh.sshExec(`echo "[${name}]" > /home/vagrant/baker/${name}/baker_inventory && echo ${ip}\tansible_ssh_private_key_file=${ip}_rsa\tansible_user=${vmSSHConfig.user}\tansible_python_interpreter=${pythonPath}" >> /home/vagrant/baker/${name}/baker_inventory && ansible all -i "localhost," -m lineinfile -a "dest=/etc/hosts line='${ip} ${name}' state=present" -c local --become`, ansibleSSHConfig);
     }
 }
 

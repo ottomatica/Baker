@@ -10,6 +10,8 @@ const print          = require('./print')
 const scp2           = require('scp2');
 const util           = require('./utils/utils');
 
+const shell = require('node-powershell');
+
 let sshSessionMethod = null;
 let sshExecMethod    = null;
 let useNative        = true;
@@ -30,7 +32,9 @@ class Ssh {
         // Select methods to use
         if( useNative )
         {
-            sshExecMethod    = Ssh._nativeSSHExec;
+            // sshExecMethod    = Ssh._nativeSSHExec;
+            // We will prefer to still use ssh2 for execution for now.
+            sshExecMethod    = Ssh._JSSSHExec;
             sshSessionMethod = Ssh._nativeSSH_Session;
         }
         else
@@ -45,19 +49,28 @@ class Ssh {
     {
         if (!cmd) return cmd;
 
-        if( Ssh.useNative )
+        if( Ssh.useNative && sshExecMethod == Ssh._nativeSSHExec)
         {
             // Handling platform quoting style
             if( os.platform() == 'win32' )
             {
                 // Newlines can be troublesome --especially in middle of multi-line string.
                 // This is assuming a newline in a multiline string since we tend to use these in echoes.
-                cmd = cmd.replace(/[\n]/g, '"^\n"');
+                //cmd = cmd.replace(/[\n]/g, '^\n');
+                if( cmd.indexOf('\n') > 0 )
+                {
+                    console.log(cmd);
+                    throw new Error('Newlines are not supported with native ssh command execution!');
+                }
 
                 // tripple quote for windows => These mean we want to keep these quotes for execution inside the environment.
-                cmd = cmd.replace(/["]/g, '"""');
+                // cmd = cmd.replace(/["]/g, '`"');
+                // cmd = cmd.replace(/["]/g, '^"');
+                // cmd = cmd.replace(/[;]/g, '^;');
+                // cmd = cmd.replace(/&&/g, '^&&');
+
                 // quote whole thing.
-                cmd = `"${cmd}"`;
+                cmd = `@'\n"${cmd}"\n'@\n`;
             }
             else
             {
@@ -236,8 +249,7 @@ class Ssh {
     static async _nativeSSHExec(cmd, sshConfig, timeout = 20000, verbose = false, options = {}) {
         //let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no -o ConnectTimeout=${Math.floor(timeout/1000)} -o ConnectionAttempts=60 "${sshConfig.user}"@"${sshConfig.hostname}" ${cmd}`;
 
-        let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}" -tt ${cmd}`;
-
+        let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p ${sshConfig.port} -o StrictHostKeyChecking=no ${sshConfig.user}@${sshConfig.hostname} -tt ${cmd}`;
 
         if( process.env.BAKER_DEBUG )
         {
@@ -246,14 +258,40 @@ class Ssh {
 
         return new Promise(function( resolve, reject )
         {
-            let child = child_process.exec(prepareSSHCommand, function(error, stdout, stderr)
+            if( os.platform() == 'win32' )
             {
-                resolve(stdout.replace(/[\r]/g,''));
-            });
-            if( verbose )
+                let ps = new shell({
+                    executionPolicy: 'Bypass',
+                    noProfile: true
+                  });
+
+                  ps.addCommand(prepareSSHCommand)
+                  ps.invoke()
+                  .then(output => {
+                    console.log(output);
+                    resolve(output)
+                  })
+                  .catch(err => {
+                    console.log(err);
+                    ps.dispose();
+                    reject(err);
+                  });
+            }
+            else
             {
-                child.stdout.pipe(process.stdout);
-                child.stderr.pipe(process.stderr);
+                let child = child_process.exec(prepareSSHCommand, function(error, stdout, stderr)
+                {
+                    if( error )
+                    {
+                        console.error(error);
+                    }
+                    resolve(stdout.replace(/[\r]/g,''));
+                });
+                if( verbose )
+                {
+                    child.stdout.pipe(process.stdout);
+                    child.stderr.pipe(process.stderr);
+                }
             }
         });
     }
