@@ -89,6 +89,11 @@ class Ssh {
             cmd = Ssh.quoteCmd(cmd);
         }
 
+        if( process.env.BAKER_DEBUG )
+        {
+            console.log( `DEBUG: ${cmd}` );
+        }
+
         return await sshExecMethod(cmd, sshConfig, timeout, verbose, options);
     }
 
@@ -103,7 +108,7 @@ class Ssh {
 
     static _nativeSSH_Session(sshConfig, cmd, timeout)
     {
-        let sshCmd = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no "${sshConfig.user}"@"${sshConfig.hostname}"`;
+        let sshCmd = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no ${sshConfig.user}@${sshConfig.hostname}`;
 
         if( cmd )
         {
@@ -275,7 +280,7 @@ class Ssh {
     }
 
     static async _nativeSSHExec(cmd, sshConfig, timeout = 20000, verbose = false, options = {}) {
-        //let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no -o ConnectTimeout=${Math.floor(timeout/1000)} -o ConnectionAttempts=60 "${sshConfig.user}"@"${sshConfig.hostname}" ${cmd}`;
+        //let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p "${sshConfig.port}" -o StrictHostKeyChecking=no -o ConnectTimeout=${Math.floor(timeout/1000)} -o ConnectionAttempts=60 ${sshConfig.user}@${sshConfig.hostname} ${cmd}`;
 
         let prepareSSHCommand = `ssh -q -i "${sshConfig.private_key}" -p ${sshConfig.port} -o StrictHostKeyChecking=no ${sshConfig.user}@${sshConfig.hostname} -tt ${cmd}`;
 
