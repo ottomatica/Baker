@@ -137,11 +137,11 @@ class RuncProvider extends Provider {
      * @param {String} cmdToRun
      * @param {boolean} terminateProcessOnClose
      */
-    async ssh(name, cmdToRun, terminateProcessOnClose) {
-        await this.sshChroot(name, cmdToRun, terminateProcessOnClose);
+    async ssh(name, cmdToRun, terminateProcessOnClose, verbose) {
+        await this.sshChroot(name, cmdToRun, terminateProcessOnClose, verbose);
     }
 
-    async sshChroot(name, cmdToRun, terminateProcessOnClose) {
+    async sshChroot(name, cmdToRun, terminateProcessOnClose, verbose) {
         try {
             let cmd = this.prepareSSHCmd(name, cmdToRun, terminateProcessOnClose);
             // console.log(cmd);
@@ -152,7 +152,7 @@ class RuncProvider extends Provider {
             else
             {
                 // console.log('execute');
-                await Ssh.sshExec(cmd, bakerSSHConfig, 20000, true, {pty:true});
+                await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose, {pty:true});
             }
         } catch (err) {
             throw err;
@@ -181,7 +181,6 @@ class RuncProvider extends Provider {
             cmd = `${env} chroot ${rootfsPath} /bin/bash -c "${cmdToRun}"`;
         }
 
-        console.log(`Running: ${cmd}`);
         return cmd;
     }
 
@@ -231,23 +230,8 @@ class RuncProvider extends Provider {
                                 type: 'bind',
                                 bind: true
                             } ];
-        let mounts = '';
-        mountPoints.forEach(mountPoint => {
-            mounts += `if ! mount | grep "${mountPoint.dest}" > /dev/null; then mkdir -p ${mountPoint.dest}; mount -t ${mountPoint.type} ${mountPoint.bind ? '--bind' : ''} ${mountPoint.source} ${mountPoint.dest}; fi; `;
-        })
 
-        var prepareCmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; ${mounts}`;
-        await Ssh.sshExec(prepareCmd, bakerSSHConfig, 60000, verbose);
-
-        var addHostsCmd = `echo "127.0.0.1 localhost loopback" >> ${rootfsPath}/etc/hosts`;
-        await Ssh.sshExec(addHostsCmd, bakerSSHConfig, 60000, verbose);
-
-        // make real /dev/null
-        var makeDevNull = `rm -f ${rootfsPath}/dev/null && mknod -m 666 ${rootfsPath}/dev/null c 1 3`;
-        await Ssh.sshExec(makeDevNull, bakerSSHConfig, 60000, verbose);
-
-        // make connection within chroot so we can turn off /sbin/initctl
-        await this.ssh(doc.name, `dpkg-divert --add --rename --local /sbin/initctl`, false );
+        await Spinner.spinPromise( this._prepareChroot(doc, bakerPath, rootfsPath, mountPoints, verbose), `Building container for ${doc.name}`, spinnerDot);
 
         await this.addToAnsibleHosts(doc.name, rootfsPath);
         await this.mkTemplatesDir(doc, bakerSSHConfig);
@@ -260,6 +244,33 @@ class RuncProvider extends Provider {
         // Installing stuff.
         let resolveB = require('../../bakelets/resolve');
         await resolveB.resolveBakelet(bakeletsPath, remotesPath, doc, scriptPath, verbose);
+    }
+
+    async _prepareChroot(doc, bakerPath, rootfsPath, mountPoints, verbose)
+    {
+        let self = this;
+        return new Promise( async function(resolve,reject)
+        {
+            let mounts = '';
+            mountPoints.forEach(mountPoint => {
+                mounts += `if ! mount | grep "${mountPoint.dest}" > /dev/null; then mkdir -p ${mountPoint.dest}; mount -t ${mountPoint.type} ${mountPoint.bind ? '--bind' : ''} ${mountPoint.source} ${mountPoint.dest}; fi; `;
+            })
+
+            var prepareCmd = `mkdir -p ${bakerPath}; mkdir -p ${rootfsPath}; tar -xf /share/Users/${os.userInfo().username}/.baker/boxes/rootfs.tar -C ${rootfsPath}; echo 'nameserver 8.8.4.4' | tee -a ${rootfsPath}/etc/resolv.conf; ${mounts}`;
+            await Ssh.sshExec(prepareCmd, bakerSSHConfig, 60000, verbose);
+
+            var addHostsCmd = `echo "127.0.0.1 localhost loopback" >> ${rootfsPath}/etc/hosts`;
+            await Ssh.sshExec(addHostsCmd, bakerSSHConfig, 60000, verbose);
+
+            // make real /dev/null
+            var makeDevNull = `rm -f ${rootfsPath}/dev/null && mknod -m 666 ${rootfsPath}/dev/null c 1 3`;
+            await Ssh.sshExec(makeDevNull, bakerSSHConfig, 60000, verbose);
+
+            // make connection within chroot so we can turn off /sbin/initctl
+            await self.ssh(doc.name, `dpkg-divert --add --rename --local /sbin/initctl`, false, verbose );
+
+            resolve();
+        })
     }
 
     static async retrieveSSHConfigByName(name) {
