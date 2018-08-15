@@ -72,7 +72,7 @@ class Ssh {
                 // quote whole thing.
                 cmd = `@'\n"${cmd}"\n'@\n`;
             }
-            else if( os.platform() != 'win32' && sshExecMethod == Ssh._nativeSSHExec)
+            else if( os.platform() != 'win32' )
             {
                 // surround all of cmd with '' in bash when native
                 // https://unix.stackexchange.com/questions/30903/how-to-escape-quotes-in-shell                
@@ -83,12 +83,20 @@ class Ssh {
         return cmd;
     }
 
-    static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
-        return await sshExecMethod(Ssh.quoteCmd(cmd), sshConfig, timeout, verbose, options);
+    static async sshExec(cmd, sshConfig, timeout=20000, verbose=false, options={}, quote=true) {
+        if( quote )
+        {
+            cmd = Ssh.quoteCmd(cmd);
+        }
+        return await sshExecMethod(cmd, sshConfig, timeout, verbose, options);
     }
 
-    static async SSH_Session(sshConfig, cmd, timeout=20000){
-        return await sshSessionMethod(sshConfig, Ssh.quoteCmd(cmd), timeout);
+    static async SSH_Session(sshConfig, cmd, timeout=20000, quote=true){
+        if( quote )
+        {
+            cmd = Ssh.quoteCmd(cmd);
+        }
+        return await sshSessionMethod(sshConfig, cmd, timeout);
     }
 
     static _nativeSSH_Session(sshConfig, cmd, timeout)

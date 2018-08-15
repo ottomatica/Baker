@@ -147,11 +147,11 @@ class RuncProvider extends Provider {
             // console.log(cmd);
             if( !cmdToRun )
             {
-                await Ssh.SSH_Session(bakerSSHConfig, cmd);
+                await Ssh.SSH_Session(bakerSSHConfig, cmd, 20000, true);
             }
             else
             {
-                await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose, {pty:true});
+                await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose, {pty:true},false);
             }
         } catch (err) {
             throw err;
