@@ -1,4 +1,4 @@
-# Baker
+# Baker 🍞
 
 Meet Baker! -- a simple tool for provisioning virtual machines and containers. With Baker you can quickly create development environments and run your code. With one tool, you have the functionality of vagrant, docker, ansible, and task runners like grunt.
 
