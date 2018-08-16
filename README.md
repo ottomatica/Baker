@@ -77,6 +77,6 @@ commands:
 ```
 
 See a running demo below:
-[![asciicast](https://asciinema.org/a/b8QOm7vocMVfKKQFoe5OjeY44.png)](https://asciinema.org/a/b8QOm7vocMVfKKQFoe5OjeY44)
+[![asciicast](https://asciinema.org/a/lfb4aYpmtkHw6DLVFGjsdtaWu.png)](https://asciinema.org/a/lfb4aYpmtkHw6DLVFGjsdtaWu)
 
 For more details, checkout [docs.getbaker.io](https://docs.getbaker.io/) and join our [Slack](https://getbaker.io/slack).
