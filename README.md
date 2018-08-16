@@ -21,7 +21,7 @@ You can also point to a git repository with a baker.yml file, and and Baker will
 ```
 $ baker bake --repo https://github.com/ottomatica/baker-test.git
 ```
-
+See a running demo below:
 [![asciicast](https://asciinema.org/a/S3xtkL2FvnINO4IkQCCja5BTX.png)](https://asciinema.org/a/S3xtkL2FvnINO4IkQCCja5BTX)
 
 For more details, checkout [docs.getbaker.io](https://docs.getbaker.io/) and join our [Slack](https://getbaker.io/slack).
