@@ -58,7 +58,6 @@ config:
   - template: 
       src: env/templates/hibernate-template.cfg.xml 
       dest: /Onboarding/CoffeeMaker/src/main/resources/hibernate.cfg.xml
-# start: cd /Onboarding/CoffeeMaker && mvn spring-boot:run
 commands:
   serve: cd CoffeeMaker && mvn spring-boot:run
   debug: cd CoffeeMaker && mvnDebug spring-boot:run
