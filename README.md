@@ -36,6 +36,35 @@ commands:
   gh-deploy: mkdocs gh-deploy
 ```
 
+Setting up a Java environment with MySQL can be done easily.
+```
+name: onboard
+vm:
+  ip: 192.168.8.8
+  ports: 8080
+vars:
+  - mysql_password:
+      prompt: Type your password for mysql server
+tools:
+  - maven
+services:
+  - mysql:
+      version: 8
+      service_conf: env/templates/mysql.cfg
+      client_conf: env/templates/my.cnf
+lang:
+  - java8
+config:
+  - template: 
+      src: env/templates/hibernate-template.cfg.xml 
+      dest: /Onboarding/CoffeeMaker/src/main/resources/hibernate.cfg.xml
+# start: cd /Onboarding/CoffeeMaker && mvn spring-boot:run
+commands:
+  serve: cd CoffeeMaker && mvn spring-boot:run
+  debug: cd CoffeeMaker && mvnDebug spring-boot:run
+  test: cd CoffeeMaker && mvn test
+```
+
 See a running demo below:
 [![asciicast](https://asciinema.org/a/S3xtkL2FvnINO4IkQCCja5BTX.png)](https://asciinema.org/a/S3xtkL2FvnINO4IkQCCja5BTX)
 
