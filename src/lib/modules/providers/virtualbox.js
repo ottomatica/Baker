@@ -112,8 +112,9 @@ class VirtualBoxProvider extends Provider {
      * @param {String} name
      * @param {String} cmdToRun
      * @param {boolean} terminateProcessOnClose
+     * @param {boolean} verbose
      */
-    async ssh(name, cmdToRun, terminateProcessOnClose) {
+    async ssh(name, cmdToRun, terminateProcessOnClose, verbose=false) {
         try {
             let info = await this.getSSHConfig(name);
 
@@ -125,13 +126,11 @@ class VirtualBoxProvider extends Provider {
             }
             else
             {
-                let allocateTTY = "";
                 if( terminateProcessOnClose )
                 {
                     cmdToRun = `shopt -s huponexit; ${cmdToRun}`;
-                    allocateTTY = '-tt';
                 }
-                await Ssh.sshExec(cmdToRun, info);
+                await Ssh.sshExec(cmdToRun, info, 20000, verbose);
             }
         } catch(err) {
             throw err;
