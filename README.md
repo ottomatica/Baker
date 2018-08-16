@@ -21,6 +21,21 @@ You can also point to a git repository with a baker.yml file, and and Baker will
 ```
 $ baker bake --repo https://github.com/ottomatica/baker-test.git
 ```
+
+Baker also supports creating environments inside containers that do not require a VM.
+
+```
+name: baker-docs
+container: 
+  ports: 8000
+lang:
+  - python2
+commands:
+  build: mkdocs build
+  serve: mkdocs serve -a 0.0.0.0:8000
+  gh-deploy: mkdocs gh-deploy
+```
+
 See a running demo below:
 [![asciicast](https://asciinema.org/a/S3xtkL2FvnINO4IkQCCja5BTX.png)](https://asciinema.org/a/S3xtkL2FvnINO4IkQCCja5BTX)
 
