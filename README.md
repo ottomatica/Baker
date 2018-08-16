@@ -24,7 +24,7 @@ $ baker bake --repo https://github.com/ottomatica/baker-test.git
 
 Baker also supports creating environments inside containers that do not require a VM.
 
-```
+``` yaml
 name: baker-docs
 container: 
   ports: 8000
