@@ -37,7 +37,7 @@ commands:
 ```
 
 Setting up a Java environment with MySQL can be done easily.
-```
+``` yaml
 name: onboard
 vm:
   ip: 192.168.8.8
