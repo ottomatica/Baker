@@ -2,6 +2,18 @@
 
 Meet Baker! -- a simple tool for provisioning virtual machines and containers. With Baker you can quickly create development environments and run your code. With one tool, you have the functionality of vagrant, docker, ansible, and task runners like grunt.
 
+## Install from source
+
+``` bash
+git clone https://github.com/ottomatica/Baker
+cd Baker
+npm install
+npm link
+```
+
+Also see other [binary installation options](https://docs.getbaker.io/installation/).
+## Using Baker
+
 Baker uses a configuration file (baker.yml) in the root directory of you project. This is an example of a baker.yml file. By running `baker bake` Baker provisions a VM with nodejs installed, and the specified ip address and port forwarding rules configured for you. You can access the VM by running `baker ssh` or run commands inside the VM with `baker run <Command Name>`. Your code is accessible in the VM via a shared folder.
 
 ``` yaml
