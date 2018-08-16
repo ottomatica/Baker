@@ -118,7 +118,7 @@ class VirtualBoxProvider extends Provider {
         try {
             let info = await this.getSSHConfig(name);
 
-            console.log(info);
+            if(process.env.BAKER_DEBUG) console.log(info);
 
             if( !cmdToRun )
             {
