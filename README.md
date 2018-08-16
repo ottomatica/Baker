@@ -24,4 +24,4 @@ $ baker bake --repo https://github.com/ottomatica/baker-test.git
 
 [![asciicast](https://asciinema.org/a/S3xtkL2FvnINO4IkQCCja5BTX.png)](https://asciinema.org/a/S3xtkL2FvnINO4IkQCCja5BTX)
 
-For more details, checkout [docs.getbaker.io](https://docs.getbaker.io/).
+For more details, checkout [docs.getbaker.io](https://docs.getbaker.io/) and join our [Slack](https://getbaker.io/slack).
