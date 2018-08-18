@@ -29,13 +29,21 @@ npm run package-linux
 
 cd installers
 echo "creating tar.gz for homebrew"
-tar -zcvf macos/bin/baker-macos-latest.tar.gz macos/bin/baker
+mkdir -p /tmp/baker-release/${BAKER_RELEASE}/
+cwd=$(pwd)
+echo "$cwd"
+# clean any old files
+rm -f /tmp/baker-release/${BAKER_RELEASE}/*
+cp macos/bin/baker /tmp/baker-release/${BAKER_RELEASE}/
+cd /tmp/baker-release/ && tar -zcvf $cwd/macos/bin/baker-macos-latest.tar.gz ${BAKER_RELEASE}/
+cd $cwd
 
 echo "moving new pkg to baker-latest.pkg for mac"
 mv macos/bin/baker-${BAKER_RELEASE}.pkg macos/bin/baker-latest.pkg
 
 SHA=$(shasum -a 256 macos/bin/baker-macos-latest.tar.gz | awk '{printf $1}')
 echo "Update homebrew shaw: $SHA";
+echo "Version: ${BAKER_RELEASE}"
 
 echo "You are not done, yet"
 echo "You need to upload the .tar.gz, .pkg, and .deb on github."
