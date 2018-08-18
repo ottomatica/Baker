@@ -137,12 +137,13 @@ class RuncProvider extends Provider {
      * @param {String} cmdToRun
      * @param {boolean} terminateProcessOnClose
      */
-    async ssh(name, cmdToRun, terminateProcessOnClose, verbose) {
+    async ssh(name, cmdToRun, terminateProcessOnClose, verbose=false, options={}) {
         await this.sshChroot(name, cmdToRun, terminateProcessOnClose, verbose);
     }
 
-    async sshChroot(name, cmdToRun, terminateProcessOnClose, verbose) {
+    async sshChroot(name, cmdToRun, terminateProcessOnClose, verbose, options) {
         try {
+            options.pty = true;
 
             let rootfsPath = `/mnt/disk/${name}/rootfs`;
             let env = `PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin`;
@@ -151,7 +152,7 @@ class RuncProvider extends Provider {
             if( Ssh.useNative )
             {
                 let writeProfile = `echo '. ~/.bashrc; export PS1="\\u@${name}:# "' > ${rootfsPath}/root/.baker.rc && chmod +x ${rootfsPath}/root/.baker.rc`;
-                await Ssh.sshExec(writeProfile, bakerSSHConfig, 20000, verbose, {pty:true});
+                await Ssh.sshExec(writeProfile, bakerSSHConfig, 20000, verbose, options);
             }
 
             let cmd = this.prepareSSHCmd(name, cmdToRun, terminateProcessOnClose);
@@ -162,7 +163,7 @@ class RuncProvider extends Provider {
             }
             else
             {
-                await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose, {pty:true});
+                await Ssh.sshExec(cmd, bakerSSHConfig, 20000, verbose, options);
             }
         } catch (err) {
             throw err;

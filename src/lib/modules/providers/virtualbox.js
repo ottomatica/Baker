@@ -114,7 +114,7 @@ class VirtualBoxProvider extends Provider {
      * @param {boolean} terminateProcessOnClose
      * @param {boolean} verbose
      */
-    async ssh(name, cmdToRun, terminateProcessOnClose, verbose=false) {
+    async ssh(name, cmdToRun, terminateProcessOnClose, verbose=false, options={}) {
         try {
             let info = await this.getSSHConfig(name);
 
@@ -130,7 +130,7 @@ class VirtualBoxProvider extends Provider {
                 {
                     cmdToRun = `shopt -s huponexit; ${cmdToRun}`;
                 }
-                await Ssh.sshExec(cmdToRun, info, 20000, verbose);
+                await Ssh.sshExec(cmdToRun, info, 20000, verbose, options);
             }
         } catch(err) {
             throw err;

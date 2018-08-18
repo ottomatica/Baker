@@ -220,6 +220,13 @@ class Ssh {
                             process.exit( )
                         }
 
+                        if( options.interactive )
+                        {
+                            // Redirect input/from our process into stream;
+                            process.stdin.setRawMode(true);
+                            process.stdin.pipe(stream);
+                        }
+
                         // If we receive a termination of our main process, we need to close stream and process.
                         process.on( 'SIGINT', handleClose);
 
