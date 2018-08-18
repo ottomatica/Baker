@@ -1,7 +1,7 @@
 const Bakelet  = require('../bakelet');
 const chalk = require('chalk');
 const _ = require('underscore');
-const Ssh = require('./../modules/ssh');
+const Ssh = require('../../modules/ssh');
 
 class Git extends Bakelet {
     constructor(name, ansibleSSHConfig, version) {
