@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [ -z ${1+x} ]; then 
+if [ -z ${1+x} ]; then
     echo "Usage: ./build-installer.sh <release>"
     exit 1
-else 
+else
     echo "Creating installers for '$1'"
 fi
 
@@ -49,4 +49,4 @@ echo "You are not done, yet"
 echo "You need to upload the .tar.gz, .pkg, and .deb on github."
 echo "Then you need to switch to a windows machine and run 'grunt'"
 echo "Then you need to rename win/bin/baker-setup.exe to baker-windows-latest.exe and upload too"
-echo "Finally, you need to update the sha in ottomatica/homebrew"
+echo "Finally, you need to update the sha to $SHA and VERSION to ${BAKER_RELEASE} in ottomatica/homebrew"
