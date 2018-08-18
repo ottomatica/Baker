@@ -217,18 +217,20 @@ class Ssh {
                         {
                             console.log( "\nShutting down from SIGINT (Crtl-C)" )
                             stream.signal('INT');
-                            process.exit( )
+                            process.exit(0);
                         }
 
                         if( options.interactive )
                         {
                             // Redirect input/from our process into stream;
-                            process.stdin.setRawMode(true);
                             process.stdin.pipe(stream);
                         }
+                        else
+                        {
+                            // // If we receive a termination of our main process, we need to close stream and process.
+                            process.on( 'SIGINT', handleClose);
+                       }
 
-                        // If we receive a termination of our main process, we need to close stream and process.
-                        process.on( 'SIGINT', handleClose);
 
                         if (err) {
                             console.error(err);
@@ -237,8 +239,20 @@ class Ssh {
                         stream
                             .on('close', function (code, signal) {
                                 c.end();
-                                // console.log(code, signal);
-                                process.removeListener('SIGINT', handleClose);
+
+                                if( options.interactive )
+                                {
+                                    //process.stdin.setRawMode(false);
+                                    process.stdin.unpipe(stream);
+                                    if (!options.preserveStdin) {
+                                        process.stdin.unref();
+                                    }
+                                }
+                                else
+                                {
+                                    process.removeListener('SIGINT', handleClose);
+                                }
+        
                                 resolve(buffer);
                             })
                             .on('data', function (data) {
