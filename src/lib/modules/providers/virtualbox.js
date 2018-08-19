@@ -39,7 +39,8 @@ class VirtualBoxProvider extends Provider {
             for( let vm of VMs)
             {
                 let state = await this.getState(vm.name);
-                table.push( {name: vm.name, state: state} );
+                let ports = await this._getUsedPorts(vm.name);
+                table.push( {name: vm.name, state: state, ports: ports.join(',') } );
             }
 
             console.table('\nBaker vms: ', table);
@@ -47,6 +48,23 @@ class VirtualBoxProvider extends Provider {
             throw err
         }
         return;
+    }
+
+    async _getUsedPorts(name)
+    {
+        let ports = [];
+        let properties = await this.driver.info(name);
+        for( let prop in properties )
+        {
+            if( prop.indexOf('Forwarding(') >= 0 )
+            {
+                try {
+                    ports.push( parseInt( properties[prop].split(',')[3]) );
+                }
+                catch(e) { console.error(e); }
+            }
+        }
+        return ports;
     }
 
     /**
