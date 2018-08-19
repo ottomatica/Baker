@@ -1,0 +1,46 @@
+- hosts: all
+  vars:
+    - package_names:
+      - texlive-latex-base
+      - texlive-latex-base-doc
+      - texlive-latex-extra
+      - texlive-latex-extra-doc
+      - texlive-generic-extra
+      - texlive-latex-recommended
+      - texlive-latex-recommended-doc
+      - texlive-science
+      - texlive-fonts-recommended
+      - texlive-fonts-extra
+      - latexmk
+
+  tasks:
+
+    - stat: path=/usr/bin/pdflatex
+      register: file_exists
+
+    - name: install latex packages
+      apt: pkg="{{item}}" state="present"
+      with_items: "{{package_names}}"
+      become: yes
+      when: file_exists.stat.exists == False
+
+    - name: install basics
+      apt: pkg="{{item}}" state="present"
+      with_items:
+        - git
+        - vim
+        - build-essential
+        - python-pip
+      become: yes
+
+    - name: Upgrade pip
+      pip:
+        name: pip
+        extra_args: --upgrade
+      become: yes
+
+    - name: install pygments
+      pip:
+        name: pygments
+        executable: pip2
+      become: yes

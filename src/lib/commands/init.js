@@ -1,21 +1,7 @@
-'use strict';
+const Interactive = require('../modules/init/interactive');
 
-module.exports = function(dep) {
-    let cmd = {};
-
-    cmd.command = 'init';
-    cmd.desc =
-        'initializes a new Baker environment by creating a baker.yml file';
-    cmd.builder = {};
-    cmd.handler = async function(argv) {
-        const { baker, print, spinner, spinnerDot } = dep;
-
-        try {
-            await spinner.spinPromise(baker.init(), 'Creating baker.yml in current directory', spinnerDot);
-        } catch (err){
-            print.error(err);
-        }
-    };
-
-    return cmd;
-};
+exports.command = 'init';
+exports.desc = 'initializes a new Baker environment by creating a baker.yml file';
+exports.handler = async function(argv) {
+    await Interactive.initBaker2();
+}

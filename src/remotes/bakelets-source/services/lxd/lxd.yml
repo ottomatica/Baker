@@ -1,0 +1,174 @@
+---
+- hosts: localhost
+  tasks:
+    - name: Include 16.04 variables
+      set_fact:
+        lxd_packages:
+            - lxd
+            - python-pip
+            - python-lxc
+            - sqlite3
+        when:
+            - ansible_distribution == 'Ubuntu'
+            - ansible_distribution_version == '16.04'
+
+    - name: Include 14.04 variables
+      set_fact:
+        lxd_packages:
+            - lxd
+            - python-pip
+            - sqlite3
+        when:
+            - ansible_distribution == 'Ubuntu'
+            - ansible_distribution_version == '14.04'
+
+    - block:
+        - name: Ubuntu | Enable backports (replace)
+          replace:
+            dest: '/etc/apt/sources.list'
+            regexp: '^# deb http://(.*)/ubuntu([/]*) {{ ansible_distribution_release }}-backports'
+            replace: 'deb http://\1/ubuntu\2 {{ ansible_distribution_release }}-backports'
+            backup: yes
+          register: backports1
+        - name: Ubuntu | Enable backports (line)
+          lineinfile:
+            dest: '/etc/apt/sources.list'
+            regexp: '^deb http://.*/ubuntu {{ ansible_distribution_release }}-backports main restricted universe multiverse'
+            line: 'deb http://archive.ubuntu.com/ubuntu {{ ansible_distribution_release }}-backports main restricted universe multiverse'
+            backup: yes
+          register: backports2
+        - name: apt | update cache
+          apt: update_cache=yes
+          when: backports1.changed or backports2.changed
+        - name: apt | manual install of lxd
+          command: "env DEBIAN_FRONTEND=noninteractive apt-get -t trusty-backports -y install lxd creates=/usr/bin/lxd"
+      when: ansible_distribution_release == 'trusty'
+
+    - name: apt | lxd
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items: "{{ lxd_packages }}"
+
+    - name: apt | zfs denpendencies
+      apt:
+        name: zfsutils-linux
+        state: present
+      when: lxd_with_zfs_backend is defined and lxd_with_zfs_backend
+
+    - name: ensure aide.conf.d directory exists
+      file:
+        dest: /etc/aide/aide.conf.d
+        state: directory
+        mode: 0755
+
+    - name: add additional aide HIDS configuration
+      copy:
+        src: 99_aide_local_lxd
+        dest: /etc/aide/aide.conf.d/99_aide_local_lxd
+        mode: 0644
+
+    #######################################################################
+    ######################### Configuring LXD #############################
+    #######################################################################
+
+    - name: configure lxd bridge
+      template:
+        src: lxd-bridge.j2
+        dest: /etc/default/lxd-bridge
+        mode: 0644
+        backup: yes
+      notify:
+        - restart lxd-bridge
+      register: lxdconf
+
+    ## FIXME! if executed in kitchen lxd, "Converge failed"
+    - name: force restart of lxd to have working network
+      service:
+        name: lxd
+        state: restarted
+      when: lxdconf.changed and (ansible_virtualization_type is not defined or not (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker"))
+      ## centos7/vagrant/virtualbox
+      ignore_errors: true
+
+    - block:
+        - name: create config dir
+          file:
+            dest: /etc/lxc
+            state: directory
+            mode: 0755
+        - name: configure static ip inside dnsmasq
+          template:
+            src: lxc-dnsmasq-hosts.conf.j2
+            dest: /etc/lxc/lxc-dnsmasq-hosts.conf
+            mode: 0644
+            backup: yes
+          when: lxd_dnsmasq_staticips is defined and lxd_dnsmasq_staticips != []
+      when: lxd_dnsmasq_conf is defined and lxd_dnsmasq_conf
+
+    - name: increase subuid/gid
+      replace:
+        dest: "{{ item }}"
+        regexp: '^(.*):([0-9]*):([0-9]*)$'
+        replace: "\\1:{{ lxd_subid_start }}:{{ lxd_subid_range }}"
+        backup: yes
+      with_items:
+        - /etc/subuid
+        - /etc/subgid
+
+    - name: check if lxd is running
+      shell: "ps axu |grep [l]xd"
+      changed_when: false
+      register: ps
+      ignore_errors: true
+    - debug: var=ps
+
+    ## FIXME! idempotency issue on xenial: lxd fault at first run / lxd in lxd impact?
+    - debug: var=ansible_virtualization_type
+    - name: ensure lxd service is started and enabled
+      service:
+        name: lxd
+        state: started
+        enabled: yes
+      when: (ansible_virtualization_type is not defined or not (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker"))
+      ## centos7/vagrant/virtualbox
+      ignore_errors: true
+
+    - name: check if lxd is running
+      shell: "ps axu |grep [l]xd"
+      changed_when: false
+      register: ps
+      ignore_errors: true
+    - debug: var=ps
+
+    - block:
+        - name: Debian | Check if a reboot is required
+          register: file
+          stat:
+            path: /var/run/reboot-required
+            get_md5: no
+        - name: Need to reboot system?
+          debug:
+            msg: "You will need to reboot system. asked ansible not doing it."
+          when: file.stat.exists is defined and file.stat.exists == true and lxd_noreboot is defined and lxd_noreboot
+        - name: Reboot system
+          command: /sbin/reboot
+          when: file.stat.exists is defined and file.stat.exists == true and not (lxd_noreboot is defined and lxd_noreboot)
+          async: 0
+          poll: 0
+          ignore_errors: true
+        - name: waiting for server to come back
+          local_action: wait_for host={{ inventory_hostname }} state=started
+          become: false
+          when: file.stat.exists is defined and file.stat.exists == true and not (lxd_noreboot is defined and lxd_noreboot)
+      when: (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu') and (ansible_virtualization_type is not defined or not (ansible_virtualization_type == "lxc")) and (travisci is not defined or travisci == false)
+
+    ## REVIEW needed: https://github.com/lxc/lxd/blob/master/doc/production-setup.md
+    - name: increase fs.inotify.max_user_instances (default 128)
+      sysctl:
+        name: fs.inotify.max_user_instances
+        value: 1048576
+        sysctl_set: yes
+        state: present
+        reload: yes
+      when: (ansible_virtualization_type is not defined or not (ansible_virtualization_type == "lxc" or ansible_virtualization_type == "docker"))

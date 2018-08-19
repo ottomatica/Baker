@@ -1,0 +1,49 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.hostname = "{{dockerHostName}}"
+
+  config.vm.network "private_network", ip: "192.168.252.252"
+  config.vm.network "private_network", ip: "192.168.252.251"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "2048"
+    vb.customize ['modifyvm', :id, '--nictype1', 'virtio']
+    vb.customize ['modifyvm', :id, '--nicpromisc1', 'allow-all']
+    vb.customize ['modifyvm', :id, '--nictype2', 'virtio']
+    vb.customize ['modifyvm', :id, '--nicpromisc2', 'allow-all']
+
+    # fix crappy dns
+    # https://serverfault.com/questions/453185/vagrant-virtualbox-dns-10-0-2-3-not-working
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+
+    vb.name = "{{dockerHostName}}"
+  end
+
+  # Setting VM name in vagrant
+  config.vm.define "{{dockerHostName}}" do |t|
+  end
+
+  config.vm.synced_folder "/", "/home/vagrant/host_root"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt-get -y install bridge-utils
+  SHELL
+
+  config.vm.provision "ansible_local", run: 'always' do |ansible|
+    ansible.playbook = "dockerConfig.yml"
+    ansible.verbose = false
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo ip addr del 192.168.252.252/24 dev enp0s8
+
+    sudo service  networking restart
+    sudo systemctl daemon-reload
+    sudo service docker restart
+  SHELL
+end

@@ -1,22 +1,21 @@
-'use strict';
+const Baker     = require('../modules/baker');
+const conf      = require('../../lib/modules/configstore');
+const Print     = require('../modules/print');
+const Spinner   = require('../modules/spinner');
+const VagrantProvider = require('../modules/providers/vagrant');
 
-module.exports = function(dep) {
-    let cmd = {};
-    cmd.builder = { };
-    cmd.command = 'boxes';
-    cmd.desc = `list existing Baker boxes`;
-    cmd.handler = async function(argv) {
-        const { baker, print, spinner, spinnerDot } = dep;
-        const { verbose } = argv;
+const spinnerDot = conf.get('spinnerDot');
 
-        try {
-            await spinner.spinPromise(baker.bakerBoxes(), `Getting list of Baker boxes`, spinnerDot);
-        } catch (err) {
-            print.error(err);
-        }
-    };
+exports.command = 'boxes';
+exports.desc = `list existing Baker boxes`;
+exports.handler = async function(argv) {
+    const { verbose } = argv;
 
-    return cmd;
-};
+    const provider = new VagrantProvider();
 
-
+    try {
+        await Spinner.spinPromise(provider.bakerBoxes(), `Getting list of Baker boxes`, spinnerDot);
+    } catch (err) {
+        Print.error(err);
+    }
+}

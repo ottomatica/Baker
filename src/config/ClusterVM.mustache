@@ -1,0 +1,30 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure('2') do |config|
+
+  config.vm.box = 'ubuntu/xenial64'
+  # Install python 2 if not installed.
+  config.vm.provision "shell",
+    inline: "test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)"
+  #config.vm.provision "file", source: "~/.baker/ansible-srv/keys/baker_rsa.pub", destination: "~/.ssh/authorized_keys"
+
+  config.vm.provider :virtualbox do |vb|
+    vb.customize [ 'modifyvm', :id, '--natdnshostresolver1', 'on' ]
+    vb.customize ["modifyvm", :id, "--cpus", 1]
+
+  end
+
+{{#cluster.nodes}}
+
+  config.vm.define :{{name}} do |machine|
+    machine.vm.network 'private_network', ip: '{{ip}}'
+    machine.vm.provider :virtualbox do |vb|
+      vb.customize ["modifyvm", :id, "--memory",{{memory}}]
+      vb.customize ["modifyvm", :id, "--cpus", {{cpus}}]
+    end
+  end
+
+{{/cluster.nodes}}
+
+end

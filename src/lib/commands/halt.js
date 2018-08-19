@@ -1,29 +1,43 @@
-'use strict';
+const Baker          = require('../modules/baker');
+const conf           = require('../../lib/modules/configstore');
+const Print          = require('../modules/print');
+const Spinner        = require('../modules/spinner');
+const spinnerDot     = conf.get('spinnerDot');
 
-module.exports = function(dep) {
-    let cmd = {};
+exports.command = ['stop [VMName]', 'halt [VMName]'];
+exports.desc = `shut down a VM`;
 
-    cmd.command = 'halt <VMName>';
-    cmd.desc = `shut down a VM`;
-    cmd.builder = {
-        force: {
-            alias: 'f',
-            describe: `force shut down`,
-            demand: false,
-            type: 'boolean'
-        }
-    };
+exports.builder = (yargs) => {
+    yargs
+        .example(`$0 halt`, `Halts the VM build from baker.yml of current directory`)
+        .example(`$0 halt baker-test`, `Halts baker-test VM`);
 
-    cmd.handler = async function(argv) {
-        const { baker, print, spinner, spinnerDot } = dep;
-        const { VMName, force } = argv;
+    // TODO: bakePath is required for finding the envType.
+    // for now assuming the command is executed in same dir as baker.yml
+    // yargs.positional('envName', {
+    //         describe: 'Name of the environment to stop',
+    //         type: 'string'
+    //     });
 
-        try {
-            await spinner.spinPromise(baker.haltVM(VMName, force), `Stopping VM: ${VMName}`, spinnerDot);
-        } catch(err) {
-            print.error(err);
-        }
-    };
+    yargs.options({
+            force: {
+                alias: 'f',
+                describe: `force shut down`,
+                demand: false,
+                type: 'boolean'
+            }
+        });
+}
 
-    return cmd;
-};
+exports.handler = async function(argv) {
+    let { envName, force } = argv;
+
+    try {
+        let bakePath = process.cwd();
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath);
+
+        await Spinner.spinPromise(BakerObj.stop(envName, force), `Stopping VM: ${envName}`, spinnerDot);
+    } catch(err) {
+        Print.error(err);
+    }
+}

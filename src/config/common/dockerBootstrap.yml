@@ -1,0 +1,25 @@
+---
+- hosts: all
+  gather_facts: no
+  tasks:
+  - name: Install sudo
+    raw: apt-get update && apt-get install -y sudo
+
+  - name: Install python
+    raw: test -e /usr/bin/python || (sudo apt -y update && sudo apt install -y python-minimal)
+
+  # Address bug affecting apt_repository
+  # https://github.com/ansible/ansible/issues/40608
+  - name: Install lsb-release
+    raw: sudo apt install -y lsb-release
+
+  # Some apt-get installs require aptitude. Unless we specify force_apt_get: yes
+  # then this is required
+  # https://github.com/ansible/ansible/pull/27962/files
+  - name: Install aptitude
+    apt: pkg="{{item}}" state=present
+    with_items:
+      - python-apt
+      - aptitude
+      - dpkg-dev
+

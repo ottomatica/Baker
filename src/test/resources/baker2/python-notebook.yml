@@ -1,6 +1,6 @@
 ---
 name: python-nb-test
-vagrant:
+vmß:
   ip: "192.168.88.2"
 tools:
   - jupyter

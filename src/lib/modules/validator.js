@@ -1,10 +1,16 @@
-'use strict';
+const Promise   = require('bluebird');
+const drivelist = Promise.promisifyAll(require('drivelist'));
+const fs        = require('fs-extra');
+const hasbin    = require('hasbin');
+const path      = require('path');
+const print     = require('./print');
+const validator = require('validator');
+const yaml      = require('js-yaml');
 
-module.exports = function(dep) {
-    let result = {};
+class Validator {
+    constructor() {}
 
-    result.validateDependencies = async function(){
-        const { hasbin, Promise, fs, path, drivelist, print } = dep;
+    static async validateDependencies () {
         let platform = process.platform;
         let dependencyNotFound = 'Dependencies not found. Make sure you have installed VirtualBox and Vagrant.';
 
@@ -50,9 +56,7 @@ module.exports = function(dep) {
         }
     }
 
-    result.validateBakerScript = async function(bakerScriptPath) {
-        const { path, fs, yaml, validator, print } = dep;
-
+    static async validateBakerScript (bakerScriptPath) {
         let doc;
         try {
             doc = yaml.safeLoad(
@@ -150,6 +154,6 @@ module.exports = function(dep) {
             return;
         }
     }
+}
 
-    return result;
-};
+module.exports = Validator;

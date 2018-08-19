@@ -1,0 +1,60 @@
+- hosts: all 
+  become: yes
+  tasks:
+
+    - name: Install basic utils and build envs.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - git
+        - unzip
+        - vim
+        - build-essential
+
+    - name: Install required system packages.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - python-dev
+        - python-pip
+        - python-setuptools
+
+    - name: Set python as default python using alternatives
+      alternatives:
+        name: python
+        link: /usr/bin/python
+        path: /usr/bin/python2
+
+    - name: Upgrade pip
+      pip:
+        name: pip
+        executable: pip2
+        extra_args: --upgrade --user
+        version: 18
+
+    # long story: https://github.com/pypa/pip/issues/5240
+    - name: Remove old pip
+      file:
+        state: absent
+        path: "/usr/bin/pip"
+
+    - name: Create symbolic link 
+      file:
+        src: "~/.local/bin/pip"
+        dest: /usr/bin/pip
+        state: link
+
+    - name: Set pip as default pip using alternatives
+      alternatives:
+        name: pip
+        link: /usr/bin/pip
+        path: "~/.local/bin/pip"
+        priority: 1000
+
+    - stat: path="{{BAKER_SHARE_DIR}}/requirements.txt"
+      register: file_exists
+   
+    - name: Install the project requirements
+      pip:
+        state: present
+        executable: pip
+        requirements: "{{BAKER_SHARE_DIR}}/requirements.txt"
+      when: file_exists.stat.exists == True

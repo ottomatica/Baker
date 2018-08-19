@@ -1,0 +1,39 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+    - name: Ensure apt-transport-https is installed.
+      apt: name=apt-transport-https state=present
+
+    - name: Add R deb package
+      apt_repository:
+        repo: "deb https://cran.rstudio.com/bin/linux/ubuntu {{=<% %>=}}{{ ansible_distribution_release }}<%={{ }}=%>/"
+        state: present
+      become: yes
+
+    - name: Ensure the R apt repository key is present
+      apt_key:
+        id=E084DAB9
+        keyserver=keyserver.ubuntu.com
+        state=present
+      become: yes
+
+    - name: Ensure r-base is installed.
+      apt:
+        pkg: r-base
+        force: yes
+        state: latest
+        cache_valid_time: 3600
+        update_cache: yes
+      become: yes
+
+    - name: Build-essentials often needed for r-packages
+      apt: pkg=build-essential state=present
+      become: yes
+
+    {{#cran}}
+    - name: Install some r packages
+      command: Rscript -e "install.packages(c({{{packages}}}), repos='https://cran.rstudio.com/')"
+      become: yes
+    {{/cran}}

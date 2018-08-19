@@ -1,11 +1,9 @@
-'use strict';
+const ora = require('ora');
 
-module.exports = function(dep) {
-    let result = {};
+class Spinner {
+    constructor() {}
 
-    result.spinPromise = async function spin(promise, text, spinner, stream=process.stdout){
-        const { ora } = dep;
-
+    static async spinPromise(promise, text, spinner, stream = process.stdout) {
         ora.promise(promise, {
             text: text,
             spinner: spinner,
@@ -15,6 +13,6 @@ module.exports = function(dep) {
         });
         return promise;
     }
+}
 
-    return result;
-};
+module.exports = Spinner;

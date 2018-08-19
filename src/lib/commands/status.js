@@ -1,20 +1,17 @@
-'use strict';
+const Baker          = require('../modules/baker');
+const conf           = require('../../lib/modules/configstore')
+const Print          = require('../modules/print');
+const Spinner        = require('../modules/spinner');
+const spinnerDot     = conf.get('spinnerDot');
 
-module.exports = function(dep) {
-    let cmd = {};
+exports.command = 'status';
+exports.desc = `Show status for all Baker VMs`;
+exports.handler = async function(argv) {
 
-    cmd.command = 'status';
-    cmd.desc = `show status for all Baker VMs`;
-    cmd.builder = {};
-    cmd.handler = async function(argv) {
-        const { baker, print, spinner, spinnerDot } = dep;
-
-        try {
-            await spinner.spinPromise(baker.status(), `Getting status of Baker VMs`, spinnerDot);
-        } catch (err) {
-            print.error(err);
-        }
-    };
-
-    return cmd;
-};
+    try {
+//        await Spinner.spinPromise(Baker.list(), `Getting status of Baker environments`, spinnerDot);
+        await Baker.list();
+    } catch (err) {
+        Print.error(err);
+    }
+}

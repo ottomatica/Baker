@@ -1,0 +1,29 @@
+# baker.yml Auto generated using `baker init` command
+---
+name: {{name}}
+vm:
+    ip: {{ip}}
+    {{#ports}}
+    ports: {{ports}}
+    {{/ports}}
+
+{{#langs}}
+lang:
+    {{#lang}}
+    - {{.}}
+    {{/lang}}
+{{/langs}}
+
+{{#services}}
+services:
+    {{#service}}
+    - {{.}}
+    {{/service}}
+{{/services}}
+
+{{#tools}}
+tools:
+    {{#tool}}
+    - {{.}}
+    {{/tool}}
+{{/tools}}

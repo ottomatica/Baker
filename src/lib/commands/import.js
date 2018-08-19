@@ -1,8 +1,22 @@
-'use strict';
+const Baker          = require('../modules/baker');
+const conf           = require('../../lib/modules/configstore');
+const Print          = require('../modules/print');
+const Spinner        = require('../modules/spinner');
+const spinnerDot     = conf.get('spinnerDot');
+const VagrantProvider = require('../modules/providers/vagrant');
 
-module.exports = function(dep) {
-    let cmd = {};
-    cmd.builder = {
+exports.command = 'import <boxPath>';
+exports.desc = `Import packaged Baker environment`;
+
+exports.builder = (yargs) => {
+    yargs.example(`$0 import ./baker.box`, `Import a Baker Box`)
+
+    yargs.positional('boxPath', {
+            describe: 'Path to the .box file',
+            type: 'string'
+        });
+
+    yargs.options({
         name: {
             alias: 'n',
             describe: `Provide name for the imported box`,
@@ -15,21 +29,15 @@ module.exports = function(dep) {
             demand: false,
             type: 'boolean'
         }
-    };
-    cmd.command = 'import <boxPath>';
-    cmd.desc = `import packaged Baker environment`;
-    cmd.handler = async function(argv) {
-        const { baker, print, spinner, spinnerDot } = dep;
-        const { boxPath, name, verbose } = argv;
+    });
+}
 
-        try {
-            await spinner.spinPromise(baker.import(boxPath, verbose), `Importing box: ${boxPath}`, spinnerDot);
-        } catch (err) {
-            print.error(err);
-        }
-    };
+exports.handler = async function(argv) {
+    const { boxPath, name, verbose } = argv;
 
-    return cmd;
-};
-
-
+    try {
+        await Spinner.spinPromise(VagrantProvider.import(boxPath, verbose), `Importing box: ${boxPath}`, spinnerDot);
+    } catch (err) {
+        Print.error(err);
+    }
+}

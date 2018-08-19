@@ -1,22 +1,36 @@
-'use strict';
+const Baker   = require('../modules/baker');
+const conf    = require('../../lib/modules/configstore')
+const Print   = require('../modules/print');
+const Spinner = require('../modules/spinner');
 
-module.exports = function(dep) {
-    let cmd = {};
+const spinnerDot = conf.get('spinnerDot');
 
-    cmd.command = 'up <VMName>';
-    cmd.desc = `start a VM`;
-    cmd.builder = {};
+exports.command = ['start [VMName]', 'up [VMName]'];
+exports.desc = `start a VM`;
 
-    cmd.handler = async function(argv) {
-        const { baker, print, spinner, spinnerDot } = dep;
-        const { VMName } = argv;
+exports.builder = (yargs) => {
+    yargs
+        .example(`$0 up`, `Start the Baker VM of current directory`)
+        .example(`$0 up baker-test`, `Start 'baker-test' Baker VM`);
 
-        try{
-            await spinner.spinPromise(baker.upVM(VMName), `Starting VM: ${VMName}`, spinnerDot);
-        } catch (err){
-            print.error(err);
-        }
-    };
+    // TODO: bakePath is required for finding the envType.
+    // for now assuming the command is executed in same dir as baker.yml
+    // yargs
+    //     .positional('VMName', {
+    //         describe: 'Name of the Baker VM to Start',
+    //         type: 'string'
+    //     });
+}
 
-    return cmd;
-};
+exports.handler = async function(argv) {
+    let { envName, verbose } = argv;
+
+    try{
+        let bakePath = process.cwd();
+        const {envName, BakerObj} = await Baker.chooseProvider(bakePath);
+
+        await Spinner.spinPromise(BakerObj.start(envName, verbose), `Starting VM: ${envName}`, spinnerDot);
+    } catch (err){
+        Print.error(err);
+    }
+}

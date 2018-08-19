@@ -1,0 +1,51 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+    - name: Install pip
+      apt: name={{ item }} update_cache=yes
+      with_items:
+      - python-pip
+
+    - name: Install the Python modules
+      pip:
+        name: "{{item}}"
+      become: yes
+      with_items:
+        - urllib3
+        - pyOpenSSL
+        - ndg-httpsclient
+        - pyasn1
+
+    - name: Disable Firewall
+      service: name=ufw state=stopped
+
+    - name: Install HTTPS Apt Packages
+      apt: name={{ item }} update_cache=yes
+      with_items:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+
+    - name: Add Docker GPG Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+        validate_certs: no
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        validate_certs: no
+
+    - name: Install Docker CE
+      apt: name=docker-ce state=present update_cache=yes
+
+    - name: Enable Docker at Startup
+      service: name=docker state=started enabled=yes
+
+    - name: add user mod to docker
+      command: usermod -aG docker {{ ansible_user }}
