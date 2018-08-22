@@ -138,7 +138,7 @@ class RuncProvider extends Provider {
      * @param {boolean} terminateProcessOnClose
      */
     async ssh(name, cmdToRun, terminateProcessOnClose, verbose=false, options={}) {
-        await this.sshChroot(name, cmdToRun, terminateProcessOnClose, verbose);
+        await this.sshChroot(name, cmdToRun, terminateProcessOnClose, verbose, options);
     }
 
     async sshChroot(name, cmdToRun, terminateProcessOnClose, verbose, options) {
