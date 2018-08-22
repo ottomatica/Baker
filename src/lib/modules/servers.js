@@ -17,7 +17,7 @@ const Utils         = require('./utils/utils');
 const vagrant       = Promise.promisifyAll(require('node-vagrant'));
 
 const vbox               = require('node-virtualbox');
-const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
+const VBoxProvider       = require('node-virtualbox/lib/VBoxProvider');
 const VirtualboxProvider = require('./providers/virtualbox');
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
