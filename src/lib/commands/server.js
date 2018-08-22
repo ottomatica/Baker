@@ -1,13 +1,11 @@
-const path          = require('path');
-
 const Print         = require('../modules/print');
-const Ssh         = require('../modules/ssh');
+const Ssh           = require('../modules/ssh');
 const Servers       = require('../modules/servers');
 const Spinner       = require('../modules/spinner');
 const conf          = require('../modules/configstore');
 const spinnerDot    = conf.get('spinnerDot');
 
-const { configPath, boxes, bakerForMacPath, bakerSSHConfig } = require('../../global-vars');
+const { bakerSSHConfig } = require('../../global-vars');
 
 
 exports.command = 'server <cmdlet> [name]';
