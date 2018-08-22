@@ -1,5 +1,7 @@
 const Promise       = require('bluebird');
 const child_process = require('child_process');
+const { promisify } = require('util');
+const execAsync     = promisify(child_process.exec);
 const conf          = require('../../lib/modules/configstore');
 const download      = require('download');
 const fs            = require('fs-extra');
@@ -23,6 +25,22 @@ const { configPath, boxes, bakerForMacPath, bakerSSHConfig } = require('../../gl
 
 class Servers {
     constructor() {}
+
+    static async stopBakerServer(forceVirtualBox = false) {
+        if (require('os').platform() === 'darwin' && !forceVirtualBox) {
+            try {
+                await execAsync(`ps aux | grep -v grep | grep "${path.join(bakerForMacPath, 'bakerformac.sh')}" | awk '{print $2}' | xargs kill`);
+                await execAsync(`ps aux | grep -v grep | grep "${path.join(bakerForMacPath, 'vendor', 'vpnkit.exe')}" | awk '{print $2}' | xargs kill`);
+                await execAsync(`launchctl unload ${path.join(bakerForMacPath, '9pfs.plist')} 2> /dev/null`);
+            } catch (err) {
+                console.error(err);
+            }
+        } else {
+            if (require('os').platform() === 'darwin')
+                console.log('=> Using virtualbox as hypervisor for Baker VM.');
+            await vbox({stopCmd: true, vmname: 'baker-srv', syncs: [], verbose: false}).catch( e => e );
+        }
+    }
 
     static async installBakerServer(forceVirtualBox = false) {
         if (require('os').platform() === 'darwin' && !forceVirtualBox) {
