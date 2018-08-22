@@ -17,6 +17,7 @@ const Utils         = require('./utils/utils');
 const vagrant       = Promise.promisifyAll(require('node-vagrant'));
 
 const vbox               = require('node-virtualbox');
+const VBoxProvider  =      require('node-virtualbox/lib/VBoxProvider');
 const VirtualboxProvider = require('./providers/virtualbox');
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
@@ -38,7 +39,8 @@ class Servers {
         } else {
             if (require('os').platform() === 'darwin')
                 console.log('=> Using virtualbox as hypervisor for Baker VM.');
-            await vbox({stopCmd: true, vmname: 'baker-srv', syncs: [], verbose: false}).catch( e => e );
+            if((await (new VBoxProvider()).getState('baker-srv')) === 'running')
+                await vbox({stopCmd: true, vmname: 'baker-srv', syncs: [], verbose: false}).catch( e => e );
         }
     }
 
@@ -67,6 +69,8 @@ class Servers {
                     disk: true,
                     verbose: true
                 });
+            } else {
+                await vbox({start: true, vmname: 'baker-srv', syncs: [], verbose: true});
             }
 
             // TODO: mounting /data / share
