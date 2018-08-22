@@ -79,7 +79,7 @@ exports.handler = async function(argv) {
 
         console.log(`Running ${cmdlet} in ${envName} 🍞`);
 
-        await provider.ssh(envName, cmd, true, true, {interactive:true}).catch( function(err)
+        await provider.ssh(envName, cmd, true, true, {interactive:true, pty:true}).catch( function(err)
         {
             // Ignore errors caused by manual termination of ssh.
             if( err.message.indexOf("Command failed: ssh -q") != 0 )

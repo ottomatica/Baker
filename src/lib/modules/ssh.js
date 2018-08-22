@@ -207,6 +207,7 @@ class Ssh {
 
     static async _JSSSHExec(cmd, sshConfig, timeout=20000, verbose=false, options={}) {
         let buffer = "";
+        let closing = false;
         return new Promise((resolve, reject) => {
             var c = new Client();
             c
@@ -215,9 +216,18 @@ class Ssh {
 
                         function handleClose()
                         {
-                            console.log( "\nShutting down from SIGINT (Crtl-C)" )
-                            stream.signal('INT');
-                            process.exit(0);
+                            console.log( `\nShutting down from SIGINT (Crtl-C)` )
+                            if( !closing )
+                            {
+                                // This only works if we have pty:true in options!
+                                stream.signal('INT');
+                                // Some ssh servers (openssh) may not correctly implement signal handling.
+                                // https://github.com/mscdex/ssh2/issues/382
+                                stream.write('\x03');
+                                //stream.end();
+                                closing = true;
+                            }
+                            //process.exit(0);
                         }
 
                         if( options.interactive )
