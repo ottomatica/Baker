@@ -22,7 +22,6 @@ class Template extends Bakelet {
         );
 
         this.src = `templates/${path.basename(path.resolve(this.bakePath, obj.template.src))}`;
-        console.log("template src", this.src)
         this.dest = obj.template.dest;
         this.variables = variables;
     }
