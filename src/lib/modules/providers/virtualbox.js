@@ -188,10 +188,11 @@ class VirtualBoxProvider extends Provider {
             let cpus = doc.vm.cpus || 2;
             let syncs = [`${slash(scriptPath)};/${path.basename(scriptPath)}`];
             // [...syncFolders, ...[{folder : {src: slash(scriptPath), dest: `/${path.basename(scriptPath)}`}}]]
+
+
             await Utils.copyFileSync(path.join(configPath, 'baker_rsa.pub'), os.tmpdir(), 'baker_rsa.pub');
-            await vbox({
+            let vmOptions = {
                 provision: true,
-                ip: doc.vm.ip,
                 mem: mem,
                 cpus: cpus,
                 vmname: doc.name,
@@ -199,7 +200,13 @@ class VirtualBoxProvider extends Provider {
                 forward_ports: doc.vm.ports ? typeof (doc.vm.ports) === 'object' ? doc.vm.ports : String(doc.vm.ports).replace(/\s/g, '').split(',') : undefined,
                 add_ssh_key: path.join(os.tmpdir(), 'baker_rsa.pub'),
                 verbose: true
-            });
+            };
+
+            if( doc.vm.ip )
+            {
+                vmOptions.ip = doc.vm.ip;
+            }
+            await vbox(vmOptions);
         }
         let vmInfo = await this.driver.info(doc.name);
         console.log( `VM is currently in state ${vmInfo.VMState}`)
