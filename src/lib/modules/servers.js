@@ -69,7 +69,7 @@ class Servers {
                     disk: true,
                     verbose: true
                 });
-            } else {
+            } else if((await (new VBoxProvider()).getState('baker-srv')) != 'running') {
                 await vbox({start: true, vmname: 'baker-srv', syncs: [], verbose: true});
             }
 
