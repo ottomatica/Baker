@@ -54,8 +54,13 @@
     #     priority: 1000
     #   become: yes
 
+    - name: fetch fix pip script
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+
     - name: fix pip
-      shell: curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && python /tmp/get-pip.py --force-reinstall
+      shell: python /tmp/get-pip.py --force-reinstall
       become: yes
 
     - stat: path="{{BAKER_SHARE_DIR}}/requirements.txt"
@@ -64,7 +69,7 @@
     - name: Install the project requirements
       pip:
         state: present
-        executable: pip
+        executable: /usr/local/bin/pip
         requirements: "{{BAKER_SHARE_DIR}}/requirements.txt"
       when: file_exists.stat.exists == True
       become: yes
