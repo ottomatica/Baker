@@ -1,5 +1,4 @@
-- hosts: all 
-  become: yes
+- hosts: all
   tasks:
 
     - name: Install basic utils and build envs.
@@ -9,6 +8,7 @@
         - unzip
         - vim
         - build-essential
+      become: yes
 
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
@@ -16,45 +16,55 @@
         - python-dev
         - python-pip
         - python-setuptools
+      become: yes
 
     - name: Set python as default python using alternatives
       alternatives:
         name: python
         link: /usr/bin/python
         path: /usr/bin/python2
+      become: yes
 
-    - name: Upgrade pip
-      pip:
-        name: pip
-        executable: pip2
-        extra_args: --upgrade --user
-        version: 18
+    # - name: Upgrade pip
+    #   pip:
+    #     name: pip
+    #     executable: pip2
+    #     extra_args: --upgrade --user
+    #     version: 18
 
-    # long story: https://github.com/pypa/pip/issues/5240
-    - name: Remove old pip
-      file:
-        state: absent
-        path: "/usr/bin/pip"
+    # # long story: https://github.com/pypa/pip/issues/5240
+    # - name: Remove old pip
+    #   file:
+    #     state: absent
+    #     path: "/usr/bin/pip"
+    #   become: yes
 
-    - name: Create symbolic link 
-      file:
-        src: "~/.local/bin/pip"
-        dest: /usr/bin/pip
-        state: link
+    # - name: Create symbolic link
+    #   file:
+    #     src: "{{ansible_env.HOME}}/.local/bin/pip"
+    #     dest: /usr/bin/pip
+    #     state: link
+    #   become: yes
 
-    - name: Set pip as default pip using alternatives
-      alternatives:
-        name: pip
-        link: /usr/bin/pip
-        path: "~/.local/bin/pip"
-        priority: 1000
+    # - name: Set pip as default pip using alternatives
+    #   alternatives:
+    #     name: pip
+    #     link: /usr/bin/pip
+    #     path: "{{ansible_env.HOME}}/.local/bin/pip"
+    #     priority: 1000
+    #   become: yes
+
+    - name: fix pip
+      shell: curl https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && python /tmp/get-pip.py --force-reinstall
+      become: yes
 
     - stat: path="{{BAKER_SHARE_DIR}}/requirements.txt"
       register: file_exists
-   
+
     - name: Install the project requirements
       pip:
         state: present
         executable: pip
         requirements: "{{BAKER_SHARE_DIR}}/requirements.txt"
       when: file_exists.stat.exists == True
+      become: yes
