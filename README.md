@@ -11,7 +11,7 @@ For more details, checkout [docs.getbaker.io](https://docs.getbaker.io/) and joi
 
 ``` bash
 git clone https://github.com/ottomatica/Baker
-cd Baker
+cd Baker/src
 npm install
 npm link
 ```
