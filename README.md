@@ -33,7 +33,7 @@ commands:
   serve: cd /baker-test/deployment/express && npm install && node index.js
 ```
 
-You can also point to a git repository with a baker.yml file, and and Baker will do the rest rest:
+You can also point to a git repository with a baker.yml file, and and Baker will do the rest:
 
 ```
 $ baker bake --repo https://github.com/ottomatica/baker-test.git
