@@ -1,4 +1,4 @@
-### Baker community survey
+### Baker community survey 🍞⁉️
 If you have time, please answer few short questions to help us improve Baker: [community survey](https://goo.gl/forms/ffEyDVwQcI96Nt5c2)
 
 # Baker 🍞
