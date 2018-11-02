@@ -35,7 +35,7 @@
     "camelcase": "^4.1.0",
     "chalk": "^2.4.1",
     "configstore": "^3.1.2",
-    "console.table": "^0.9.1",
+    "console.table": "^0.10.0",
     "digitalocean": "^1.1.1",
     "dockerode": "^2.5.5",
     "download": "^7.1.0",
