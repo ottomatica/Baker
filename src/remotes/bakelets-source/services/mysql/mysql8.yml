@@ -141,6 +141,8 @@
       #template: src=templates/root/.my.cnf dest=/root/.my.cnf owner=root mode=0600
       template: src=templates/my.cnf dest={{ ansible_env.HOME}}/.my.cnf mode=0600
 
+    # Need to ignore errors for rebake until mysql_user model is updated.
+    # https://github.com/ansible/ansible/issues/40091
     - name: update mysql root password for all root accounts on {{ inventory_hostname }}
       mysql_user: name=root host={{ item }} password={{ root_db_password }} priv=*.*:ALL login_user=root login_password={{root_db_password}}
       with_items:
@@ -150,7 +152,8 @@
         # IP address of server
         - "{{ inventory_hostname }}"
         - '%'
-
+      ignore_errors: true
+      
     # - name: update mysql root password for all root accounts on {{ inventory_hostname }}
     #   mysql_user:
     #     name: root

@@ -1,5 +1,7 @@
 const Promise       = require('bluebird');
 const child_process = require('child_process');
+const { promisify } = require('util');
+const execAsync     = promisify(child_process.exec);
 const conf          = require('../../lib/modules/configstore');
 const download      = require('download');
 const fs            = require('fs-extra');
@@ -15,6 +17,7 @@ const Utils         = require('./utils/utils');
 const vagrant       = Promise.promisifyAll(require('node-vagrant'));
 
 const vbox               = require('node-virtualbox');
+const VBoxProvider       = require('node-virtualbox/lib/VBoxProvider');
 const VirtualboxProvider = require('./providers/virtualbox');
 const VagrantProvider    = require('./providers/vagrant');
 const VagrantProviderObj = new VagrantProvider();
@@ -23,6 +26,23 @@ const { configPath, boxes, bakerForMacPath, bakerSSHConfig } = require('../../gl
 
 class Servers {
     constructor() {}
+
+    static async stopBakerServer(forceVirtualBox = false) {
+        if (require('os').platform() === 'darwin' && !forceVirtualBox) {
+            try {
+                await execAsync(`ps aux | grep -v grep | grep "${path.join(bakerForMacPath, 'bakerformac.sh')}" | awk '{print $2}' | xargs kill`);
+                await execAsync(`ps aux | grep -v grep | grep "${path.join(bakerForMacPath, 'vendor', 'vpnkit.exe')}" | awk '{print $2}' | xargs kill`);
+                await execAsync(`launchctl unload ${path.join(bakerForMacPath, '9pfs.plist')} 2> /dev/null`);
+            } catch (err) {
+                console.error(err);
+            }
+        } else {
+            if (require('os').platform() === 'darwin')
+                console.log('=> Using virtualbox as hypervisor for Baker VM.');
+            if((await (new VBoxProvider()).getState('baker-srv')) === 'running')
+                await vbox({stopCmd: true, vmname: 'baker-srv', syncs: [], verbose: false}).catch( e => e );
+        }
+    }
 
     static async installBakerServer(forceVirtualBox = false) {
         if (require('os').platform() === 'darwin' && !forceVirtualBox) {
@@ -49,6 +69,8 @@ class Servers {
                     disk: true,
                     verbose: true
                 });
+            } else if((await (new VBoxProvider()).getState('baker-srv')) != 'running') {
+                await vbox({start: true, vmname: 'baker-srv', syncs: [], verbose: true});
             }
 
             // TODO: mounting /data / share
@@ -89,7 +111,7 @@ class Servers {
         await fs.chmod(path.join(bakerForMacPath, 'vendor', 'vpnkit.exe'), '710');
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'vendor', 'u9fs'), path.join(bakerForMacPath, 'vendor'), 'u9fs', 'e9189eb4f8e89e232534cffa3cc71856');
         await fs.chmod(path.join(bakerForMacPath, 'vendor', 'u9fs'), '710');
-        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'bakerformac.sh'), bakerForMacPath, 'bakerformac.sh', '64975d23b5615b0ac43fd51ad340a0d4');
+        await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'bakerformac.sh'), bakerForMacPath, 'bakerformac.sh', '3de3ac68d388d772c07645d13e6bc357');
         await fs.chmod(path.join(bakerForMacPath, 'bakerformac.sh'), '710');
         await Utils.copyFileSync(path.join(configPath, 'BakerForMac', 'hyperkitrun.sh'), bakerForMacPath, 'hyperkitrun.sh', 'bcfd28980e8516c424a72197b45f9d38');
         await fs.chmod(path.join(bakerForMacPath, 'hyperkitrun.sh'), '710');

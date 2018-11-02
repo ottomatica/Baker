@@ -1,11 +1,11 @@
-const path          = require('path');
-
 const Print         = require('../modules/print');
-const Ssh         = require('../modules/ssh');
-//const Spinner       = require('../modules/spinner');
-//const spinnerDot    = conf.get('spinnerDot');
+const Ssh           = require('../modules/ssh');
+const Servers       = require('../modules/servers');
+const Spinner       = require('../modules/spinner');
+const conf          = require('../modules/configstore');
+const spinnerDot    = conf.get('spinnerDot');
 
-const { configPath, boxes, bakerForMacPath, bakerSSHConfig } = require('../../global-vars');
+const { bakerSSHConfig } = require('../../global-vars');
 
 
 exports.command = 'server <cmdlet> [name]';
@@ -25,10 +25,21 @@ exports.builder = (yargs) => {
         describe: 'Optional target of cmdlet:',
         type: 'string'
     });
+
+    yargs.options(
+        {
+            forceVirtualBox: {
+                describe: `Force using virtualbox instead of xhyve VM on Mac (no effect on Windows/Linux)`,
+                hidden: true, // just for debugging for now
+                demand: false,
+                type: 'boolean'
+            }
+        }
+    );
 }
 
 exports.handler = async function(argv) {
-    const { cmdlet, name } = argv;
+    const { cmdlet, name, forceVirtualBox } = argv;
 
     try{
         switch( cmdlet )
@@ -48,6 +59,13 @@ exports.handler = async function(argv) {
 
                 await Ssh.sshExec(cmd, bakerSSHConfig, 20000, true ).catch(e => e);
 
+                break;
+            case "reload":
+                await Spinner.spinPromise(Servers.stopBakerServer(forceVirtualBox), `Stopping Baker server`, spinnerDot);
+                await Spinner.spinPromise(Servers.installBakerServer(forceVirtualBox), `Starting Baker server`, spinnerDot);
+                break;
+            case "stop":
+                await Spinner.spinPromise(Servers.stopBakerServer(forceVirtualBox), `Stopping Baker server`, spinnerDot);
                 break;
             default:
         }

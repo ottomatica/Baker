@@ -1,4 +1,4 @@
-- hosts: all 
+- hosts: all
   become: yes
   tasks:
 
@@ -13,30 +13,41 @@
     - debug:
         msg: "Python Version output: {{python_version}}"
     # https://stackoverflow.com/questions/26028416/why-does-python-print-version-info-to-stderr
-    # Python version outputs to stdout or stderr depending on version. 
+    # Python version outputs to stdout or stderr depending on version.
 
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
       with_items:
-        - python-numpy 
-        - python-scipy 
+#        - python-numpy
+        - python-scipy
         - python-matplotlib
-        - python-pandas         
+        - python-pandas
+      when: python_version.stdout.startswith('Python 2') or python_version.stderr.startswith('Python 2')
+
+    - name: Install numpy
+      pip: name=numpy extra_args=--user  executable=pip
       when: python_version.stdout.startswith('Python 2') or python_version.stderr.startswith('Python 2')
 
     - name: Install Jupyter
-      pip: name=jupyter
+      pip: name=jupyter executable=pip
       when: python_version.stdout.startswith('Python 2') or python_version.stderr.startswith('Python 2')
+      become: yes
 
     - name: Install required system packages.
       apt: pkg={{ item }} state=present
       with_items:
-        - python3-numpy 
-        - python3-scipy 
+#        - python3-numpy
+        - python3-scipy
         - python3-matplotlib
-        - python3-pandas         
+        - python3-pandas
+        - python3-pip
+      when: python_version.stdout.startswith('Python 3') or python_version.stderr.startswith('Python 3')
+
+    - name: Install numpy
+      pip: name=numpy extra_args=--user
       when: python_version.stdout.startswith('Python 3') or python_version.stderr.startswith('Python 3')
 
     - name: Install Jupyter
       pip: name=jupyter
       when: python_version.stdout.startswith('Python 3') or python_version.stderr.startswith('Python 3')
+      become: yes

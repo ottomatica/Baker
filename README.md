@@ -1,3 +1,6 @@
+### Baker community survey 🍞⁉️
+If you have time, please answer few short questions to help us improve Baker: [community survey](https://goo.gl/forms/ffEyDVwQcI96Nt5c2)
+
 # Baker 🍞
 
 Meet Baker! -- a simple tool for provisioning virtual machines and containers. With Baker you can quickly create development environments and run your code. With one tool, you have the functionality of vagrant, docker, ansible, and task runners like grunt.
@@ -11,7 +14,7 @@ For more details, checkout [docs.getbaker.io](https://docs.getbaker.io/) and joi
 
 ``` bash
 git clone https://github.com/ottomatica/Baker
-cd Baker
+cd Baker/src
 npm install
 npm link
 ```
@@ -33,7 +36,7 @@ commands:
   serve: cd /baker-test/deployment/express && npm install && node index.js
 ```
 
-You can also point to a git repository with a baker.yml file, and and Baker will do the rest rest:
+You can also point to a git repository with a baker.yml file, and and Baker will do the rest:
 
 ```
 $ baker bake --repo https://github.com/ottomatica/baker-test.git

@@ -21,6 +21,9 @@ sed -i "" -e "s/Version: .*/Version: ${BAKER_RELEASE}/" "linux/deb-template/bake
 echo "Updating AppVersion in win/scripts/baker.iss to be $BAKER_RELEASE";
 sed -i "" -e "s/AppVersion=.*/AppVersion=${BAKER_RELEASE}/" "win/scripts/baker.iss"
 
+# clean any old files
+rm -f macos/bin/*
+
 cd ../
 echo "running mac installer"
 npm run package-macos

@@ -16,7 +16,7 @@ const { configPath} = require('../../../global-vars');
 class Interactive {
 
     static async initBaker2() {
-        let Baker = this;
+        let self = this;
         // TODO: Find a better approach to do this
         try{
             if (await fs.pathExists(await path.resolve(path.resolve(process.cwd(), 'baker.yml'))))
@@ -94,7 +94,13 @@ class Interactive {
                         },
                         {
                             name: 'R'
-                        }
+                        },
+                        {
+                            name: 'python2'
+                        },
+                        {
+                            name: 'python3'
+                        },
                     ]
                 },
                 {
@@ -106,7 +112,7 @@ class Interactive {
                             name: 'docker'
                         },
                         {
-                            name: 'mysql'
+                            name: 'neo4j'
                         }
                     ]
                 },
@@ -126,6 +132,12 @@ class Interactive {
                         },
                         {
                             name: 'jekyll'
+                        },
+                        {
+                            name: 'latex'
+                        },
+                        {
+                            name: 'defects4j'
                         }
                     ]
                 }
@@ -141,6 +153,14 @@ class Interactive {
         let cwd = path.resolve(process.cwd());
         await fs.writeFile(path.resolve(cwd, 'baker.yml'), bakerYML, { encoding: 'utf8' });
         return;
+    }
+
+    /**
+     * Get list of available bakelets
+     * @param {String} type  services, lang, tools
+     */
+    static _listBakelets(type) {
+        return fs.readdirSync(path.resolve(`./lib/bakelets/${type}`)).map(e => {return { 'name': e.replace('.js', '')}});
     }
 }
 

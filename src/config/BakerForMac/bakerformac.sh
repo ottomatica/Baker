@@ -5,7 +5,7 @@ mkdir -p ~/Library/Baker/run
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 pid=`cat ~/Library/Baker/run/bakerformac-vpnkit.pid`
 
-if ! `launchctl list | grep "com.baker.u9fs" > /dev/null`; then
+if ! `launchctl list | grep "com.baker.u9fs." > /dev/null`; then
     echo "Starting u9fs"
     launchctl load $SCRIPTPATH/9pfs.plist
 fi

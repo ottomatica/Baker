@@ -2,7 +2,8 @@ const Bakelet = require('../bakelet');
 const Ansible = require('../../modules/configuration/ansible');
 const path    = require('path');
 const Ssh     = require('../../modules/ssh');
-const VagrantProvider = require('../../modules/providers/vagrant');
+
+const { privateKey } = require('../../../global-vars');
 
 class Keys extends Bakelet {
 
@@ -19,15 +20,8 @@ class Keys extends Bakelet {
         {
             for (let clientName of obj.keys)
             {
-                // TODO: I think ssh config should just be passed to the function, instead of getting it here
-                let sshConfig = await VagrantProvider.retrieveSSHConfigByName(clientName);
-                if( sshConfig.private_key == undefined )
-                {
-                    throw `Could not retrieve ${clientName}'s ssh key`
-                }
-
                 await Ssh.copyFromHostToVM(
-                    sshConfig.private_key,
+                    privateKey,
                     `/home/vagrant/baker/${this.name}/${clientName}_id_rsa`,
                     this.ansibleSSHConfig
                 );
