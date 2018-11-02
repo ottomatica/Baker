@@ -42,7 +42,7 @@
     "drivelist": "^6.4.0",
     "fs-extra": "^7.0.0",
     "hasbin": "^1.2.3",
-    "inquirer": "^5.2.0",
+    "inquirer": "^6.2.0",
     "js-yaml": "^3.12.0",
     "jsonfile": "^5.0.0",
     "md5-file": "^4.0.0",
