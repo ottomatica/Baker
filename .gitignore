@@ -1,6 +1,5 @@
 .vscode
 node_modules/
-package-lock.json
 builds/
 installers/macos/bin/*
 installers/win/bin/*
