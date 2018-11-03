@@ -32,7 +32,6 @@
   "homepage": "https://getbaker.io/",
   "dependencies": {
     "bluebird": "^3.5.1",
-    "camelcase": "^5.0.0",
     "chalk": "^2.4.1",
     "configstore": "^4.0.0",
     "console.table": "^0.10.0",
@@ -55,12 +54,10 @@
     "ping": "^0.2.2",
     "prompt": "^1.0.0",
     "request": "^2.88.0",
-    "require-dir": "^1.1.0",
     "scp2": "^0.5.0",
     "simple-git": "^1.96.0",
     "slash": "^2.0.0",
     "ssh2": "^0.6.1",
-    "tmp": "0.0.33",
     "underscore": "^1.9.1",
     "validator": "^10.8.0",
     "yargs": "^12.0.2"
