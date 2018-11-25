@@ -14,6 +14,7 @@ module.exports = {
     envIndexPath: path.join(boxes, 'data', 'index.json'),
     bakerForMacPath,
     bakerSSHConfig,
-    privateKey
+    privateKey,
     // spinnerDot  : 'dots'
+    version: require('./package.json').version
 };
