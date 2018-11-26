@@ -1,0 +1,58 @@
+- hosts: all
+  become: yes
+  tasks:
+
+    - name: Install basic utils and build envs.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - git
+        - unzip
+        - vim
+        - build-essential
+
+    - name: add ppa for python 3.6
+      apt_repository: repo='ppa:deadsnakes/ppa' state=present
+
+    - name: Install required system packages.
+      apt: pkg={{ item }} state=present
+      with_items:
+        - python3.6
+        - python3.6-dev
+        - python3.6-venv
+
+    - name: Set python3.6 as default python using alternatives
+      alternatives:
+        name: python
+        link: /usr/bin/python
+        path: /usr/bin/python3.6
+
+    - name: Get pip
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+
+    - name: Install pip3.6
+      become: yes
+      command: python3.6 /tmp/get-pip.py
+
+    - name: Set pip3.6 as default pip using alternatives
+      alternatives:
+        name: pip
+        link: /usr/bin/pip
+        path: /usr/local/bin/pip3.6
+
+    - name: Upgrade pip
+      pip:
+        name: pip
+        executable: pip3.6
+        extra_args: --upgrade
+
+    - stat: path="{{BAKER_SHARE_DIR}}/requirements.txt"
+      register: file_exists
+
+    - name: Install the project requirements
+      pip:
+        state: present
+        executable: pip3.6
+        requirements: "{{BAKER_SHARE_DIR}}/requirements.txt"
+      when: file_exists.stat.exists == True
