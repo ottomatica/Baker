@@ -14,7 +14,7 @@ PACKAGEREL="installers/macos"
 IDENTIFIER="io.ottomatica.$NAME"
 
 # Package version number.
-VERSION="0.6.14"
+VERSION="0.6.15"
 
 # The location to copy the contents of files.
 INSTALL_LOCATION="/opt/baker/bin"
