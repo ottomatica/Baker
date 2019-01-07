@@ -34,7 +34,7 @@
   "homepage": "https://getbaker.io/",
   "dependencies": {
     "bluebird": "^3.5.3",
-    "chalk": "^2.4.1",
+    "chalk": "^2.4.2",
     "configstore": "^4.0.0",
     "console.table": "^0.10.0",
     "digitalocean": "^1.1.1",
