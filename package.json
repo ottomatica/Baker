@@ -61,7 +61,7 @@
     "ssh2": "^0.8.2",
     "underscore": "^1.9.1",
     "validator": "^10.11.0",
-    "yargs": "^13.2.1"
+    "yargs": "^13.2.2"
   },
   "pkg": {
     "assets": [
