@@ -21,6 +21,9 @@ sed -i "" -e "s/Version: .*/Version: ${BAKER_RELEASE}/" "linux/deb-template/bake
 echo "Updating AppVersion in win/scripts/baker.iss to be $BAKER_RELEASE";
 sed -i "" -e "s/AppVersion=.*/AppVersion=${BAKER_RELEASE}/" "win/scripts/baker.iss"
 
+echo "Updating pkgver in PKGBUILD to be $BAKER_RELEASE";
+sed -i "" -e "s/^pkgver=.*$/pkgver=${BAKER_RELEASE}/" "PKGBUILD"
+
 # clean any old files
 rm -f macos/bin/*
 
@@ -50,6 +53,7 @@ echo "Version: ${BAKER_RELEASE}"
 
 echo "You are not done, yet"
 echo "You need to upload the .tar.gz, .pkg, and .deb on github."
+echo "You also need to update the md5sums field in PKGBUILD to the md5 sum of the source .tar.gz."
 echo "Then you need to switch to a windows machine and run 'grunt'"
 echo "Then you need to rename win/bin/baker-setup.exe to baker-windows-latest.exe and upload too"
 echo "Finally, you need to update the sha to $SHA and VERSION to ${BAKER_RELEASE} in ottomatica/homebrew"

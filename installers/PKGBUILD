@@ -1,15 +1,16 @@
+# Maintainer: Samim Mirhosseini <samim@ottomatica.io>
 pkgname="baker"
-pkgver=0.6.15
+pkgver=0.7.0
 pkgrel=1
-pkgdesc="A simple tool for provisioning virtual machines and containers"
+pkgdesc="Quick and easy baking of computing environments."
 arch=('x86_64')
 url="https://github.com/ottomatica/Baker"
 license=('Apache')
 provides=('baker')
-makedepends=('npm' 'jq')
+makedepends=('npm' 'jq' 'python2')
 optdepends=('virtualbox<6.0.0: virtual machine support')
 source=($pkgname-$pkgver.tar.gz::https://github.com/ottomatica/Baker/archive/v$pkgver.tar.gz)
-md5sums=('f901bf66439365f647b67e902d406814')
+md5sums=('63a02cc6837a64b917558c763dff1341')
 
 package() {
     npm install -g \
