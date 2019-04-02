@@ -8,7 +8,7 @@ url="https://github.com/ottomatica/Baker"
 license=('Apache')
 provides=('baker')
 makedepends=('npm' 'jq' 'python2')
-optdepends=('virtualbox<6.0.0: virtual machine support')
+optdepends=('virtualbox: virtual machine support')
 source=($pkgname-$pkgver.tar.gz::https://github.com/ottomatica/Baker/archive/v$pkgver.tar.gz)
 md5sums=('63a02cc6837a64b917558c763dff1341')
 
