@@ -79,7 +79,7 @@
     "grunt": "^1.0.4",
     "innosetup-compiler": "^5.5.62",
     "mocha": "^6.1.4",
-    "pkg": "^4.3.7",
+    "pkg": "^4.3.8",
     "standard-version": "^5.0.2"
   },
   "config": {
