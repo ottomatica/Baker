@@ -7,7 +7,7 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{FF82CC8F-9CAD-4210-97AA-2C5F955DB742}
 AppName=Baker
-AppVersion=0.6.13
+AppVersion=0.7.0
 ;AppVerName=Baker 0.4.3
 AppPublisher=Ottomatica LLC
 AppPublisherURL=https://getbaker.io/
