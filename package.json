@@ -74,7 +74,7 @@
   "bin": "baker.js",
   "devDependencies": {
     "chai": "^4.1.2",
-    "commitizen": "^3.1.1",
+    "commitizen": "^4.0.2",
     "cz-conventional-changelog": "^2.1.0",
     "grunt": "^1.0.4",
     "innosetup-compiler": "^5.5.62",
