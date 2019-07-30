@@ -80,7 +80,7 @@
     "innosetup-compiler": "^5.5.62",
     "mocha": "^6.2.0",
     "pkg": "^4.4.0",
-    "standard-version": "^6.0.1"
+    "standard-version": "^7.0.0"
   },
   "config": {
     "commitizen": {
