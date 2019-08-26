@@ -1,6 +1,29 @@
-# Change Log
+# Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [0.7.1](https://github.com/ottomatica/Baker/compare/v0.7.0...v0.7.1) (2019-07-02)
+
+
+### Bug Fixes
+
+* **build:** fixing .deb script (rm vagrant dependency) ([0570993](https://github.com/ottomatica/Baker/commit/0570993))
+
+
+### Build System
+
+* **deps:** Bump bluebird from 3.5.4 to 3.5.5 ([#146](https://github.com/ottomatica/Baker/issues/146)) ([558b3ea](https://github.com/ottomatica/Baker/commit/558b3ea))
+* **deps:** Bump configstore from 4.0.0 to 5.0.0 ([#148](https://github.com/ottomatica/Baker/issues/148)) ([c4e9c09](https://github.com/ottomatica/Baker/commit/c4e9c09))
+* **deps:** Bump fs-extra to 8.1.0 ([#154](https://github.com/ottomatica/Baker/issues/154)) ([9cb5f12](https://github.com/ottomatica/Baker/commit/9cb5f12))
+* **deps:** Bump inquirer to 6.4.1 ([#153](https://github.com/ottomatica/Baker/issues/153)) ([d2408b4](https://github.com/ottomatica/Baker/commit/d2408b4))
+* **deps:** Bump node-virtualbox to 0.2.3 ([#152](https://github.com/ottomatica/Baker/issues/152)) ([c7de810](https://github.com/ottomatica/Baker/commit/c7de810))
+* **deps:** Bump simple-git to 1.117.0 ([#155](https://github.com/ottomatica/Baker/issues/155)) ([ee83b49](https://github.com/ottomatica/Baker/commit/ee83b49))
+* **deps:** Bump validator from 10.11.0 to 11.0.0 ([#145](https://github.com/ottomatica/Baker/issues/145)) ([770486b](https://github.com/ottomatica/Baker/commit/770486b))
+* **deps:** Bump yargs from 13.2.2 to 13.2.4 ([#141](https://github.com/ottomatica/Baker/issues/141)) ([d58cbb6](https://github.com/ottomatica/Baker/commit/d58cbb6))
+* **deps-dev:** Bump pkg from 4.3.8 to 4.4.0 ([#142](https://github.com/ottomatica/Baker/issues/142)) ([d358eee](https://github.com/ottomatica/Baker/commit/d358eee))
+* **deps-dev:** Bump standard-version from 5.0.2 to 6.0.1 ([#138](https://github.com/ottomatica/Baker/issues/138)) ([145b964](https://github.com/ottomatica/Baker/commit/145b964))
+
+
 
 ## [0.7.0](https://github.com/ottomatica/Baker/compare/v0.6.15...v0.7.0) (2019-05-05)
 

@@ -3,7 +3,7 @@ Version: 0.7.0
 Section: base
 Priority: optional
 Architecture: amd64
-Depends: virtualbox, vagrant
+Depends: virtualbox
 Maintainer: Samim Mirhosseini <samim@ottomatica.io>
 Description: Baker
  🍞 Quick and easy baking of computing environments.
