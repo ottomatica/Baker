@@ -10,7 +10,7 @@ provides=('baker')
 makedepends=('npm' 'jq' 'python2')
 optdepends=('virtualbox: virtual machine support')
 source=($pkgname-$pkgver.tar.gz::https://github.com/ottomatica/Baker/archive/v$pkgver.tar.gz)
-md5sums=('63a02cc6837a64b917558c763dff1341')
+md5sums=('159a26f533a29a26ff6b6cdd42a05407')
 
 package() {
     npm install -g \
