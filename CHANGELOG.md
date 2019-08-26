@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.7.2](https://github.com/ottomatica/Baker/compare/v0.7.1...v0.7.2) (2019-08-26)
+
+
+### Build System
+
+* **deps:** [Security] Bump lodash.template from 4.4.0 to 4.5.0 ([#160](https://github.com/ottomatica/Baker/issues/160)) ([d0c7c29](https://github.com/ottomatica/Baker/commit/d0c7c29))
+* **deps:** Bump inquirer to 7.0.0 ([#178](https://github.com/ottomatica/Baker/issues/178)) ([4b8cd20](https://github.com/ottomatica/Baker/commit/4b8cd20))
+* **deps:** Bump mustache from 3.0.1 to 3.0.2 ([#177](https://github.com/ottomatica/Baker/issues/177)) ([c37bce7](https://github.com/ottomatica/Baker/commit/c37bce7))
+* **deps:** Bump node-vagrant from 1.3.9 to 1.3.10 ([#176](https://github.com/ottomatica/Baker/issues/176)) ([12e1212](https://github.com/ottomatica/Baker/commit/12e1212))
+* **deps:** Bump simple-git to 1.124.0 ([#172](https://github.com/ottomatica/Baker/issues/172)) ([be21037](https://github.com/ottomatica/Baker/commit/be21037))
+* **deps:** Bump ssh2 from 0.8.4 to 0.8.5 ([#162](https://github.com/ottomatica/Baker/issues/162)) ([40b6c9a](https://github.com/ottomatica/Baker/commit/40b6c9a))
+* **deps:** Bump validator from 11.0.0 to 11.1.0 ([#157](https://github.com/ottomatica/Baker/issues/157)) ([478e779](https://github.com/ottomatica/Baker/commit/478e779))
+* **deps:** Bump yargs to 14.0.0 ([#175](https://github.com/ottomatica/Baker/issues/175)) ([b12ae79](https://github.com/ottomatica/Baker/commit/b12ae79))
+* **deps-dev:** Bump commitizen to 4.0.3 ([#170](https://github.com/ottomatica/Baker/issues/170)) ([cac2acd](https://github.com/ottomatica/Baker/commit/cac2acd))
+* **deps-dev:** Bump cz-conventional-changelog to 3.0.2 ([#169](https://github.com/ottomatica/Baker/issues/169)) ([12e90c5](https://github.com/ottomatica/Baker/commit/12e90c5))
+* **deps-dev:** Bump innosetup-compiler from 5.5.62 to 5.6.1 ([#171](https://github.com/ottomatica/Baker/issues/171)) ([b22da56](https://github.com/ottomatica/Baker/commit/b22da56))
+* **deps-dev:** Bump mocha from 6.1.4 to 6.2.0 ([#167](https://github.com/ottomatica/Baker/issues/167)) ([2c596ff](https://github.com/ottomatica/Baker/commit/2c596ff))
+* **deps-dev:** Bump standard-version from 6.0.1 to 7.0.0 ([#173](https://github.com/ottomatica/Baker/issues/173)) ([8f81226](https://github.com/ottomatica/Baker/commit/8f81226))
+
+
+
 ### [0.7.1](https://github.com/ottomatica/Baker/compare/v0.7.0...v0.7.1) (2019-07-02)
 
 

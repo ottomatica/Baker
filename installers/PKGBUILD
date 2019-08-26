@@ -1,6 +1,6 @@
 # Maintainer: Samim Mirhosseini <samim@ottomatica.io>
 pkgname="baker"
-pkgver=0.7.0
+pkgver=0.7.2
 pkgrel=1
 pkgdesc="Quick and easy baking of computing environments."
 arch=('x86_64')
