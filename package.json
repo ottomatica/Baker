@@ -38,7 +38,7 @@
     "configstore": "^5.0.0",
     "console.table": "^0.10.0",
     "digitalocean": "^1.1.1",
-    "dockerode": "^2.5.8",
+    "dockerode": "^3.0.0",
     "download": "^7.1.0",
     "fs-extra": "^8.1.0",
     "hasbin": "^1.2.3",
