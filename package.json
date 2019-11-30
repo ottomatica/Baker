@@ -33,7 +33,7 @@
   },
   "homepage": "https://getbaker.io/",
   "dependencies": {
-    "bluebird": "^3.7.1",
+    "bluebird": "^3.7.2",
     "chalk": "^3.0.0",
     "configstore": "^5.0.0",
     "console.table": "^0.10.0",
