@@ -59,7 +59,7 @@
     "simple-git": "^1.129.0",
     "slash": "^3.0.0",
     "ssh2": "^0.8.7",
-    "underscore": "^1.9.1",
+    "underscore": "^1.9.2",
     "validator": "^12.1.0",
     "yargs": "^15.0.2"
   },
