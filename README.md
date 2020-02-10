@@ -3,7 +3,9 @@
 Meet Baker! -- a simple tool for provisioning virtual machines and containers. With Baker you can quickly create development environments and run your code. With one tool, you have the functionality of vagrant, docker, ansible, and task runners like grunt.
 
 See a running demo below:
-[![asciicast](https://asciinema.org/a/lfb4aYpmtkHw6DLVFGjsdtaWu.png)](https://asciinema.org/a/lfb4aYpmtkHw6DLVFGjsdtaWu)
+<p align="center">
+  <img src="./docs/img/demo.gif">
+</p>
 
 For more details, checkout [docs.getbaker.io](https://docs.getbaker.io/) and join our [Slack](https://getbaker.io/slack).
 
