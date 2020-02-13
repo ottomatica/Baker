@@ -35,7 +35,7 @@
   "dependencies": {
     "bluebird": "^3.7.2",
     "chalk": "^3.0.0",
-    "configstore": "^5.0.0",
+    "configstore": "^5.0.1",
     "console.table": "^0.10.0",
     "digitalocean": "^1.1.1",
     "dockerode": "^3.1.0",
