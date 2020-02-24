@@ -44,7 +44,7 @@
     "hasbin": "^1.2.3",
     "inquirer": "^7.0.4",
     "js-yaml": "^3.13.1",
-    "jsonfile": "^5.0.0",
+    "jsonfile": "^6.0.0",
     "md5-file": "^4.0.0",
     "mustache": "^4.0.0",
     "netaddr": "^1.1.0",
