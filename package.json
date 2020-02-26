@@ -78,7 +78,7 @@
     "cz-conventional-changelog": "^3.1.0",
     "grunt": "^1.0.4",
     "innosetup-compiler": "^5.6.1",
-    "mocha": "^7.0.1",
+    "mocha": "^7.1.0",
     "pkg": "^4.4.3",
     "standard-version": "^7.1.0"
   },
