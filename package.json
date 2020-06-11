@@ -60,7 +60,7 @@
     "slash": "^3.0.0",
     "ssh2": "^0.8.9",
     "underscore": "^1.10.2",
-    "validator": "^12.2.0",
+    "validator": "^13.1.0",
     "yargs": "^15.3.1"
   },
   "pkg": {
