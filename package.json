@@ -50,7 +50,7 @@
     "netaddr": "^1.1.0",
     "node-powershell": "^4.0.0",
     "node-vagrant": "^1.4.0",
-    "node-virtualbox": "^0.2.3",
+    "node-virtualbox": "^0.2.4",
     "ora": "^4.0.4",
     "ping": "^0.2.2",
     "prompt": "^1.0.0",
