@@ -37,7 +37,7 @@
     "chalk": "^4.1.0",
     "configstore": "^5.0.1",
     "console.table": "^0.10.0",
-    "digitalocean": "^1.1.1",
+    "digitalocean": "^1.2.1",
     "dockerode": "^3.1.0",
     "download": "^7.1.0",
     "fs-extra": "^9.0.1",
