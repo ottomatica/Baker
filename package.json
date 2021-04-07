@@ -52,7 +52,7 @@
     "node-vagrant": "^1.4.0",
     "node-virtualbox": "^0.2.3",
     "ora": "^4.0.4",
-    "ping": "^0.2.2",
+    "ping": "^0.4.1",
     "prompt": "^1.0.0",
     "request": "^2.88.2",
     "scp2": "^0.5.0",
