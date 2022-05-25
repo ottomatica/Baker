@@ -76,7 +76,7 @@
     "chai": "^4.1.2",
     "commitizen": "^4.0.3",
     "cz-conventional-changelog": "^3.1.0",
-    "grunt": "^1.0.4",
+    "grunt": "^1.5.3",
     "innosetup-compiler": "^5.6.1",
     "mocha": "^7.0.1",
     "pkg": "^4.4.3",
